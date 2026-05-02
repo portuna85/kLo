@@ -40,7 +40,7 @@ dependencies {
     testRuntimeOnly("com.h2database:h2")
     testImplementation("org.testcontainers:junit-jupiter:1.21.4")
     testImplementation("org.testcontainers:mariadb:1.21.4")
-    testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
 }
 
 tasks.withType<Test>().configureEach {

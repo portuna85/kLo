@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.kraft.lotto.feature.winningnumber.application.WinningNumberQueryService;
+import com.kraft.lotto.feature.winningnumber.web.dto.NumberFrequencyDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberPageDto;
 import com.kraft.lotto.support.BusinessException;
@@ -70,5 +71,23 @@ class WinningNumberControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.content.length()").value(2))
                 .andExpect(jsonPath("$.data.totalElements").value(2));
+    }
+
+    @Test
+    void GET_stats_frequency_정상응답() throws Exception {
+        List<NumberFrequencyDto> data = List.of(
+                new NumberFrequencyDto(1, 123),
+                new NumberFrequencyDto(2, 118)
+        );
+        Mockito.when(queryService.frequency()).thenReturn(data);
+
+        mockMvc.perform(get("/api/winning-numbers/stats/frequency"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].number").value(1))
+                .andExpect(jsonPath("$.data[0].count").value(123))
+                .andExpect(jsonPath("$.data[1].number").value(2))
+                .andExpect(jsonPath("$.data[1].count").value(118));
     }
 }
