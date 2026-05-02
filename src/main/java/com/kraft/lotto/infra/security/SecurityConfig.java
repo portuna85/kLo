@@ -5,6 +5,7 @@ import com.kraft.lotto.infra.config.KraftAdminProperties;
 import com.kraft.lotto.support.ApiError;
 import com.kraft.lotto.support.ApiResponse;
 import com.kraft.lotto.support.ErrorCode;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
+@ConditionalOnWebApplication
 public class SecurityConfig {
 
     @Bean

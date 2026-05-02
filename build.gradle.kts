@@ -26,7 +26,7 @@ dependencies {
 
     // JPA + Flyway + MariaDB
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.flywaydb:flyway-core")
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-mysql")
     runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
 

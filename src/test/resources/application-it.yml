@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    database-platform: org.hibernate.dialect.MariaDBDialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+kraft:
+  admin:
+    username: testadmin
+    password: testpw
+  api:
+    client: mock
+    url: http://localhost
+  recommend:
+    max-attempts: 1000
