@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: kraft-lotto
+  datasource:
+    url: ${KRAFT_DB_URL:jdbc:mariadb://localhost:3306/kraft_lotto}
+    username: ${KRAFT_DB_USER:kraft}
+    password: ${KRAFT_DB_PASSWORD:kraft}
+    driver-class-name: org.mariadb.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: never
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+
+kraft:
+  admin:
+    username: ${KRAFT_ADMIN_USERNAME:admin}
+    password: ${KRAFT_ADMIN_PASSWORD:admin}
+  api:
+    client: ${KRAFT_API_CLIENT:mock}
+    url: ${KRAFT_API_URL:https://www.dhlottery.co.kr/common.do}
+  recommend:
+    max-attempts: ${KRAFT_RECOMMEND_MAX_ATTEMPTS:100000}

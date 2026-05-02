@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:kraft_lotto_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    database-platform: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+
+kraft:
+  admin:
+    username: testadmin
+    password: testpw
+  api:
+    client: mock
+    url: http://localhost
+  recommend:
+    max-attempts: 1000
