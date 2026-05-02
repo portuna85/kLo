@@ -26,7 +26,7 @@ dependencies {
 
     // JPA + Flyway + MariaDB
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.flywaydb:flyway-core")
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-mysql")
     runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
 
@@ -35,6 +35,7 @@ dependencies {
 
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.springframework.security:spring-security-test")
     testRuntimeOnly("com.h2database:h2")
     testImplementation("org.testcontainers:junit-jupiter:1.21.4")
