@@ -1,0 +1,31 @@
+package com.kraft.lotto.support;
+
+import org.springframework.http.HttpStatus;
+
+public enum ErrorCode {
+
+    LOTTO_INVALID_COUNT(HttpStatus.BAD_REQUEST, "추천 개수는 1~10 사이여야 합니다."),
+    LOTTO_INVALID_NUMBER(HttpStatus.BAD_REQUEST, "유효하지 않은 로또 번호입니다."),
+    LOTTO_GENERATION_TIMEOUT(HttpStatus.SERVICE_UNAVAILABLE, "추천 조합 생성 시도 한도를 초과했습니다."),
+    WINNING_NUMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "요청하신 회차의 당첨번호를 찾을 수 없습니다."),
+    EXTERNAL_API_FAILURE(HttpStatus.BAD_GATEWAY, "외부 API 호출에 실패했습니다."),
+    COLLECT_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "당첨번호 수집에 실패했습니다."),
+    UNAUTHORIZED_ADMIN(HttpStatus.UNAUTHORIZED, "관리자 인증이 필요합니다."),
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "내부 서버 오류가 발생했습니다.");
+
+    private final HttpStatus httpStatus;
+    private final String defaultMessage;
+
+    ErrorCode(HttpStatus httpStatus, String defaultMessage) {
+        this.httpStatus = httpStatus;
+        this.defaultMessage = defaultMessage;
+    }
+
+    public HttpStatus getHttpStatus() {
+        return httpStatus;
+    }
+
+    public String getDefaultMessage() {
+        return defaultMessage;
+    }
+}
