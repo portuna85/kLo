@@ -93,4 +93,25 @@ class WinningNumberQueryServiceTest {
         assertThat(result.page()).isZero();
         assertThat(result.totalElements()).isEqualTo(2);
     }
+
+    @Test
+    void frequency_본번호만_집계하고_1부터_45까지_모두_반환() {
+        WinningNumberQueryService service = new WinningNumberQueryService(repository);
+        // 두 회차 모두 본번호 [1,7,13,22,34,45] / 보너스 8 → 보너스는 집계 제외
+        when(repository.findAllOrderByRoundAsc()).thenReturn(List.of(entity(1), entity(2)));
+
+        var result = service.frequency();
+
+        assertThat(result).hasSize(45);
+        assertThat(result.get(0).number()).isEqualTo(1);
+        assertThat(result.get(44).number()).isEqualTo(45);
+        // 본번호로 등장한 1번/7번/13번/22번/34번/45번은 2회씩
+        assertThat(result.get(0).count()).isEqualTo(2);
+        assertThat(result.get(6).count()).isEqualTo(2);
+        assertThat(result.get(44).count()).isEqualTo(2);
+        // 보너스인 8번은 0회 (보너스는 집계 제외)
+        assertThat(result.get(7).count()).isZero();
+        // 사용되지 않은 2번은 0회
+        assertThat(result.get(1).count()).isZero();
+    }
 }

@@ -1,9 +1,11 @@
 package com.kraft.lotto.feature.winningnumber.web;
 
 import com.kraft.lotto.feature.winningnumber.application.WinningNumberQueryService;
+import com.kraft.lotto.feature.winningnumber.web.dto.NumberFrequencyDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberPageDto;
 import com.kraft.lotto.support.ApiResponse;
+import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,5 +41,10 @@ public class WinningNumberController {
             @RequestParam(name = "size", defaultValue = "20") int size
     ) {
         return ApiResponse.success(queryService.list(page, size));
+    }
+
+    @GetMapping("/stats/frequency")
+    public ApiResponse<List<NumberFrequencyDto>> frequency() {
+        return ApiResponse.success(queryService.frequency());
     }
 }

@@ -1,11 +1,15 @@
 package com.kraft.lotto.feature.winningnumber.application;
 
+import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberEntity;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberMapper;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberRepository;
+import com.kraft.lotto.feature.winningnumber.web.dto.NumberFrequencyDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberPageDto;
 import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,5 +56,26 @@ public class WinningNumberQueryService {
                 .map(WinningNumberMapper::toDomain)
                 .map(WinningNumberDto::from);
         return WinningNumberPageDto.from(mapped);
+    }
+
+    /**
+     * 1~45 본번호의 출현 빈도를 회차 전체에 걸쳐 집계해 1번부터 45번까지 오름차순으로 반환한다.
+     * 보너스 번호는 집계에서 제외한다. 데이터가 없는 번호도 count=0으로 항상 포함된다.
+     */
+    public List<NumberFrequencyDto> frequency() {
+        long[] counts = new long[46]; // index 1..45
+        for (WinningNumberEntity e : repository.findAllOrderByRoundAsc()) {
+            counts[e.getN1()]++;
+            counts[e.getN2()]++;
+            counts[e.getN3()]++;
+            counts[e.getN4()]++;
+            counts[e.getN5()]++;
+            counts[e.getN6()]++;
+        }
+        List<NumberFrequencyDto> result = new ArrayList<>(45);
+        for (int n = 1; n <= 45; n++) {
+            result.add(new NumberFrequencyDto(n, counts[n]));
+        }
+        return List.copyOf(result);
     }
 }
