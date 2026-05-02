@@ -1,0 +1,43 @@
+services:
+  mariadb:
+    image: mariadb:11.8
+    container_name: kraft-lotto-mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${KRAFT_DB_NAME:-kraft_lotto}
+      MARIADB_USER: ${KRAFT_DB_USER:-kraft}
+      MARIADB_PASSWORD: ${KRAFT_DB_PASSWORD:-kraft}
+      MARIADB_ROOT_PASSWORD: ${KRAFT_DB_ROOT_PASSWORD:-rootpw}
+    ports:
+      - "3306:3306"
+    volumes:
+      - kraft-lotto-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kraft-lotto-app
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      KRAFT_DB_URL: jdbc:mariadb://mariadb:3306/${KRAFT_DB_NAME:-kraft_lotto}
+      KRAFT_DB_USER: ${KRAFT_DB_USER:-kraft}
+      KRAFT_DB_PASSWORD: ${KRAFT_DB_PASSWORD:-kraft}
+      KRAFT_ADMIN_USERNAME: ${KRAFT_ADMIN_USERNAME:?KRAFT_ADMIN_USERNAME must be set}
+      KRAFT_ADMIN_PASSWORD: ${KRAFT_ADMIN_PASSWORD:?KRAFT_ADMIN_PASSWORD must be set}
+      KRAFT_API_CLIENT: ${KRAFT_API_CLIENT:-real}
+      KRAFT_API_URL: ${KRAFT_API_URL:-https://www.dhlottery.co.kr/common.do}
+      KRAFT_RECOMMEND_MAX_ATTEMPTS: ${KRAFT_RECOMMEND_MAX_ATTEMPTS:-100000}
+    ports:
+      - "8080:8080"
+
+volumes:
+  kraft-lotto-db:
