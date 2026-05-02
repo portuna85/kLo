@@ -23,8 +23,8 @@ public class AdminWinningNumberController {
         this.collectService = collectService;
     }
 
-    @PostMapping("/collect")
-    public ApiResponse<CollectResponse> collect(@Valid @RequestBody(required = false) CollectRequest request) {
+    @PostMapping("/refresh")
+    public ApiResponse<CollectResponse> refresh(@Valid @RequestBody(required = false) CollectRequest request) {
         Integer target = request == null ? null : request.targetRound();
         return ApiResponse.success(collectService.collect(target));
     }

@@ -36,7 +36,7 @@ class AdminWinningNumberControllerTest {
         Mockito.when(collectService.collect(isNull()))
                 .thenReturn(new CollectResponse(3, 0, 0, 1103));
 
-        mockMvc.perform(post("/api/admin/winning-numbers/collect"))
+        mockMvc.perform(post("/api/admin/winning-numbers/refresh"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.collected").value(3))
@@ -48,7 +48,7 @@ class AdminWinningNumberControllerTest {
         Mockito.when(collectService.collect(1103))
                 .thenReturn(new CollectResponse(2, 1, 0, 1103));
 
-        mockMvc.perform(post("/api/admin/winning-numbers/collect")
+        mockMvc.perform(post("/api/admin/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"targetRound\":1103}"))
                 .andExpect(status().isOk())
@@ -61,7 +61,7 @@ class AdminWinningNumberControllerTest {
         Mockito.when(collectService.collect(isNull()))
                 .thenThrow(new BusinessException(ErrorCode.EXTERNAL_API_FAILURE));
 
-        mockMvc.perform(post("/api/admin/winning-numbers/collect"))
+        mockMvc.perform(post("/api/admin/winning-numbers/refresh"))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.error.code").value("EXTERNAL_API_FAILURE"));
     }
