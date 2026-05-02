@@ -76,6 +76,6 @@ public class WinningNumberQueryService {
         for (int n = 1; n <= 45; n++) {
             result.add(new NumberFrequencyDto(n, counts[n]));
         }
-        return List.copyOf(result);
+        return java.util.Collections.unmodifiableList(result);
     }
 }
