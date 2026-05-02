@@ -6,15 +6,12 @@ spring:
     driver-class-name: org.h2.Driver
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
     database-platform: org.hibernate.dialect.H2Dialect
+    open-in-view: false
   flyway:
-    enabled: false
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+    enabled: true
+    locations: classpath:db/migration
 
 kraft:
   admin:
@@ -25,3 +22,4 @@ kraft:
     url: http://localhost
   recommend:
     max-attempts: 1000
+
