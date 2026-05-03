@@ -159,6 +159,15 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
+    @DisplayName("targetRound 가 1 미만이면 BusinessException(LOTTO_INVALID_TARGET_ROUND) 를 던진다")
+    void throwsInvalidTargetRoundWhenTargetRoundIsNonPositive() {
+        assertThatExceptionOfType(BusinessException.class)
+                .isThrownBy(() -> service.collect(0))
+                .extracting(BusinessException::getErrorCode)
+                .isEqualTo(ErrorCode.LOTTO_INVALID_TARGET_ROUND);
+    }
+
+    @Test
     @DisplayName("collected 가 0 이면 이벤트를 발행하지 않는다")
     void doesNotPublishEventWhenCollectedIsZero() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0));
@@ -170,4 +179,3 @@ class WinningNumberCollectServiceTest {
         verify(eventPublisher, never()).publishEvent(any());
     }
 }
-

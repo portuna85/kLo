@@ -10,6 +10,7 @@ import com.kraft.lotto.support.ErrorCode;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -44,6 +45,7 @@ public class WinningNumberCollectService {
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
+    @Autowired
     public WinningNumberCollectService(LottoApiClient lottoApiClient,
                                        WinningNumberRepository repository,
                                        ApplicationEventPublisher eventPublisher) {
@@ -61,6 +63,10 @@ public class WinningNumberCollectService {
     }
 
     public CollectResponse collect(Integer targetRound) {
+        if (targetRound != null && targetRound <= 0) {
+            throw new BusinessException(ErrorCode.LOTTO_INVALID_TARGET_ROUND);
+        }
+
         int startRound = repository.findMaxRound().orElse(0) + 1;
         int collected = 0;
         int skipped = 0;

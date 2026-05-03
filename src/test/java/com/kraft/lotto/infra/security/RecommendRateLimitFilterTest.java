@@ -110,11 +110,13 @@ class RecommendRateLimitFilterTest {
         java.lang.reflect.Field field = RecommendRateLimitFilter.class.getDeclaredField("requestHistory");
         field.setAccessible(true);
         Map<String, Deque<Long>> history = (Map<String, Deque<Long>>) field.get(filter);
+        long now = System.currentTimeMillis();
         for (int i = 0; i < RecommendRateLimitFilter.MAX_TRACKED_IPS; i++) {
-            history.put("fill." + i, new ArrayDeque<>());
+            Deque<Long> bucket = new ArrayDeque<>();
+            bucket.addLast(now);
+            history.put("fill." + i, bucket);
         }
 
-        // 용량 초과 상태에서 새 IP 요청 → 차단
         assertThat(executeRequest(postRecommend("172.16.99.99"))).isEqualTo(429);
     }
 

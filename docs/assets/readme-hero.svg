@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="520" viewBox="0 0 1440 520" role="img" aria-labelledby="title desc">
+  <title id="title">KraftLotto architecture hero</title>
+  <desc id="desc">A refined abstract lottery dashboard with Spring service layers, MariaDB storage, and six numbered balls.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a1020"/>
+      <stop offset="0.48" stop-color="#111827"/>
+      <stop offset="1" stop-color="#12312f"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.06"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity="0.34"/>
+    </filter>
+  </defs>
+  <rect width="1440" height="520" fill="url(#bg)"/>
+  <path d="M0 405 C210 345 334 476 559 421 C782 366 870 245 1088 278 C1245 302 1300 363 1440 319 L1440 520 L0 520 Z" fill="#0fb981" opacity="0.12"/>
+  <path d="M0 79 C182 146 328 31 510 77 C706 127 816 224 1026 169 C1194 125 1278 51 1440 97" fill="none" stroke="#60a5fa" stroke-width="2" opacity="0.18"/>
+
+  <g filter="url(#shadow)">
+    <rect x="104" y="86" width="1232" height="348" rx="28" fill="url(#panel)" stroke="#ffffff" stroke-opacity="0.18"/>
+  </g>
+
+  <g transform="translate(168 139)">
+    <text x="0" y="0" fill="#ffffff" font-family="Inter, Segoe UI, sans-serif" font-size="62" font-weight="800">KraftLotto</text>
+    <text x="2" y="50" fill="#cbd5e1" font-family="Inter, Segoe UI, sans-serif" font-size="22">편향을 피하는 Spring Boot 로또 6/45 추천 서비스</text>
+    <g transform="translate(0 94)" font-family="Inter, Segoe UI, sans-serif" font-size="15" fill="#e5e7eb">
+      <rect x="0" y="0" width="134" height="34" rx="17" fill="#22c55e" fill-opacity="0.18" stroke="#22c55e" stroke-opacity="0.45"/>
+      <text x="18" y="23">Java 25</text>
+      <rect x="150" y="0" width="174" height="34" rx="17" fill="#38bdf8" fill-opacity="0.16" stroke="#38bdf8" stroke-opacity="0.42"/>
+      <text x="168" y="23">Spring Boot 4</text>
+      <rect x="340" y="0" width="142" height="34" rx="17" fill="#f59e0b" fill-opacity="0.18" stroke="#f59e0b" stroke-opacity="0.44"/>
+      <text x="358" y="23">MariaDB 11.8</text>
+    </g>
+  </g>
+
+  <g transform="translate(763 118)" font-family="Inter, Segoe UI, sans-serif">
+    <rect x="0" y="0" width="410" height="252" rx="22" fill="#020617" fill-opacity="0.45" stroke="#ffffff" stroke-opacity="0.16"/>
+    <text x="30" y="48" fill="#f8fafc" font-size="20" font-weight="700">Feature-first flow</text>
+    <g fill="none" stroke="#94a3b8" stroke-width="2" opacity="0.72">
+      <path d="M94 97 H206"/>
+      <path d="M214 97 H326"/>
+      <path d="M206 148 H94"/>
+      <path d="M326 148 H214"/>
+    </g>
+    <g font-size="14" font-weight="700" text-anchor="middle">
+      <rect x="34" y="74" width="92" height="48" rx="14" fill="#2563eb"/>
+      <text x="80" y="104" fill="#eff6ff">Web</text>
+      <rect x="159" y="74" width="92" height="48" rx="14" fill="#16a34a"/>
+      <text x="205" y="104" fill="#f0fdf4">Service</text>
+      <rect x="284" y="74" width="92" height="48" rx="14" fill="#ea580c"/>
+      <text x="330" y="104" fill="#fff7ed">Domain</text>
+      <rect x="34" y="126" width="92" height="48" rx="14" fill="#475569"/>
+      <text x="80" y="156" fill="#f8fafc">Security</text>
+      <rect x="159" y="126" width="92" height="48" rx="14" fill="#7c3aed"/>
+      <text x="205" y="156" fill="#faf5ff">Cache</text>
+      <rect x="284" y="126" width="92" height="48" rx="14" fill="#0f766e"/>
+      <text x="330" y="156" fill="#ecfeff">MariaDB</text>
+    </g>
+  </g>
+
+  <g transform="translate(176 333)" font-family="Inter, Segoe UI, sans-serif" font-size="24" font-weight="800" text-anchor="middle">
+    <circle cx="0" cy="0" r="30" fill="#facc15"/><text x="0" y="8" fill="#422006">7</text>
+    <circle cx="76" cy="0" r="30" fill="#38bdf8"/><text x="76" y="8" fill="#082f49">13</text>
+    <circle cx="152" cy="0" r="30" fill="#fb7185"/><text x="152" y="8" fill="#fff1f2">22</text>
+    <circle cx="228" cy="0" r="30" fill="#cbd5e1"/><text x="228" y="8" fill="#111827">34</text>
+    <circle cx="304" cy="0" r="30" fill="#a3e635"/><text x="304" y="8" fill="#1a2e05">41</text>
+    <circle cx="380" cy="0" r="30" fill="#f97316"/><text x="380" y="8" fill="#fff7ed">45</text>
+  </g>
+</svg>

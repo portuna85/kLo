@@ -14,13 +14,13 @@ services:
     env_file:
       - .env
     environment:
-      MARIADB_DATABASE: ${KRAFT_DB_NAME}
-      MARIADB_USER: ${KRAFT_DB_USER}
-      MARIADB_PASSWORD: ${KRAFT_DB_PASSWORD}
-      MARIADB_ROOT_PASSWORD: ${KRAFT_DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${KRAFT_DB_NAME:?KRAFT_DB_NAME is required}
+      MARIADB_USER: ${KRAFT_DB_USER:?KRAFT_DB_USER is required}
+      MARIADB_PASSWORD: ${KRAFT_DB_PASSWORD:?KRAFT_DB_PASSWORD is required}
+      MARIADB_ROOT_PASSWORD: ${KRAFT_DB_ROOT_PASSWORD:?KRAFT_DB_ROOT_PASSWORD is required}
       TZ: Asia/Seoul
     ports:
-      - "3306:3306"
+      - "${KRAFT_DB_PORT:-3306}:3306"
     networks:
       - kraft-net
     volumes:
@@ -49,13 +49,15 @@ services:
     env_file:
       - .env
     environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      KRAFT_IN_CONTAINER: "true"
       # 컨테이너 네트워크에서는 호스트가 'mariadb' 입니다.
       # .env 의 KRAFT_DB_URL 이 이미 mariadb 호스트로 설정되어 있다면 이 항목은 생략 가능하지만,
       # 호스트 OS 에서 동일 .env 를 로컬 실행에 재사용할 가능성을 고려해 컨테이너 전용으로 강제합니다.
-      KRAFT_DB_URL: jdbc:mariadb://mariadb:3306/${KRAFT_DB_NAME}?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Seoul&connectTimeout=3000
+      KRAFT_DB_URL: jdbc:mariadb://mariadb:3306/${KRAFT_DB_NAME:?KRAFT_DB_NAME is required}?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Seoul&connectTimeout=3000
       TZ: Asia/Seoul
     ports:
-      - "8080:8080"
+      - "${KRAFT_APP_PORT:-8080}:8080"
     networks:
       - kraft-net
     volumes:
