@@ -78,6 +78,9 @@ kraft:
     retry-backoff-ms: ${KRAFT_API_RETRY_BACKOFF_MS:200}
   recommend:
     max-attempts: ${KRAFT_RECOMMEND_MAX_ATTEMPTS:100000}
+    rate-limit:
+      max-requests: ${KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS:30}
+      window-seconds: ${KRAFT_RECOMMEND_RATE_LIMIT_WINDOW_SECONDS:60}
   logging:
     # 로그 파일 출력 경로 (logback-spring.xml 에서 ${LOG_PATH} 로 사용).
     # 컨테이너에서는 docker-compose 의 볼륨이 /app/logs 로 마운트됩니다.
