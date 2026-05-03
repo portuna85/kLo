@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kraft.lotto.feature.winningnumber.domain.LottoCombination;
 import com.kraft.lotto.feature.winningnumber.domain.WinningNumber;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -27,28 +28,62 @@ public class DhLotteryApiClient implements LottoApiClient {
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
     private final String baseUrl;
+    private final int maxRetries;
+    private final int retryBackoffMs;
+    private final MeterRegistry meterRegistry;
 
     public DhLotteryApiClient(RestClient restClient, ObjectMapper objectMapper, String baseUrl) {
+        this(restClient, objectMapper, baseUrl, 0, 0, null);
+    }
+
+    public DhLotteryApiClient(RestClient restClient,
+                              ObjectMapper objectMapper,
+                              String baseUrl,
+                              int maxRetries,
+                              int retryBackoffMs,
+                              MeterRegistry meterRegistry) {
         this.restClient = restClient;
         this.objectMapper = objectMapper;
         this.baseUrl = baseUrl;
+        this.maxRetries = Math.max(0, maxRetries);
+        this.retryBackoffMs = Math.max(0, retryBackoffMs);
+        this.meterRegistry = meterRegistry;
     }
 
     @Override
     public Optional<WinningNumber> fetch(int round) {
-        String body;
-        try {
-            body = restClient.get()
-                    .uri(baseUrl + "?method=getLottoNumber&drwNo=" + round)
-                    .retrieve()
-                    .body(String.class);
-        } catch (RestClientException ex) {
-            throw new LottoApiClientException("외부 API 호출 실패 (round=" + round + ")", ex);
+        int attempts = maxRetries + 1;
+        count("kraft.api.dhlottery.call.total", "round", String.valueOf(round));
+        int attempt = 0;
+        while (true) {
+            attempt++;
+            try {
+                String body = restClient.get()
+                        .uri(baseUrl + "?method=getLottoNumber&drwNo=" + round)
+                        .retrieve()
+                        .body(String.class);
+                if (body == null || body.isBlank()) {
+                    count("kraft.api.dhlottery.call.failure", "reason", "blank_body");
+                    throw new LottoApiClientException("외부 API 응답이 비어 있습니다 (round=" + round + ")");
+                }
+                Optional<WinningNumber> parsed = parse(round, body);
+                if (parsed.isEmpty()) {
+                    count("kraft.api.dhlottery.call.empty", "reason", "not_drawn");
+                } else {
+                    count("kraft.api.dhlottery.call.success");
+                }
+                return parsed;
+            } catch (RestClientException ex) {
+                count("kraft.api.dhlottery.call.failure", "reason", "network");
+                if (attempt >= attempts) {
+                    throw new LottoApiClientException(
+                            "외부 API 호출 실패 (round=" + round + ", attempts=" + attempts + ")", ex);
+                }
+                count("kraft.api.dhlottery.call.retry");
+                log.warn("dhlottery 호출 실패, 재시도합니다: round={}, attempt={}/{}", round, attempt, attempts, ex);
+                sleepBackoff();
+            }
         }
-        if (body == null || body.isBlank()) {
-            throw new LottoApiClientException("외부 API 응답이 비어 있습니다 (round=" + round + ")");
-        }
-        return parse(round, body);
     }
 
     Optional<WinningNumber> parse(int round, String body) {
@@ -56,6 +91,7 @@ public class DhLotteryApiClient implements LottoApiClient {
         try {
             node = objectMapper.readTree(body);
         } catch (Exception ex) {
+            count("kraft.api.dhlottery.call.failure", "reason", "json_parse");
             throw new LottoApiClientException("외부 API 응답 파싱 실패 (round=" + round + ")", ex);
         }
         String returnValue = node.path("returnValue").asText("");
@@ -92,10 +128,31 @@ public class DhLotteryApiClient implements LottoApiClient {
                     totalSales
             ));
         } catch (LottoApiClientException ex) {
+            count("kraft.api.dhlottery.call.failure", "reason", "validation");
             throw ex;
         } catch (DateTimeParseException | IllegalArgumentException | NullPointerException ex) {
+            count("kraft.api.dhlottery.call.failure", "reason", "transform");
             throw new LottoApiClientException(
                     "외부 API 응답 변환 실패 (round=" + round + "): " + ex.getMessage(), ex);
         }
+    }
+
+    private void sleepBackoff() {
+        if (retryBackoffMs <= 0) {
+            return;
+        }
+        try {
+            Thread.sleep(retryBackoffMs);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new LottoApiClientException("재시도 대기 중 인터럽트가 발생했습니다.", ie);
+        }
+    }
+
+    private void count(String metricName, String... tags) {
+        if (meterRegistry == null) {
+            return;
+        }
+        meterRegistry.counter(metricName, tags).increment();
     }
 }

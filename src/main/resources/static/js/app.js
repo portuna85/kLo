@@ -173,6 +173,13 @@
   const fmtNum = (n) => Number(n ?? 0).toLocaleString('ko-KR');
   const skeleton = () =>
     '<div class="placeholder-glow"><span class="placeholder col-7"></span></div>';
+  const setTextMessage = (container, text, className = 'small mb-0') => {
+    container.innerHTML = '';
+    const p = document.createElement('p');
+    p.className = className;
+    p.textContent = text;
+    container.appendChild(p);
+  };
 
   // ───────────────────────── 추천 ─────────────────────────
   const onRecommend = async (e) => {
@@ -199,7 +206,7 @@
         out.appendChild(row);
       });
     } catch (err) {
-      out.innerHTML = `<p class="text-danger small mb-0">${err.message}</p>`;
+      setTextMessage(out, err.message, 'text-danger small mb-0');
       toast(`추천 실패: ${err.code ?? ''} ${err.message}`, true);
     }
   };
@@ -209,17 +216,30 @@
     container.innerHTML = '';
     const head = document.createElement('div');
     head.className = 'd-flex justify-content-between align-items-center mb-2';
-    head.innerHTML =
-      `<strong>${wn.round}회</strong>` +
-      `<span class="text-muted small">${wn.drawDate}</span>`;
+    const roundStrong = document.createElement('strong');
+    roundStrong.textContent = `${wn.round}회`;
+    const dateSpan = document.createElement('span');
+    dateSpan.className = 'text-muted small';
+    dateSpan.textContent = wn.drawDate;
+    head.appendChild(roundStrong);
+    head.appendChild(dateSpan);
     container.appendChild(head);
     container.appendChild(ballsRow(wn.numbers, wn.bonusNumber));
     const dl = document.createElement('dl');
     dl.className = 'kraft-kv';
-    dl.innerHTML =
-      `<dt>1등 당첨금</dt><dd>${fmtNum(wn.firstPrize)} 원</dd>` +
-      `<dt>1등 당첨자</dt><dd>${fmtNum(wn.firstWinners)} 명</dd>` +
-      `<dt>총 판매금</dt><dd>${fmtNum(wn.totalSales)} 원</dd>`;
+    const kv = [
+      ['1등 당첨금', `${fmtNum(wn.firstPrize)} 원`],
+      ['1등 당첨자', `${fmtNum(wn.firstWinners)} 명`],
+      ['총 판매금', `${fmtNum(wn.totalSales)} 원`]
+    ];
+    kv.forEach(([k, v]) => {
+      const dt = document.createElement('dt');
+      dt.textContent = k;
+      const dd = document.createElement('dd');
+      dd.textContent = v;
+      dl.appendChild(dt);
+      dl.appendChild(dd);
+    });
     container.appendChild(dl);
   };
 
@@ -230,7 +250,7 @@
       const data = await api('/api/winning-numbers/latest');
       renderWinning(data, out);
     } catch (err) {
-      out.innerHTML = `<p class="text-danger small mb-0">${err.message}</p>`;
+      setTextMessage(out, err.message, 'text-danger small mb-0');
     }
   };
 
@@ -245,7 +265,7 @@
       const data = await api(`/api/winning-numbers/${round}`);
       renderWinning(data, out);
     } catch (err) {
-      out.innerHTML = `<p class="text-danger small mb-0">${err.message}</p>`;
+      setTextMessage(out, err.message, 'text-danger small mb-0');
       toast(`${err.code ?? ''} ${err.message}`, true);
     }
   };
@@ -298,7 +318,7 @@
       renderList(data);
       updatePager();
     } catch (err) {
-      out.innerHTML = `<p class="text-danger small mb-0">${err.message}</p>`;
+      setTextMessage(out, err.message, 'text-danger small mb-0');
       updatePager();
     }
   };
@@ -312,7 +332,8 @@
     const targetRoundRaw = String(fd.get('targetRound') || '').trim();
     const targetRound = targetRoundRaw === '' ? null : Number(targetRoundRaw);
     const out = document.getElementById('admin-result');
-    out.innerHTML = '<span class="text-muted">수집 요청 중…</span>';
+    out.textContent = '수집 요청 중…';
+    out.className = 'small mt-2 text-muted';
 
     const auth = 'Basic ' + btoa(`${username}:${password}`);
     try {
@@ -328,18 +349,19 @@
       let body = null;
       try { body = await res.json(); } catch (_) { /* noop */ }
       if (res.status === 401) {
-        out.innerHTML = '<span class="text-danger">인증 실패: 아이디/비밀번호를 확인하세요.</span>';
+        out.textContent = '인증 실패: 아이디/비밀번호를 확인하세요.';
+        out.className = 'small mt-2 text-danger';
         return;
       }
       if (!body || !body.success) {
         const msg = body?.error?.message || `HTTP ${res.status}`;
-        out.innerHTML = `<span class="text-danger">실패: ${msg}</span>`;
+        out.textContent = `실패: ${msg}`;
+        out.className = 'small mt-2 text-danger';
         return;
       }
       const d = body.data;
-      out.innerHTML =
-        `<span class="text-success">수집 완료</span> · ` +
-        `신규 <strong>${d.collected}</strong> · 스킵 ${d.skipped} · 실패 ${d.failed} · 최신 ${d.latestRound}회`;
+      out.textContent = `수집 완료 · 신규 ${d.collected} · 스킵 ${d.skipped} · 실패 ${d.failed} · 최신 ${d.latestRound}회`;
+      out.className = 'small mt-2 text-success';
       toast(`수집 완료: 신규 ${d.collected} · 최신 ${d.latestRound}회`);
       // 목록/최신 갱신
       listState.page = 0;
@@ -347,7 +369,8 @@
       loadList();
       loadFrequency();
     } catch (err) {
-      out.innerHTML = `<span class="text-danger">네트워크 오류: ${err.message}</span>`;
+      out.textContent = `네트워크 오류: ${err.message}`;
+      out.className = 'small mt-2 text-danger';
     }
   };
 
@@ -364,14 +387,23 @@
         const cell = document.createElement('div');
         cell.className = 'kraft-freq-cell';
         const pct = Math.round((count / max) * 100);
-        cell.innerHTML =
-          `<span class="n">${number}</span>` +
-          `<div class="bar"><i style="width:${pct}%"></i></div>` +
-          `<small>${count}</small>`;
+        const n = document.createElement('span');
+        n.className = 'n';
+        n.textContent = number;
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        const i = document.createElement('i');
+        i.style.width = `${pct}%`;
+        bar.appendChild(i);
+        const small = document.createElement('small');
+        small.textContent = count;
+        cell.appendChild(n);
+        cell.appendChild(bar);
+        cell.appendChild(small);
         out.appendChild(cell);
       });
     } catch (err) {
-      out.innerHTML = `<p class="text-danger small mb-0">${err.message}</p>`;
+      setTextMessage(out, err.message, 'text-danger small mb-0');
     }
   };
 
@@ -401,4 +433,3 @@
     loadList();
   });
 })();
-

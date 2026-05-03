@@ -2,6 +2,10 @@ package com.kraft.lotto.feature.winningnumber.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kraft.lotto.feature.winningnumber.domain.WinningNumber;
@@ -9,6 +13,8 @@ import java.time.LocalDate;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 @DisplayName("DhLotteryApiClient")
 class DhLotteryApiClientTest {
@@ -104,5 +110,38 @@ class DhLotteryApiClientTest {
         assertThatThrownBy(() -> client.parse(1102, body))
                 .isInstanceOf(LottoApiClientException.class);
     }
-}
 
+    @Test
+    @DisplayName("fetch 는 네트워크 오류 시 설정된 재시도 횟수 내에서 재시도 후 성공할 수 있다")
+    void fetchRetriesOnNetworkFailure() {
+        RestClient restClient = mock(RestClient.class, RETURNS_DEEP_STUBS);
+        String successBody = """
+                {
+                  "totSellamnt": 79760843000,
+                  "returnValue": "success",
+                  "drwNoDate": "2024-01-06",
+                  "firstWinamnt": 2596477500,
+                  "drwtNo6": 33,
+                  "drwtNo4": 24,
+                  "drwtNo5": 28,
+                  "bnusNo": 38,
+                  "firstPrzwnerCo": 11,
+                  "drwtNo2": 13,
+                  "drwtNo3": 23,
+                  "drwtNo1": 6,
+                  "drwNo": 1102
+                }
+                """;
+        when(restClient.get().uri(anyString()).retrieve().body(String.class))
+                .thenThrow(new RestClientException("temporary network failure"))
+                .thenReturn(successBody);
+
+        DhLotteryApiClient retryingClient = new DhLotteryApiClient(
+                restClient, new ObjectMapper(), "http://localhost", 2, 0, null);
+
+        Optional<WinningNumber> result = retryingClient.fetch(1102);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().round()).isEqualTo(1102);
+    }
+}

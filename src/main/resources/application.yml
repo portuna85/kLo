@@ -72,6 +72,10 @@ kraft:
   api:
     client: ${KRAFT_API_CLIENT:mock}
     url: ${KRAFT_API_URL:https://www.dhlottery.co.kr/common.do}
+    connect-timeout-ms: ${KRAFT_API_CONNECT_TIMEOUT_MS:2000}
+    read-timeout-ms: ${KRAFT_API_READ_TIMEOUT_MS:3000}
+    max-retries: ${KRAFT_API_MAX_RETRIES:2}
+    retry-backoff-ms: ${KRAFT_API_RETRY_BACKOFF_MS:200}
   recommend:
     max-attempts: ${KRAFT_RECOMMEND_MAX_ATTEMPTS:100000}
   logging:

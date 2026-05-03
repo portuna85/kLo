@@ -113,5 +113,15 @@ class AdminWinningNumberControllerTest {
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.error.code").value("EXTERNAL_API_FAILURE"));
     }
-}
 
+    @Test
+    @DisplayName("POST /collect 는 targetRound가 1 미만이면 400 LOTTO_INVALID_TARGET_ROUND 를 반환한다")
+    void postCollectReturns400OnInvalidTargetRound() throws Exception {
+        mockMvc.perform(post("/api/admin/winning-numbers/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"targetRound\":0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("LOTTO_INVALID_TARGET_ROUND"));
+    }
+}

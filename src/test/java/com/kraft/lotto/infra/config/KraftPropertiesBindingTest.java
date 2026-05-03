@@ -45,6 +45,10 @@ class KraftPropertiesBindingTest {
     void bindsApiProperties() {
         assertThat(api.client()).isEqualTo("mock");
         assertThat(api.url()).isEqualTo("http://localhost");
+        assertThat(api.connectTimeoutMs()).isEqualTo(2000);
+        assertThat(api.readTimeoutMs()).isEqualTo(3000);
+        assertThat(api.maxRetries()).isEqualTo(2);
+        assertThat(api.retryBackoffMs()).isEqualTo(50);
     }
 
     @Test
@@ -53,4 +57,3 @@ class KraftPropertiesBindingTest {
         assertThat(recommend.maxAttempts()).isEqualTo(1000);
     }
 }
-
