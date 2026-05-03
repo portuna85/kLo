@@ -54,7 +54,9 @@ public class DhLotteryApiClient implements LottoApiClient {
     public Optional<WinningNumber> fetch(int round) {
         int attempts = maxRetries + 1;
         count("kraft.api.dhlottery.call.total", "round", String.valueOf(round));
-        for (int attempt = 1; attempt <= attempts; attempt++) {
+        int attempt = 0;
+        while (true) {
+            attempt++;
             try {
                 String body = restClient.get()
                         .uri(baseUrl + "?method=getLottoNumber&drwNo=" + round)
@@ -82,7 +84,6 @@ public class DhLotteryApiClient implements LottoApiClient {
                 sleepBackoff();
             }
         }
-        throw new LottoApiClientException("외부 API 호출 실패 (round=" + round + ")");
     }
 
     Optional<WinningNumber> parse(int round, String body) {

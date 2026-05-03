@@ -38,7 +38,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleConstraint(ConstraintViolationException ex) {
-        ErrorCode code = resolveConstraintCode(ex.getMessage());
+        String propertyPath = ex.getConstraintViolations().stream()
+                .findFirst()
+                .map(v -> v.getPropertyPath().toString())
+                .orElse("");
+        ErrorCode code = resolveConstraintCode(propertyPath);
         return ResponseEntity.status(code.getHttpStatus())
                 .body(ApiResponse.failure(code, ex.getMessage()));
     }
@@ -79,17 +83,17 @@ public class GlobalExceptionHandler {
         return ErrorCode.REQUEST_VALIDATION_ERROR;
     }
 
-    private static ErrorCode resolveConstraintCode(String message) {
-        if (message == null) {
+    private static ErrorCode resolveConstraintCode(String propertyPath) {
+        if (propertyPath == null) {
             return ErrorCode.REQUEST_VALIDATION_ERROR;
         }
-        if (message.contains("count")) {
+        if (propertyPath.endsWith("count")) {
             return ErrorCode.LOTTO_INVALID_COUNT;
         }
-        if (message.contains("targetRound")) {
+        if (propertyPath.endsWith("targetRound")) {
             return ErrorCode.LOTTO_INVALID_TARGET_ROUND;
         }
-        if (message.contains("page") || message.contains("size")) {
+        if (propertyPath.endsWith("page") || propertyPath.endsWith("size")) {
             return ErrorCode.LOTTO_INVALID_PAGE_REQUEST;
         }
         return ErrorCode.REQUEST_VALIDATION_ERROR;
