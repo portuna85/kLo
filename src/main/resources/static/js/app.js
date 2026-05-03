@@ -134,15 +134,30 @@
   };
 
   // ───────────────────────── Toast ─────────────────────────
+  let toastTimer = null;
   const toast = (msg, isError = false) => {
     const el = document.getElementById('toast');
     if (!el) return;
     el.textContent = msg;
     el.classList.toggle('error', isError);
     el.classList.add('show');
-    clearTimeout(toast._t);
-    toast._t = setTimeout(() => el.classList.remove('show'), 2400);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
     (isError ? Logger.step('toast').warn : Logger.step('toast').debug)('표시', { msg });
+  };
+
+  // ───────────────────────── 유틸: 버튼 로딩 상태 ─────────────────────────
+  const withLoading = async (btn, fn) => {
+    const prev = btn.innerHTML;
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    try {
+      return await fn();
+    } finally {
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+      btn.innerHTML = prev;
+    }
   };
 
   // ───────────────────────── 6볼 렌더 ─────────────────────────
@@ -174,7 +189,7 @@
   const skeleton = () =>
     '<div class="placeholder-glow"><span class="placeholder col-7"></span></div>';
   const setTextMessage = (container, text, className = 'small mb-0') => {
-    container.innerHTML = '';
+    container.replaceChildren();
     const p = document.createElement('p');
     p.className = className;
     p.textContent = text;
@@ -187,33 +202,37 @@
     const fd = new FormData(e.currentTarget);
     const count = Number(fd.get('count') || 5);
     const out = document.getElementById('recommend-result');
+    const btn = e.currentTarget.querySelector('[type="submit"]');
     out.innerHTML = skeleton();
-    try {
-      const data = await api('/api/recommend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ count })
-      });
-      out.innerHTML = '';
-      data.combinations.forEach((c, i) => {
-        const row = document.createElement('div');
-        row.className = 'kraft-combo';
-        const idx = document.createElement('span');
-        idx.className = 'idx';
-        idx.textContent = `#${i + 1}`;
-        row.appendChild(idx);
-        row.appendChild(ballsRow(c.numbers));
-        out.appendChild(row);
-      });
-    } catch (err) {
-      setTextMessage(out, err.message, 'text-danger small mb-0');
-      toast(`추천 실패: ${err.code ?? ''} ${err.message}`, true);
-    }
+
+    await withLoading(btn, async () => {
+      try {
+        const data = await api('/api/recommend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ count })
+        });
+        out.replaceChildren();
+        data.combinations.forEach((c, i) => {
+          const row = document.createElement('div');
+          row.className = 'kraft-combo';
+          const idx = document.createElement('span');
+          idx.className = 'idx';
+          idx.textContent = `#${i + 1}`;
+          row.appendChild(idx);
+          row.appendChild(ballsRow(c.numbers));
+          out.appendChild(row);
+        });
+      } catch (err) {
+        setTextMessage(out, err.message, 'text-danger small mb-0');
+        toast(`추천 실패: ${err.code ?? ''} ${err.message}`, true);
+      }
+    });
   };
 
   // ───────────────────────── 당첨번호 렌더 ─────────────────────────
   const renderWinning = (wn, container) => {
-    container.innerHTML = '';
+    container.replaceChildren();
     const head = document.createElement('div');
     head.className = 'd-flex justify-content-between align-items-center mb-2';
     const roundStrong = document.createElement('strong');
@@ -251,6 +270,7 @@
       renderWinning(data, out);
     } catch (err) {
       setTextMessage(out, err.message, 'text-danger small mb-0');
+      toast(`최신 회차 로드 실패: ${err.message}`, true);
     }
   };
 
@@ -260,24 +280,34 @@
     const fd = new FormData(e.currentTarget);
     const round = Number(fd.get('round'));
     const out = document.getElementById('round-result');
-    out.innerHTML = skeleton();
-    try {
-      const data = await api(`/api/winning-numbers/${round}`);
-      renderWinning(data, out);
-    } catch (err) {
-      setTextMessage(out, err.message, 'text-danger small mb-0');
-      toast(`${err.code ?? ''} ${err.message}`, true);
+
+    if (!Number.isInteger(round) || round < 1) {
+      setTextMessage(out, '1 이상의 올바른 회차를 입력해 주세요.', 'text-danger small mb-0');
+      return;
     }
+
+    const btn = e.currentTarget.querySelector('[type="submit"]');
+    out.innerHTML = skeleton();
+
+    await withLoading(btn, async () => {
+      try {
+        const data = await api(`/api/winning-numbers/${round}`);
+        renderWinning(data, out);
+      } catch (err) {
+        setTextMessage(out, err.message, 'text-danger small mb-0');
+        toast(`${err.code ?? ''} ${err.message}`, true);
+      }
+    });
   };
 
   // ───────────────────────── 회차 목록 (페이지네이션) ─────────────────────────
-  const listState = { page: 0, size: 20, totalPages: 0, totalElements: 0 };
+  const listState = { page: 0, size: 20, totalPages: 0, totalElements: 0, abortCtrl: null };
 
   const renderList = (pageData) => {
     const out = document.getElementById('list-result');
-    out.innerHTML = '';
+    out.replaceChildren();
     if (!pageData.content || pageData.content.length === 0) {
-      out.innerHTML = '<p class="text-muted small mb-0">표시할 회차가 없습니다.</p>';
+      setTextMessage(out, '표시할 회차가 없습니다.', 'text-muted small mb-0');
       return;
     }
     pageData.content.forEach((wn) => {
@@ -307,17 +337,25 @@
   };
 
   const loadList = async () => {
+    // 이전 진행 중인 요청이 있으면 취소 (빠른 페이지 전환 경쟁 조건 방지)
+    if (listState.abortCtrl) listState.abortCtrl.abort();
+    listState.abortCtrl = new AbortController();
+    const { signal } = listState.abortCtrl;
+
     const out = document.getElementById('list-result');
     out.innerHTML = skeleton();
     try {
       const data = await api(
-        `/api/winning-numbers?page=${listState.page}&size=${listState.size}`
+        `/api/winning-numbers?page=${listState.page}&size=${listState.size}`,
+        { signal }
       );
+      listState.abortCtrl = null;
       listState.totalPages = data.totalPages;
       listState.totalElements = data.totalElements;
       renderList(data);
       updatePager();
     } catch (err) {
+      if (err.name === 'AbortError') return;
       setTextMessage(out, err.message, 'text-danger small mb-0');
       updatePager();
     }
@@ -326,55 +364,55 @@
   // ───────────────────────── 관리자: 수집 트리거 ─────────────────────────
   const onAdminRefresh = async (e) => {
     e.preventDefault();
+    const alog = Logger.step('admin-refresh');
     const fd = new FormData(e.currentTarget);
     const username = String(fd.get('username') || '').trim();
     const password = String(fd.get('password') || '');
     const targetRoundRaw = String(fd.get('targetRound') || '').trim();
     const targetRound = targetRoundRaw === '' ? null : Number(targetRoundRaw);
     const out = document.getElementById('admin-result');
+    const btn = e.currentTarget.querySelector('[type="submit"]');
+
     out.textContent = '수집 요청 중…';
     out.className = 'small mt-2 text-muted';
+    alog.info('수집 요청', { targetRound });
 
-    // TextEncoder로 UTF-8 인코딩하여 비ASCII 문자 포함 패스워드를 안전하게 처리
+    // TextEncoder로 UTF-8 바이트를 그대로 btoa 인코딩 (비ASCII 패스워드 안전 처리)
     const credBytes = new TextEncoder().encode(`${username}:${password}`);
     const credBinary = Array.from(credBytes, (b) => String.fromCharCode(b)).join('');
     const auth = 'Basic ' + btoa(credBinary);
-    try {
-      const res = await fetch('/api/admin/winning-numbers/refresh', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': auth
-        },
-        body: JSON.stringify(targetRound == null ? {} : { targetRound })
-      });
-      let body = null;
-      try { body = await res.json(); } catch (_) { /* noop */ }
-      if (res.status === 401) {
-        out.textContent = '인증 실패: 아이디/비밀번호를 확인하세요.';
+
+    await withLoading(btn, async () => {
+      try {
+        const data = await api('/api/admin/winning-numbers/refresh', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': auth
+          },
+          body: JSON.stringify(targetRound == null ? {} : { targetRound })
+        });
+        out.textContent = `수집 완료 · 신규 ${data.collected} · 스킵 ${data.skipped} · 실패 ${data.failed} · 최신 ${data.latestRound}회`;
+        out.className = 'small mt-2 text-success';
+        toast(`수집 완료: 신규 ${data.collected} · 최신 ${data.latestRound}회`);
+        alog.info('수집 성공', { collected: data.collected, latestRound: data.latestRound });
+        listState.page = 0;
+        loadLatest();
+        loadList();
+        loadFrequency();
+      } catch (err) {
+        if (err.code === 'UNAUTHORIZED_ADMIN') {
+          out.textContent = '인증 실패: 아이디/비밀번호를 확인하세요.';
+        } else if (err.name === 'TypeError') {
+          out.textContent = `네트워크 오류: ${err.message}`;
+        } else {
+          out.textContent = `실패: ${err.message}`;
+        }
         out.className = 'small mt-2 text-danger';
-        return;
+        alog.warn('수집 실패', { code: err.code, message: err.message });
+        toast(`관리자 수집 실패: ${err.message}`, true);
       }
-      if (!body || !body.success) {
-        const msg = body?.error?.message || `HTTP ${res.status}`;
-        out.textContent = `실패: ${msg}`;
-        out.className = 'small mt-2 text-danger';
-        return;
-      }
-      const d = body.data;
-      out.textContent = `수집 완료 · 신규 ${d.collected} · 스킵 ${d.skipped} · 실패 ${d.failed} · 최신 ${d.latestRound}회`;
-      out.className = 'small mt-2 text-success';
-      toast(`수집 완료: 신규 ${d.collected} · 최신 ${d.latestRound}회`);
-      // 목록/최신 갱신
-      listState.page = 0;
-      loadLatest();
-      loadList();
-      loadFrequency();
-    } catch (err) {
-      out.textContent = `네트워크 오류: ${err.message}`;
-      out.className = 'small mt-2 text-danger';
-    }
+    });
   };
 
   // ───────────────────────── 빈도 ─────────────────────────
@@ -385,7 +423,7 @@
     try {
       const data = await api('/api/winning-numbers/stats/frequency');
       const max = data.reduce((m, d) => Math.max(m, d.count), 1);
-      out.innerHTML = '';
+      out.replaceChildren();
       data.forEach(({ number, count }) => {
         const cell = document.createElement('div');
         cell.className = 'kraft-freq-cell';

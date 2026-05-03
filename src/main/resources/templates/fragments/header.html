@@ -9,6 +9,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
+  <meta name="description" content="로또 6/45 편향 회피형 추천 서비스 — 생일 편중·등차수열·연속번호 등 통계적으로 편향된 조합을 자동으로 걸러냅니다." />
   <title th:text="${title} ?: 'KraftLotto'">KraftLotto</title>
 
   <link rel="icon" type="image/svg+xml" th:href="@{/images/favicon.svg}" />
@@ -68,7 +69,7 @@
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
       </div>
-      <form id="form-admin-refresh">
+      <form id="form-admin-refresh" novalidate>
         <div class="modal-body">
           <div class="mb-2">
             <label class="form-label small text-muted mb-1" for="admin-username">아이디</label>
