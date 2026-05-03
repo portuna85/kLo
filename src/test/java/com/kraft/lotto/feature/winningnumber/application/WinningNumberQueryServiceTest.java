@@ -1,7 +1,7 @@
 package com.kraft.lotto.feature.winningnumber.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -16,6 +16,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -25,12 +27,20 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("WinningNumberQueryService")
 class WinningNumberQueryServiceTest {
 
     @Mock
     WinningNumberRepository repository;
 
-    private WinningNumberEntity entity(int round) {
+    WinningNumberQueryService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new WinningNumberQueryService(repository);
+    }
+
+    private static WinningNumberEntity entity(int round) {
         WinningNumber wn = new WinningNumber(
                 round,
                 LocalDate.of(2024, 1, 1).plusWeeks(round),
@@ -40,8 +50,8 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    void getLatest_정상() {
-        WinningNumberQueryService service = new WinningNumberQueryService(repository);
+    @DisplayName("getLatest 는 최신 회차를 반환한다")
+    void getLatestReturnsLatest() {
         when(repository.findTopByOrderByRoundDesc()).thenReturn(Optional.of(entity(1100)));
 
         var dto = service.getLatest();
@@ -51,38 +61,37 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    void getLatest_없으면_BusinessException_NOT_FOUND() {
-        WinningNumberQueryService service = new WinningNumberQueryService(repository);
+    @DisplayName("getLatest 결과가 없으면 BusinessException(WINNING_NUMBER_NOT_FOUND) 을 던진다")
+    void getLatestThrowsNotFoundWhenAbsent() {
         when(repository.findTopByOrderByRoundDesc()).thenReturn(Optional.empty());
 
-        assertThatThrownBy(service::getLatest)
-                .isInstanceOf(BusinessException.class)
-                .extracting(e -> ((BusinessException) e).getErrorCode())
+        assertThatExceptionOfType(BusinessException.class)
+                .isThrownBy(service::getLatest)
+                .extracting(BusinessException::getErrorCode)
                 .isEqualTo(ErrorCode.WINNING_NUMBER_NOT_FOUND);
     }
 
     @Test
-    void getByRound_없으면_NOT_FOUND() {
-        WinningNumberQueryService service = new WinningNumberQueryService(repository);
+    @DisplayName("getByRound 결과가 없으면 NOT_FOUND 를 던진다")
+    void getByRoundThrowsNotFoundWhenAbsent() {
         when(repository.findById(9999)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.getByRound(9999))
-                .isInstanceOf(BusinessException.class)
-                .extracting(e -> ((BusinessException) e).getErrorCode())
+        assertThatExceptionOfType(BusinessException.class)
+                .isThrownBy(() -> service.getByRound(9999))
+                .extracting(BusinessException::getErrorCode)
                 .isEqualTo(ErrorCode.WINNING_NUMBER_NOT_FOUND);
     }
 
     @Test
-    void getByRound_0이하는_NOT_FOUND() {
-        WinningNumberQueryService service = new WinningNumberQueryService(repository);
-
-        assertThatThrownBy(() -> service.getByRound(0))
-                .isInstanceOf(BusinessException.class);
+    @DisplayName("getByRound 에 0 이하 회차를 주면 NOT_FOUND 를 던진다")
+    void getByRoundThrowsNotFoundWhenRoundIsNonPositive() {
+        assertThatExceptionOfType(BusinessException.class)
+                .isThrownBy(() -> service.getByRound(0));
     }
 
     @Test
-    void list_size_상한_및_기본값_적용() {
-        WinningNumberQueryService service = new WinningNumberQueryService(repository);
+    @DisplayName("list 는 size 상한 및 기본값을 적용한다")
+    void listAppliesSizeBoundsAndDefaults() {
         Page<WinningNumberEntity> page = new PageImpl<>(List.of(entity(2), entity(1)), PageRequest.of(0, 100), 2);
         when(repository.findAllByOrderByRoundDesc(any())).thenReturn(page);
 
@@ -95,8 +104,8 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    void frequency_본번호만_집계하고_1부터_45까지_모두_반환() {
-        WinningNumberQueryService service = new WinningNumberQueryService(repository);
+    @DisplayName("frequency 는 본번호만 집계하고 1~45 모두 반환한다")
+    void frequencyAggregatesOnlyMainNumbersAndReturnsAll45() {
         // 두 회차 모두 본번호 [1,7,13,22,34,45] / 보너스 8 → 보너스는 집계 제외
         when(repository.findAllOrderByRoundAsc()).thenReturn(List.of(entity(1), entity(2)));
 
@@ -115,3 +124,4 @@ class WinningNumberQueryServiceTest {
         assertThat(result.get(1).count()).isZero();
     }
 }
+

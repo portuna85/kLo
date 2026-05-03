@@ -10,6 +10,7 @@ import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
 import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
 import com.kraft.lotto.support.GlobalExceptionHandler;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(controllers = AdminWinningNumberController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
+@DisplayName("AdminWinningNumberController WebMvc")
 class AdminWinningNumberControllerTest {
 
     @Autowired
@@ -32,7 +34,8 @@ class AdminWinningNumberControllerTest {
     WinningNumberCollectService collectService;
 
     @Test
-    void POST_collect_본문없으면_targetRound_null로_위임() throws Exception {
+    @DisplayName("POST /collect 본문이 없으면 targetRound 를 null 로 위임한다")
+    void postCollectDelegatesNullTargetRoundWhenBodyAbsent() throws Exception {
         Mockito.when(collectService.collect(isNull()))
                 .thenReturn(new CollectResponse(3, 0, 0, 1103));
 
@@ -44,7 +47,8 @@ class AdminWinningNumberControllerTest {
     }
 
     @Test
-    void POST_collect_targetRound_지정() throws Exception {
+    @DisplayName("POST /collect 는 지정된 targetRound 로 위임한다")
+    void postCollectDelegatesSpecifiedTargetRound() throws Exception {
         Mockito.when(collectService.collect(1103))
                 .thenReturn(new CollectResponse(2, 1, 0, 1103));
 
@@ -57,7 +61,8 @@ class AdminWinningNumberControllerTest {
     }
 
     @Test
-    void POST_collect_외부_API_실패는_502_BAD_GATEWAY() throws Exception {
+    @DisplayName("POST /collect 외부 API 실패 시 502 BAD_GATEWAY 를 반환한다")
+    void postCollectReturns502OnExternalApiFailure() throws Exception {
         Mockito.when(collectService.collect(isNull()))
                 .thenThrow(new BusinessException(ErrorCode.EXTERNAL_API_FAILURE));
 
@@ -66,3 +71,4 @@ class AdminWinningNumberControllerTest {
                 .andExpect(jsonPath("$.error.code").value("EXTERNAL_API_FAILURE"));
     }
 }
+

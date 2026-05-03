@@ -13,6 +13,7 @@ import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
 import com.kraft.lotto.support.GlobalExceptionHandler;
 import java.util.List;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(controllers = RecommendController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
+@DisplayName("RecommendController WebMvc")
 class RecommendControllerTest {
 
     @Autowired
@@ -40,7 +42,8 @@ class RecommendControllerTest {
     RecommendService recommendService;
 
     @Test
-    void POST_recommend_정상응답() throws Exception {
+    @DisplayName("POST /recommend 는 정상 응답을 반환한다")
+    void postRecommendReturnsOk() throws Exception {
         Mockito.when(recommendService.recommend(3))
                 .thenReturn(new RecommendResponse(List.of(
                         new CombinationDto(List.of(1, 7, 13, 22, 34, 45)),
@@ -59,7 +62,8 @@ class RecommendControllerTest {
     }
 
     @Test
-    void POST_recommend_본문없으면_기본값5_사용() throws Exception {
+    @DisplayName("POST /recommend 본문이 없으면 기본값 5 를 사용한다")
+    void postRecommendUsesDefaultCountWhenBodyAbsent() throws Exception {
         Mockito.when(recommendService.recommend(5))
                 .thenReturn(new RecommendResponse(List.of(
                         new CombinationDto(List.of(1, 2, 3, 4, 5, 6)),
@@ -76,7 +80,8 @@ class RecommendControllerTest {
     }
 
     @Test
-    void POST_recommend_count_범위초과시_400() throws Exception {
+    @DisplayName("POST /recommend 는 count 범위 초과 시 400 을 반환한다")
+    void postRecommendReturns400WhenCountOutOfRange() throws Exception {
         mockMvc.perform(post("/api/recommend")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"count\":11}"))
@@ -86,7 +91,8 @@ class RecommendControllerTest {
     }
 
     @Test
-    void POST_recommend_서비스_BusinessException은_적절한_상태코드와_본문() throws Exception {
+    @DisplayName("POST /recommend 는 서비스 BusinessException 을 적절한 상태코드와 본문으로 변환한다")
+    void postRecommendMapsBusinessExceptionToStatus() throws Exception {
         Mockito.when(recommendService.recommend(5))
                 .thenThrow(new BusinessException(ErrorCode.LOTTO_GENERATION_TIMEOUT));
 
@@ -97,7 +103,8 @@ class RecommendControllerTest {
     }
 
     @Test
-    void GET_rules_규칙목록_반환() throws Exception {
+    @DisplayName("GET /rules 는 규칙 목록을 반환한다")
+    void getRulesReturnsRuleList() throws Exception {
         Mockito.when(recommendService.rules()).thenReturn(List.of(
                 new RuleDto("PastWinningRule", "과거 1등 당첨 조합과 완전히 동일한 조합은 제외합니다."),
                 new RuleDto("BirthdayBiasRule", "6개 번호가 모두 31 이하인 생일 번호 편향 조합은 제외합니다.")
@@ -111,3 +118,4 @@ class RecommendControllerTest {
                 .andExpect(jsonPath("$.data[0].reason").exists());
     }
 }
+

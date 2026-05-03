@@ -3,18 +3,35 @@ package com.kraft.lotto.feature.recommend.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.kraft.lotto.feature.recommend.domain.BirthdayBiasRule;
 import com.kraft.lotto.feature.recommend.domain.ExclusionRule;
 import com.kraft.lotto.feature.winningnumber.domain.LottoCombination;
 import java.util.List;
 import java.util.Random;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+@DisplayName("LottoRecommender")
 class LottoRecommenderTest {
 
+    private static final int LARGE_BUDGET = 100_000;
+
+    private static LottoRecommender recommender(List<ExclusionRule> rules, long seed, int maxAttempts) {
+        return new LottoRecommender(rules, new Random(seed), maxAttempts);
+    }
+
+    private static ExclusionRule excludeAll() {
+        return new ExclusionRule() {
+            @Override public boolean shouldExclude(LottoCombination combination) { return true; }
+            @Override public String reason() { return "always"; }
+        };
+    }
+
     @Test
-    void 정상적으로_요청한_개수만큼_추천한다() {
-        LottoRecommender recommender = new LottoRecommender(List.of(), new Random(42L), 100_000);
-        List<LottoCombination> result = recommender.recommend(5);
+    @DisplayName("정상적으로 요청한 개수만큼 추천한다")
+    void recommendsRequestedCount() {
+        List<LottoCombination> result = recommender(List.of(), 42L, LARGE_BUDGET).recommend(5);
+
         assertThat(result).hasSize(5);
         // 각 조합은 6개의 정렬된 고유 번호
         result.forEach(c -> {
@@ -25,29 +42,30 @@ class LottoRecommenderTest {
     }
 
     @Test
-    void 추천_결과는_서로_중복되지_않는다() {
-        LottoRecommender recommender = new LottoRecommender(List.of(), new Random(7L), 100_000);
-        List<LottoCombination> result = recommender.recommend(10);
+    @DisplayName("추천 결과는 서로 중복되지 않는다")
+    void recommendationsAreUnique() {
+        List<LottoCombination> result = recommender(List.of(), 7L, LARGE_BUDGET).recommend(10);
+
         assertThat(result).doesNotHaveDuplicates();
     }
 
     @Test
-    void 모든_조합을_제외하는_규칙이_있으면_타임아웃_예외를_던진다() {
-        ExclusionRule excludeAll = new ExclusionRule() {
-            @Override public boolean shouldExclude(LottoCombination combination) { return true; }
-            @Override public String reason() { return "always"; }
-        };
-        LottoRecommender recommender = new LottoRecommender(List.of(excludeAll), new Random(0L), 100);
+    @DisplayName("모든 조합을 제외하는 규칙이 있으면 타임아웃 예외를 던진다")
+    void throwsTimeoutWhenAllCombinationsExcluded() {
+        LottoRecommender recommender = recommender(List.of(excludeAll()), 0L, 100);
+
         assertThatThrownBy(() -> recommender.recommend(1))
                 .isInstanceOf(RecommendGenerationTimeoutException.class);
     }
 
     @Test
-    void 규칙은_순서대로_적용되며_제외된_조합은_결과에_포함되지_않는다() {
+    @DisplayName("규칙은 순서대로 적용되며 제외된 조합은 결과에 포함되지 않는다")
+    void rulesAreAppliedAndExcludedCombinationsNotIncluded() {
         // 모든 번호가 31 이하인 조합을 제외하는 규칙 적용
-        ExclusionRule birthday = new com.kraft.lotto.feature.recommend.domain.BirthdayBiasRule();
-        LottoRecommender recommender = new LottoRecommender(List.of(birthday), new Random(123L), 100_000);
-        List<LottoCombination> result = recommender.recommend(10);
+        List<LottoCombination> result = recommender(List.of(new BirthdayBiasRule()), 123L, LARGE_BUDGET)
+                .recommend(10);
+
         result.forEach(c -> assertThat(c.numbers().stream().anyMatch(n -> n > 31)).isTrue());
     }
 }
+
