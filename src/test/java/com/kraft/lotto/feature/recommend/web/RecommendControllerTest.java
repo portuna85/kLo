@@ -2,6 +2,14 @@ package com.kraft.lotto.feature.recommend.web;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessRequest;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessResponse;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -13,16 +21,23 @@ import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
 import com.kraft.lotto.support.GlobalExceptionHandler;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.restdocs.RestDocumentationContextProvider;
+import org.springframework.restdocs.RestDocumentationExtension;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 /**
  * RecommendController WebMvc slice 테스트.
@@ -32,14 +47,24 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(controllers = RecommendController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
+@ExtendWith(RestDocumentationExtension.class)
 @DisplayName("RecommendController WebMvc")
 class RecommendControllerTest {
 
     @Autowired
+    WebApplicationContext context;
+
     MockMvc mockMvc;
 
     @MockitoBean
     RecommendService recommendService;
+
+    @BeforeEach
+    void setUp(RestDocumentationContextProvider restDocumentation) {
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                .apply(documentationConfiguration(restDocumentation))
+                .build();
+    }
 
     @Test
     @DisplayName("POST /recommend 는 정상 응답을 반환한다")
@@ -54,6 +79,22 @@ class RecommendControllerTest {
         mockMvc.perform(post("/api/recommend")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"count\":3}"))
+                .andDo(document("recommend-create",
+                        preprocessRequest(prettyPrint()),
+                        preprocessResponse(prettyPrint()),
+                        requestFields(
+                                fieldWithPath("count").type(JsonFieldType.NUMBER)
+                                        .optional()
+                                        .description("생성할 추천 조합 개수(1~10, 생략 시 5)")
+                        ),
+                        responseFields(
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("요청 성공 여부"),
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("성공 응답 데이터"),
+                                fieldWithPath("data.combinations").type(JsonFieldType.ARRAY).description("추천 조합 목록"),
+                                fieldWithPath("data.combinations[].numbers").type(JsonFieldType.ARRAY).description("오름차순 로또 번호 6개"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("오류 정보(성공 시 null)")
+                        )
+                ))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.combinations.length()").value(3))
@@ -111,6 +152,17 @@ class RecommendControllerTest {
         ));
 
         mockMvc.perform(get("/api/recommend/rules"))
+                .andDo(document("recommend-rules",
+                        preprocessRequest(prettyPrint()),
+                        preprocessResponse(prettyPrint()),
+                        responseFields(
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("요청 성공 여부"),
+                                fieldWithPath("data").type(JsonFieldType.ARRAY).description("현재 적용 중인 제외 규칙 목록"),
+                                fieldWithPath("data[].name").type(JsonFieldType.STRING).description("규칙 이름"),
+                                fieldWithPath("data[].reason").type(JsonFieldType.STRING).description("규칙 제외 사유 설명"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("오류 정보(성공 시 null)")
+                        )
+                ))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.length()").value(2))

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  KraftLotto — Logback 설정 (레벨 분리 파일 출력).
+    - 콘솔: Spring Boot 기본 컬러 패턴
+    - 파일: ${LOG_PATH}/kraft-{error|warn|debug}.log  (각 파일 = 해당 레벨만 정확 매칭)
+    - 롤링: 일자 + 사이즈, 압축 보관 → ${LOG_PATH}/archived/...gz
+    - 경로: KRAFT_LOG_PATH 또는 properties 'kraft.logging.path' 로 재정의 (기본 ./logs)
+    - 프로파일: local 은 com.kraft.lotto=DEBUG (debug 파일이 채워짐), 그 외는 INFO
+-->
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <springProperty scope="context" name="LOG_PATH"
+                    source="kraft.logging.path" defaultValue="./logs"/>
+
+    <!-- 파일 공통 패턴 -->
+    <property name="FILE_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%X{traceId:-},%X{spanId:-}] %logger{40} - %msg%n%wEx"/>
+    <!-- 에러 파일 전용: 매 이벤트 끝에 구분선을 둬 트레이스 단위 가독성을 높인다. -->
+    <property name="ERROR_FILE_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%X{traceId:-},%X{spanId:-}] %logger{40} - %msg%n%wEx%n──────────────────────────────────────────────────────────────%n"/>
+
+    <!-- ─── 콘솔 ─── -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 레벨별 RollingFileAppender — LevelFilter 로 정확히 일치하는 레벨만 ACCEPT, 나머지 DENY. -->
+
+    <!-- ALL: 전체 레벨 통합 로그 (필터 없음, root 레벨 이상 모두 기록) -->
+    <appender name="FILE_ALL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/kraft.log</file>
+        <encoder>
+            <pattern>${FILE_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/archived/kraft.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+    </appender>
+
+    <!-- ERROR 전용 -->
+    <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/kraft-error.log</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>${ERROR_FILE_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/archived/kraft-error.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
+            <maxHistory>60</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+    </appender>
+
+    <!-- WARN 전용 -->
+    <appender name="FILE_WARN" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/kraft-warn.log</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>${FILE_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/archived/kraft-warn.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+    </appender>
+
+    <!-- DEBUG 전용 -->
+    <appender name="FILE_DEBUG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/kraft-debug.log</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>${FILE_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/archived/kraft-debug.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>14</maxHistory>
+            <totalSizeCap>2GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+    </appender>
+
+    <!-- 비동기 래퍼 -->
+    <appender name="ASYNC_FILE_ALL" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>1024</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="FILE_ALL"/>
+    </appender>
+    <appender name="ASYNC_FILE_ERROR" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+        <includeCallerData>true</includeCallerData>
+        <appender-ref ref="FILE_ERROR"/>
+    </appender>
+    <appender name="ASYNC_FILE_WARN" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="FILE_WARN"/>
+    </appender>
+    <appender name="ASYNC_FILE_DEBUG" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>1024</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="FILE_DEBUG"/>
+    </appender>
+
+    <!-- 시끄러운 패키지 정리 -->
+    <logger name="org.springframework.boot.autoconfigure" level="WARN"/>
+    <logger name="org.apache.catalina" level="INFO"/>
+    <logger name="org.hibernate" level="INFO"/>
+
+    <!--
+      root 레벨을 DEBUG 로 두면 com.kraft.lotto 외 패키지의 DEBUG 도 파일에 쌓일 수 있다.
+      운영에선 노이즈를 줄이기 위해 INFO 를 유지하고, 우리 패키지에만 DEBUG 를 허용한다.
+    -->
+    <springProfile name="local">
+        <logger name="com.kraft.lotto" level="DEBUG"/>
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE_ALL"/>
+            <appender-ref ref="ASYNC_FILE_ERROR"/>
+            <appender-ref ref="ASYNC_FILE_WARN"/>
+            <appender-ref ref="ASYNC_FILE_DEBUG"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="!local">
+        <logger name="com.kraft.lotto" level="INFO"/>
+        <!-- 운영에서도 ERROR/WARN 파일은 정상 작동.
+             DEBUG 파일을 채우고 싶다면 위 logger 레벨을 DEBUG 로 변경한다. -->
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE_ALL"/>
+            <appender-ref ref="ASYNC_FILE_ERROR"/>
+            <appender-ref ref="ASYNC_FILE_WARN"/>
+            <appender-ref ref="ASYNC_FILE_DEBUG"/>
+        </root>
+    </springProfile>
+
+</configuration>
+

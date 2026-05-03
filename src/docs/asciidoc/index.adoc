@@ -1,0 +1,69 @@
+= KraftLotto API Docs
+:doctype: book
+:icons: font
+:source-highlighter: highlight.js
+:snippets: build/generated-snippets
+:toc: left
+:toclevels: 3
+:sectlinks:
+:sectanchors:
+
+KraftLotto API 문서는 Spring REST Docs 테스트 스니펫으로 생성됩니다.
+
+== 공통 응답 포맷
+
+[source,json]
+----
+{ "success": true, "data": { "...": "..." }, "error": null }
+----
+
+== 추천 API
+
+=== POST /api/recommend
+
+include::{snippets}/recommend-create/http-request.adoc[]
+include::{snippets}/recommend-create/request-fields.adoc[]
+include::{snippets}/recommend-create/http-response.adoc[]
+include::{snippets}/recommend-create/response-fields.adoc[]
+
+=== GET /api/recommend/rules
+
+include::{snippets}/recommend-rules/http-request.adoc[]
+include::{snippets}/recommend-rules/http-response.adoc[]
+include::{snippets}/recommend-rules/response-fields.adoc[]
+
+== 당첨번호 조회 API
+
+=== GET /api/winning-numbers/latest
+
+include::{snippets}/winning-numbers-latest/http-request.adoc[]
+include::{snippets}/winning-numbers-latest/http-response.adoc[]
+include::{snippets}/winning-numbers-latest/response-fields.adoc[]
+
+=== GET /api/winning-numbers/{round}
+
+include::{snippets}/winning-numbers-by-round/http-request.adoc[]
+include::{snippets}/winning-numbers-by-round/http-response.adoc[]
+include::{snippets}/winning-numbers-by-round/response-fields.adoc[]
+
+=== GET /api/winning-numbers?page={page}&size={size}
+
+include::{snippets}/winning-numbers-list/http-request.adoc[]
+include::{snippets}/winning-numbers-list/http-response.adoc[]
+include::{snippets}/winning-numbers-list/response-fields.adoc[]
+
+=== GET /api/winning-numbers/stats/frequency
+
+include::{snippets}/winning-numbers-frequency/http-request.adoc[]
+include::{snippets}/winning-numbers-frequency/http-response.adoc[]
+include::{snippets}/winning-numbers-frequency/response-fields.adoc[]
+
+== 관리자 API
+
+=== POST /api/admin/winning-numbers/refresh
+
+include::{snippets}/admin-winning-numbers-refresh/http-request.adoc[]
+include::{snippets}/admin-winning-numbers-refresh/request-fields.adoc[]
+include::{snippets}/admin-winning-numbers-refresh/http-response.adoc[]
+include::{snippets}/admin-winning-numbers-refresh/response-fields.adoc[]
+

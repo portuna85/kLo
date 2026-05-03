@@ -1,6 +1,13 @@
 package com.kraft.lotto.feature.winningnumber.web;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessRequest;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessResponse;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -13,27 +20,44 @@ import com.kraft.lotto.support.ErrorCode;
 import com.kraft.lotto.support.GlobalExceptionHandler;
 import java.time.LocalDate;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.restdocs.RestDocumentationContextProvider;
+import org.springframework.restdocs.RestDocumentationExtension;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 @WebMvcTest(controllers = WinningNumberController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
+@ExtendWith(RestDocumentationExtension.class)
 @DisplayName("WinningNumberController WebMvc")
 class WinningNumberControllerTest {
 
     @Autowired
+    WebApplicationContext context;
+
     MockMvc mockMvc;
 
     @MockitoBean
     WinningNumberQueryService queryService;
+
+    @BeforeEach
+    void setUp(RestDocumentationContextProvider restDocumentation) {
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                .apply(documentationConfiguration(restDocumentation))
+                .build();
+    }
 
     private static WinningNumberDto sample(int round) {
         return new WinningNumberDto(round, LocalDate.of(2024, 1, 6),
@@ -46,11 +70,54 @@ class WinningNumberControllerTest {
         Mockito.when(queryService.getLatest()).thenReturn(sample(1102));
 
         mockMvc.perform(get("/api/winning-numbers/latest"))
+                .andDo(document("winning-numbers-latest",
+                        preprocessRequest(prettyPrint()),
+                        preprocessResponse(prettyPrint()),
+                        responseFields(
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("요청 성공 여부"),
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("최신 당첨번호"),
+                                fieldWithPath("data.round").type(JsonFieldType.NUMBER).description("회차"),
+                                fieldWithPath("data.drawDate").type(JsonFieldType.STRING).description("추첨일(yyyy-MM-dd)"),
+                                fieldWithPath("data.numbers").type(JsonFieldType.ARRAY).description("본번호 6개"),
+                                fieldWithPath("data.bonusNumber").type(JsonFieldType.NUMBER).description("보너스 번호"),
+                                fieldWithPath("data.firstPrize").type(JsonFieldType.NUMBER).description("1등 당첨금"),
+                                fieldWithPath("data.firstWinners").type(JsonFieldType.NUMBER).description("1등 당첨자 수"),
+                                fieldWithPath("data.totalSales").type(JsonFieldType.NUMBER).description("총 판매금액"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("오류 정보(성공 시 null)")
+                        )
+                ))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.round").value(1102))
                 .andExpect(jsonPath("$.data.bonusNumber").value(38))
                 .andExpect(jsonPath("$.data.numbers.length()").value(6));
+    }
+
+    @Test
+    @DisplayName("GET /{round} 는 정상 응답을 반환한다")
+    void getByRoundReturnsOk() throws Exception {
+        Mockito.when(queryService.getByRound(1102)).thenReturn(sample(1102));
+
+        mockMvc.perform(get("/api/winning-numbers/1102"))
+                .andDo(document("winning-numbers-by-round",
+                        preprocessRequest(prettyPrint()),
+                        preprocessResponse(prettyPrint()),
+                        responseFields(
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("요청 성공 여부"),
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("요청 회차 당첨번호"),
+                                fieldWithPath("data.round").type(JsonFieldType.NUMBER).description("회차"),
+                                fieldWithPath("data.drawDate").type(JsonFieldType.STRING).description("추첨일(yyyy-MM-dd)"),
+                                fieldWithPath("data.numbers").type(JsonFieldType.ARRAY).description("본번호 6개"),
+                                fieldWithPath("data.bonusNumber").type(JsonFieldType.NUMBER).description("보너스 번호"),
+                                fieldWithPath("data.firstPrize").type(JsonFieldType.NUMBER).description("1등 당첨금"),
+                                fieldWithPath("data.firstWinners").type(JsonFieldType.NUMBER).description("1등 당첨자 수"),
+                                fieldWithPath("data.totalSales").type(JsonFieldType.NUMBER).description("총 판매금액"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("오류 정보(성공 시 null)")
+                        )
+                ))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.round").value(1102));
     }
 
     @Test
@@ -72,6 +139,27 @@ class WinningNumberControllerTest {
                 .thenReturn(new WinningNumberPageDto(List.of(sample(1102), sample(1101)), 0, 20, 2L, 1));
 
         mockMvc.perform(get("/api/winning-numbers?page=0&size=20"))
+                .andDo(document("winning-numbers-list",
+                        preprocessRequest(prettyPrint()),
+                        preprocessResponse(prettyPrint()),
+                        responseFields(
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("요청 성공 여부"),
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("페이지 응답 데이터"),
+                                fieldWithPath("data.content").type(JsonFieldType.ARRAY).description("당첨번호 목록"),
+                                fieldWithPath("data.content[].round").type(JsonFieldType.NUMBER).description("회차"),
+                                fieldWithPath("data.content[].drawDate").type(JsonFieldType.STRING).description("추첨일(yyyy-MM-dd)"),
+                                fieldWithPath("data.content[].numbers").type(JsonFieldType.ARRAY).description("본번호 6개"),
+                                fieldWithPath("data.content[].bonusNumber").type(JsonFieldType.NUMBER).description("보너스 번호"),
+                                fieldWithPath("data.content[].firstPrize").type(JsonFieldType.NUMBER).description("1등 당첨금"),
+                                fieldWithPath("data.content[].firstWinners").type(JsonFieldType.NUMBER).description("1등 당첨자 수"),
+                                fieldWithPath("data.content[].totalSales").type(JsonFieldType.NUMBER).description("총 판매금액"),
+                                fieldWithPath("data.page").type(JsonFieldType.NUMBER).description("현재 페이지 번호(0-base)"),
+                                fieldWithPath("data.size").type(JsonFieldType.NUMBER).description("페이지 크기"),
+                                fieldWithPath("data.totalElements").type(JsonFieldType.NUMBER).description("전체 요소 수"),
+                                fieldWithPath("data.totalPages").type(JsonFieldType.NUMBER).description("전체 페이지 수"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("오류 정보(성공 시 null)")
+                        )
+                ))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.content.length()").value(2))
@@ -88,6 +176,17 @@ class WinningNumberControllerTest {
         Mockito.when(queryService.frequency()).thenReturn(data);
 
         mockMvc.perform(get("/api/winning-numbers/stats/frequency"))
+                .andDo(document("winning-numbers-frequency",
+                        preprocessRequest(prettyPrint()),
+                        preprocessResponse(prettyPrint()),
+                        responseFields(
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("요청 성공 여부"),
+                                fieldWithPath("data").type(JsonFieldType.ARRAY).description("1~45 번호별 출현 빈도"),
+                                fieldWithPath("data[].number").type(JsonFieldType.NUMBER).description("로또 번호"),
+                                fieldWithPath("data[].count").type(JsonFieldType.NUMBER).description("출현 횟수"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("오류 정보(성공 시 null)")
+                        )
+                ))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.length()").value(2))

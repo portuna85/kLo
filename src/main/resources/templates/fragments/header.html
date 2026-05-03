@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<!--
+  공통 헤더 fragment.
+  - head(title): <title> 과 공통 메타/스타일을 주입
+  - navbar(active): 상단 내비게이션 (active = home | docs | ...)
+-->
+<head th:fragment="head(title)">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title th:text="${title} ?: 'KraftLotto'">KraftLotto</title>
+
+  <link rel="icon" type="image/svg+xml" th:href="@{/images/favicon.svg}" />
+  <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}" />
+  <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css}" />
+  <link rel="stylesheet" th:href="@{/css/app.css}" />
+</head>
+<body>
+<nav th:fragment="navbar(active)" class="navbar navbar-expand-md sticky-top kraft-navbar shadow-sm">
+  <div class="container">
+    <a class="navbar-brand fw-bold d-flex align-items-center gap-2" th:href="@{/}">
+      <i class="bi bi-stars text-warning"></i>
+      <span>KraftLotto</span>
+    </a>
+    <button class="navbar-toggler" type="button"
+            data-bs-toggle="collapse" data-bs-target="#kraft-nav"
+            aria-controls="kraft-nav" aria-expanded="false" aria-label="메뉴 열기">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div id="kraft-nav" class="collapse navbar-collapse">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link"
+             th:classappend="${active == 'home'} ? 'active fw-semibold' : ''"
+             th:href="@{/}">홈</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" target="_blank" rel="noreferrer"
+             th:href="@{/docs/index.html}">
+            API Docs <i class="bi bi-box-arrow-up-right small"></i>
+          </a>
+        </li>
+      </ul>
+      <button id="themeToggle" type="button"
+              class="btn btn-sm btn-outline-secondary"
+              aria-label="테마 전환">
+        <i class="bi bi-moon-stars"></i>
+      </button>
+      <button id="adminTrigger" type="button"
+              class="btn btn-sm btn-outline-secondary ms-2"
+              data-bs-toggle="modal" data-bs-target="#adminModal"
+              aria-label="관리자 도구 열기" title="관리자 도구">
+        <i class="bi bi-shield-lock"></i>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- 관리자 로그인 + 수집 트리거 모달 -->
+<div th:fragment="adminModal" class="modal fade" id="adminModal" tabindex="-1"
+     aria-labelledby="adminModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="adminModalLabel">
+          <i class="bi bi-shield-lock me-1"></i> 관리자 — 당첨번호 수집
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+      </div>
+      <form id="form-admin-refresh">
+        <div class="modal-body">
+          <div class="mb-2">
+            <label class="form-label small text-muted mb-1" for="admin-username">아이디</label>
+            <input id="admin-username" name="username" type="text" autocomplete="username"
+                   required class="form-control form-control-sm" />
+          </div>
+          <div class="mb-2">
+            <label class="form-label small text-muted mb-1" for="admin-password">비밀번호</label>
+            <input id="admin-password" name="password" type="password" autocomplete="current-password"
+                   required class="form-control form-control-sm" />
+          </div>
+          <div class="mb-2">
+            <label class="form-label small text-muted mb-1" for="admin-target-round">
+              대상 회차 <span class="text-muted">(선택, 비우면 최신까지 자동)</span>
+            </label>
+            <input id="admin-target-round" name="targetRound" type="number" min="1"
+                   class="form-control form-control-sm" placeholder="예: 1100" />
+          </div>
+          <div id="admin-result" class="small mt-2" aria-live="polite"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+          <button type="submit" class="btn btn-sm btn-primary">
+            <i class="bi bi-cloud-download me-1"></i> 수집 실행
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+</body>
+</html>
+

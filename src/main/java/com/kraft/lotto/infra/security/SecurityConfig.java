@@ -11,7 +11,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -29,11 +31,30 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .headers(h -> h
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "default-src 'self'; " +
+                                "img-src 'self' data:; " +
+                                "style-src 'self' 'unsafe-inline'; " +
+                                "font-src 'self' data:; " +
+                                "script-src 'self'; " +
+                                "connect-src 'self'; " +
+                                "frame-ancestors 'none'; " +
+                                "base-uri 'self'; " +
+                                "form-action 'self'"))
+                        .referrerPolicy(rp -> rp.policy(
+                                ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .permissionsPolicyHeader(pp -> pp.policy(
+                                "geolocation=(), microphone=(), camera=(), payment=(), usb=()"))
+                        .frameOptions(Customizer.withDefaults())
+                )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/", "/index", "/error", "/favicon.ico").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                         .requestMatchers("/api/recommend/**").permitAll()
                         .requestMatchers("/api/winning-numbers/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/docs", "/docs/", "/docs/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/actuator/metrics/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

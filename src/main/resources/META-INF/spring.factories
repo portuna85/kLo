@@ -1,0 +1,5 @@
+org.springframework.boot.EnvironmentPostProcessor=\
+  com.kraft.lotto.infra.config.DotenvEnvironmentPostProcessor,\
+  com.kraft.lotto.infra.config.DatasourceUrlAutoFixer,\
+  com.kraft.lotto.infra.config.RequiredConfigValidator
+

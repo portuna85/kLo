@@ -1,22 +1,44 @@
+# ============================================================
+#  로컬 개발 전용 오버라이드 (단일 프로파일 정책)
+#  - 비밀값/환경 의존 값은 모두 .env 에서 주입됩니다.
+#  - 본 파일에는 절대 비밀값을 적지 않습니다.
+# ============================================================
+
 spring:
   jpa:
     properties:
       hibernate:
         format_sql: true
+        use_sql_comments: true
+  # 템플릿/정적 리소스를 매 요청 새로 읽어 hot-reload 를 보장합니다.
+  thymeleaf:
+    cache: false
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          max-age: 0
+          no-cache: true
 
-# 로컬 개발에서는 Swagger UI 를 자유롭게 사용할 수 있도록 활성화합니다.
-springdoc:
-  api-docs:
-    enabled: true
-  swagger-ui:
-    enabled: true
 
+# 로컬에서는 health 상세 정보까지 모두 노출하여 디버깅을 돕습니다.
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,env,beans,mappings
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  # 로깅 레벨/Appender 는 logback-spring.xml 에서 프로파일별로 일원 관리합니다.
+  # 파일 출력 경로만 환경 변수로 재정의하고 싶을 때 KRAFT_LOG_PATH 를 사용하세요.
+  file:
+    # 호환성을 위해 Spring Boot 의 logging.file.path 도 동일 위치를 가리키도록 둡니다.
+    path: ${KRAFT_LOG_PATH:./logs}
 
 kraft:
   api:
+    # KRAFT_API_CLIENT 미주입 시 mock 폴백
     client: ${KRAFT_API_CLIENT:mock}

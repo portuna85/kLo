@@ -1,6 +1,7 @@
 package com.kraft.lotto.support;
 
 import jakarta.validation.ConstraintViolationException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -59,8 +60,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception ex) {
-        log.error("Unhandled exception", ex);
+    public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception ex, HttpServletRequest req) {
+        log.error("Unhandled exception at {} {} (query={})",
+                req.getMethod(), req.getRequestURI(), req.getQueryString(), ex);
         return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus())
                 .body(ApiResponse.failure(ErrorCode.INTERNAL_SERVER_ERROR));
     }
