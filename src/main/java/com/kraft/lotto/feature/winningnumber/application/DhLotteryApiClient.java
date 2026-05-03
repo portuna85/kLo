@@ -60,7 +60,7 @@ public class DhLotteryApiClient implements LottoApiClient {
         while (true) {
             attempt++;
             try {
-                URI uri = UriComponentsBuilder.fromHttpUrl(baseUrl)
+                URI uri = UriComponentsBuilder.fromUriString(baseUrl)
                         .queryParam("method", "getLottoNumber")
                         .queryParam("drwNo", round)
                         .build()

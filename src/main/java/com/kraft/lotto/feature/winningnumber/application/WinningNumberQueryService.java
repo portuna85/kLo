@@ -7,8 +7,8 @@ import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberPageDto;
 import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,17 +64,16 @@ public class WinningNumberQueryService {
     public List<NumberFrequencyDto> frequency() {
         long[] counts = new long[46]; // index 1..45
         for (Object[] row : repository.findAllNumbersForFrequency()) {
-            counts[(Integer) row[0]]++;
-            counts[(Integer) row[1]]++;
-            counts[(Integer) row[2]]++;
-            counts[(Integer) row[3]]++;
-            counts[(Integer) row[4]]++;
-            counts[(Integer) row[5]]++;
+            countMainNumbers(counts, row);
         }
-        List<NumberFrequencyDto> result = new ArrayList<>(45);
-        for (int n = 1; n <= 45; n++) {
-            result.add(new NumberFrequencyDto(n, counts[n]));
+        return IntStream.rangeClosed(1, 45)
+                .mapToObj(n -> new NumberFrequencyDto(n, counts[n]))
+                .toList();
+    }
+
+    private static void countMainNumbers(long[] counts, Object[] row) {
+        for (Object number : row) {
+            counts[(Integer) number]++;
         }
-        return java.util.Collections.unmodifiableList(result);
     }
 }
