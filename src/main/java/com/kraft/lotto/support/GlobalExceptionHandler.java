@@ -27,18 +27,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
-        String message = ex.getBindingResult().getFieldErrors().stream()
-                .findFirst()
-                .map(fe -> "%s: %s".formatted(fe.getField(), fe.getDefaultMessage()))
-                .orElse(ErrorCode.LOTTO_INVALID_COUNT.getDefaultMessage());
-        return ResponseEntity.status(ErrorCode.LOTTO_INVALID_COUNT.getHttpStatus())
-                .body(ApiResponse.failure(ErrorCode.LOTTO_INVALID_COUNT, message));
+        var fieldError = ex.getBindingResult().getFieldErrors().stream().findFirst().orElse(null);
+        String message = (fieldError == null)
+                ? ErrorCode.REQUEST_VALIDATION_ERROR.getDefaultMessage()
+                : "%s: %s".formatted(fieldError.getField(), fieldError.getDefaultMessage());
+        ErrorCode code = resolveFieldValidationCode(fieldError == null ? "" : fieldError.getField());
+        return ResponseEntity.status(code.getHttpStatus())
+                .body(ApiResponse.failure(code, message));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleConstraint(ConstraintViolationException ex) {
-        return ResponseEntity.status(ErrorCode.LOTTO_INVALID_COUNT.getHttpStatus())
-                .body(ApiResponse.failure(ErrorCode.LOTTO_INVALID_COUNT, ex.getMessage()));
+        ErrorCode code = resolveConstraintCode(ex.getMessage());
+        return ResponseEntity.status(code.getHttpStatus())
+                .body(ApiResponse.failure(code, ex.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -65,5 +67,31 @@ public class GlobalExceptionHandler {
                 req.getMethod(), req.getRequestURI(), req.getQueryString(), ex);
         return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus())
                 .body(ApiResponse.failure(ErrorCode.INTERNAL_SERVER_ERROR));
+    }
+
+    private static ErrorCode resolveFieldValidationCode(String field) {
+        if ("count".equals(field)) {
+            return ErrorCode.LOTTO_INVALID_COUNT;
+        }
+        if ("targetRound".equals(field)) {
+            return ErrorCode.LOTTO_INVALID_TARGET_ROUND;
+        }
+        return ErrorCode.REQUEST_VALIDATION_ERROR;
+    }
+
+    private static ErrorCode resolveConstraintCode(String message) {
+        if (message == null) {
+            return ErrorCode.REQUEST_VALIDATION_ERROR;
+        }
+        if (message.contains("count")) {
+            return ErrorCode.LOTTO_INVALID_COUNT;
+        }
+        if (message.contains("targetRound")) {
+            return ErrorCode.LOTTO_INVALID_TARGET_ROUND;
+        }
+        if (message.contains("page") || message.contains("size")) {
+            return ErrorCode.LOTTO_INVALID_PAGE_REQUEST;
+        }
+        return ErrorCode.REQUEST_VALIDATION_ERROR;
     }
 }

@@ -67,7 +67,7 @@
 <tr><td>🟩 프레임워크</td><td>Spring Boot <strong>4.0.5</strong> · Web · Validation · Actuator · Security</td></tr>
 <tr><td>🟧 퍼시스턴스</td><td>Spring Data JPA <code>ddl-auto=validate</code> · <strong>Flyway</strong> · MariaDB <strong>11.8 LTS</strong></td></tr>
 <tr><td>🟪 외부 통신</td><td><code>RestClient</code> + Jackson — <code>DhLotteryApiClient</code> / <code>MockLottoApiClient</code></td></tr>
-<tr><td>🟨 문서</td><td>SpringDoc OpenAPI 2.8 · Swagger UI <em>(prod OFF)</em></td></tr>
+<tr><td>🟨 문서</td><td>Spring REST Docs + Asciidoctor 정적 문서 (<code>/docs/index.html</code>)</td></tr>
 <tr><td>⬛ 빌드</td><td>Gradle Kotlin DSL · Wrapper 9.x · 멀티스테이지 Dockerfile (JRE 25, 비루트)</td></tr>
 <tr><td>🟥 테스트</td><td>JUnit 5 · Mockito · Spring Security Test · <strong>Testcontainers</strong> (MariaDB) · <strong>ArchUnit</strong></td></tr>
 </table>
@@ -196,12 +196,12 @@ $env:KRAFT_DB_URL      = "jdbc:mariadb://localhost:3306/kraft_lotto"
 $env:KRAFT_DB_USER     = "kraft"
 $env:KRAFT_DB_PASSWORD = "kraft"
 
-# 2) local 프로파일 (Mock 외부 API + Swagger UI 활성)
+# 2) local 프로파일 (Mock 외부 API + REST Docs 정적 문서)
 $env:SPRING_PROFILES_ACTIVE = "local"
 ./gradlew bootRun
 ```
 
-📖 Swagger UI · <http://localhost:8080/swagger-ui.html>
+📖 API Docs · <http://localhost:8080/docs/index.html>
 
 ### 🧪 4.3 테스트 / 빌드
 
@@ -226,10 +226,14 @@ $env:SPRING_PROFILES_ACTIVE = "local"
 | `KRAFT_DB_URL` | `jdbc:mariadb://localhost:3306/kraft_lotto` | JDBC URL |
 | `KRAFT_DB_USER` | `kraft` | DB 사용자 |
 | `KRAFT_DB_PASSWORD` | `kraft` | DB 비밀번호 |
-| `KRAFT_ADMIN_USERNAME` | `admin` <sub>(prod 필수)</sub> | 관리자 Basic Auth ID |
-| `KRAFT_ADMIN_PASSWORD` | `admin` <sub>(prod 필수)</sub> | 관리자 Basic Auth PW |
+| `KRAFT_ADMIN_USERNAME` | _(없음, 필수)_ | 관리자 Basic Auth ID |
+| `KRAFT_ADMIN_PASSWORD` | _(없음, 필수)_ | 관리자 Basic Auth PW |
 | `KRAFT_API_CLIENT` | `mock` | **`mock`** \| **`dhlottery`** — 그 외 값은 `mock` 으로 폴백 |
 | `KRAFT_API_URL` | `https://www.dhlottery.co.kr/common.do` | 외부 API base URL |
+| `KRAFT_API_CONNECT_TIMEOUT_MS` | `2000` | 외부 API 연결 타임아웃(ms) |
+| `KRAFT_API_READ_TIMEOUT_MS` | `3000` | 외부 API 응답 읽기 타임아웃(ms) |
+| `KRAFT_API_MAX_RETRIES` | `2` | 외부 API 네트워크 오류 재시도 횟수 |
+| `KRAFT_API_RETRY_BACKOFF_MS` | `200` | 재시도 간 대기 시간(ms) |
 | `KRAFT_RECOMMEND_MAX_ATTEMPTS` | `100000` | 추천 생성 최대 시도 횟수 |
 
 > [!WARNING]
@@ -240,14 +244,14 @@ $env:SPRING_PROFILES_ACTIVE = "local"
 
 ## 6. 프로파일 정책
 
-| 프로파일 | DataSource | 외부 API 기본 | Swagger UI | Actuator 노출 |
+| 프로파일 | DataSource | 외부 API 기본 | API 문서 | Actuator 노출 |
 | :--- | :--- | :--- | :---: | :--- |
 | 🟢 **`local`** | MariaDB (env)              | `mock`                       | ✅ | `health`, `info`, `metrics` |
-| 🔴 **`prod`**  | MariaDB (env, 비밀값 필수) | `${KRAFT_API_CLIENT:real}` † | ❌ | `health`, `info` |
+| 🔴 **`prod`**  | MariaDB (env, 비밀값 필수) | `${KRAFT_API_CLIENT:mock}` (운영에서는 `dhlottery` 명시 권장) | ✅ (`/docs/index.html`) | `health`, `info` |
 | 🟡 **`test`**  | H2 (MySQL 모드)            | `mock`                       | n/a | n/a |
 | 🟣 **`it`**    | Testcontainers MariaDB     | `mock`                       | n/a | n/a |
 
-<sub>† <code>application-prod.yml</code> 의 기본 토큰은 <code>real</code> 이지만 코드 매칭 토큰은 <strong><code>dhlottery</code></strong> 입니다. 운영에서 동행복권 API 를 사용하려면 <code>KRAFT_API_CLIENT=dhlottery</code> 를 명시적으로 주입하세요.</sub>
+<sub>프로파일별 별도 파일(<code>application-prod.yml</code>)은 제거되었고, 공통 <code>application.yml</code> + 환경변수 주입으로 운영 구성을 관리합니다. 운영에서 동행복권 API를 사용하려면 <code>KRAFT_API_CLIENT=dhlottery</code> 를 명시하세요.</sub>
 
 <sub>📈 <code>/actuator/metrics/**</code> 는 ADMIN Basic Auth 가 필요합니다.</sub>
 
@@ -335,7 +339,7 @@ curl -u "$KRAFT_ADMIN_USERNAME:$KRAFT_ADMIN_PASSWORD" \
 | `/api/recommend/**`                  | 🟢 공개 |
 | `/api/winning-numbers/**`            | 🟢 공개 |
 | `/actuator/health`                   | 🟢 공개 |
-| `/swagger-ui/**` · `/v3/api-docs/**` | 🟢 공개 <sub>(prod 비활성)</sub> |
+| `/docs/**`                           | 🟢 공개 |
 | `/api/admin/**`                      | 🔴 Basic + `ROLE_ADMIN` |
 | `/actuator/metrics/**`               | 🔴 Basic + `ROLE_ADMIN` |
 
@@ -434,9 +438,8 @@ kraft-lotto/
    │  │  ├─ infra/             { config · security }
    │  │  └─ support/           { ApiResponse · ErrorCode · BusinessException · GlobalExceptionHandler }
    │  └─ resources/
-   │     ├─ application.yml         ─ 공통 기본값
-   │     ├─ application-local.yml   ─ 로컬 (Swagger ON, mock)
-   │     ├─ application-prod.yml    ─ 운영 (Swagger OFF, 비밀값 필수)
+   │     ├─ application.yml         ─ 공통 기본 + 환경변수 기반 운영/로컬 설정
+   │     ├─ application-local.yml   ─ 로컬 개발 오버라이드(mock, 캐시/로그 디버깅)
    │     └─ db/migration/V1__init_winning_numbers.sql
    └─ test/                    ─ 100+ tests (단위 · WebMvc · Security · IT · ArchUnit)
 ```
@@ -452,4 +455,3 @@ _당첨이 아니라 회피로._
 <sub>Made with ☕ Java 25 · 🍃 Spring Boot 4 · 🗄️ MariaDB 11.8</sub>
 
 </div>
-

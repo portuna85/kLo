@@ -195,5 +195,13 @@ class WinningNumberControllerTest {
                 .andExpect(jsonPath("$.data[1].number").value(2))
                 .andExpect(jsonPath("$.data[1].count").value(118));
     }
-}
 
+    @Test
+    @DisplayName("GET / 는 page/size 가 유효하지 않으면 400 LOTTO_INVALID_PAGE_REQUEST 를 반환한다")
+    void getListReturns400WhenPageRequestInvalid() throws Exception {
+        mockMvc.perform(get("/api/winning-numbers?page=-1&size=0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("LOTTO_INVALID_PAGE_REQUEST"));
+    }
+}

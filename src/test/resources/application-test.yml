@@ -20,6 +20,9 @@ kraft:
   api:
     client: mock
     url: http://localhost
+    connect-timeout-ms: 2000
+    read-timeout-ms: 3000
+    max-retries: 2
+    retry-backoff-ms: 50
   recommend:
     max-attempts: 1000
-

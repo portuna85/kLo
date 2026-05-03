@@ -2,9 +2,12 @@ package com.kraft.lotto.feature.winningnumber.application;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kraft.lotto.infra.config.KraftApiProperties;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Set;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 /**
@@ -25,10 +28,31 @@ public class LottoApiClientConfig {
     static final int MOCK_DEFAULT_LATEST_ROUND = 1200;
 
     @Bean
-    public LottoApiClient lottoApiClient(KraftApiProperties properties) {
+    public RestClient lottoRestClient(KraftApiProperties properties) {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(properties.connectTimeoutMs());
+        requestFactory.setReadTimeout(properties.readTimeoutMs());
+        return RestClient.builder()
+                .requestFactory(requestFactory)
+                .build();
+    }
+
+    @Bean
+    public LottoApiClient lottoApiClient(KraftApiProperties properties,
+                                         RestClient lottoRestClient,
+                                         ObjectProvider<ObjectMapper> objectMapperProvider,
+                                         ObjectProvider<MeterRegistry> meterRegistryProvider) {
+        ObjectMapper objectMapper = objectMapperProvider.getIfAvailable(ObjectMapper::new);
         String client = properties.client() == null ? "" : properties.client().trim().toLowerCase();
         if (DHLOTTERY_TOKENS.contains(client)) {
-            return new DhLotteryApiClient(RestClient.builder().build(), new ObjectMapper(), properties.url());
+            return new DhLotteryApiClient(
+                    lottoRestClient,
+                    objectMapper,
+                    properties.url(),
+                    properties.maxRetries(),
+                    properties.retryBackoffMs(),
+                    meterRegistryProvider.getIfAvailable()
+            );
         }
         return new MockLottoApiClient(MOCK_DEFAULT_LATEST_ROUND);
     }
