@@ -7,15 +7,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kraft.lotto.feature.winningnumber.domain.WinningNumber;
 import java.time.LocalDate;
 import java.util.Optional;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+@DisplayName("DhLotteryApiClient")
 class DhLotteryApiClientTest {
 
     private final DhLotteryApiClient client =
             new DhLotteryApiClient(null, new ObjectMapper(), "http://localhost");
 
     @Test
-    void parse_정상_응답을_도메인으로_변환() {
+    @DisplayName("parse 는 정상 응답을 도메인으로 변환한다")
+    void parseConvertsValidResponseToDomain() {
         String body = """
                 {
                   "totSellamnt": 79760843000,
@@ -48,7 +51,8 @@ class DhLotteryApiClientTest {
     }
 
     @Test
-    void parse_returnValue_fail이면_empty() {
+    @DisplayName("parse 는 returnValue 가 fail 이면 empty 를 반환한다")
+    void parseReturnsEmptyWhenReturnValueIsFail() {
         String body = "{\"returnValue\":\"fail\"}";
 
         Optional<WinningNumber> result = client.parse(99999, body);
@@ -57,7 +61,8 @@ class DhLotteryApiClientTest {
     }
 
     @Test
-    void parse_응답_회차_불일치는_예외() {
+    @DisplayName("parse 는 응답 회차가 불일치하면 예외를 던진다")
+    void parseThrowsWhenRoundMismatches() {
         String body = """
                 {
                   "returnValue": "success",
@@ -75,13 +80,15 @@ class DhLotteryApiClientTest {
     }
 
     @Test
-    void parse_잘못된_JSON은_예외() {
+    @DisplayName("parse 는 잘못된 JSON 에 대해 예외를 던진다")
+    void parseThrowsOnInvalidJson() {
         assertThatThrownBy(() -> client.parse(1, "not json"))
                 .isInstanceOf(LottoApiClientException.class);
     }
 
     @Test
-    void parse_도메인_검증_실패는_예외로_래핑() {
+    @DisplayName("parse 는 도메인 검증 실패를 LottoApiClientException 으로 래핑한다")
+    void parseWrapsDomainValidationFailure() {
         // 본번호와 보너스 번호가 중복인 케이스 → WinningNumber 생성 시 IllegalArgumentException
         String body = """
                 {
@@ -98,3 +105,4 @@ class DhLotteryApiClientTest {
                 .isInstanceOf(LottoApiClientException.class);
     }
 }
+

@@ -13,6 +13,7 @@ import com.kraft.lotto.support.ErrorCode;
 import com.kraft.lotto.support.GlobalExceptionHandler;
 import java.time.LocalDate;
 import java.util.List;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(controllers = WinningNumberController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
+@DisplayName("WinningNumberController WebMvc")
 class WinningNumberControllerTest {
 
     @Autowired
@@ -39,7 +41,8 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    void GET_latest_정상응답() throws Exception {
+    @DisplayName("GET /latest 는 정상 응답을 반환한다")
+    void getLatestReturnsOk() throws Exception {
         Mockito.when(queryService.getLatest()).thenReturn(sample(1102));
 
         mockMvc.perform(get("/api/winning-numbers/latest"))
@@ -51,7 +54,8 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    void GET_byRound_없으면_404_NOT_FOUND() throws Exception {
+    @DisplayName("GET /{round} 는 회차가 없으면 404 NOT_FOUND 를 반환한다")
+    void getByRoundReturns404WhenNotFound() throws Exception {
         Mockito.when(queryService.getByRound(9999))
                 .thenThrow(new BusinessException(ErrorCode.WINNING_NUMBER_NOT_FOUND));
 
@@ -62,7 +66,8 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    void GET_list_페이지_응답() throws Exception {
+    @DisplayName("GET / 는 페이지 응답을 반환한다")
+    void getListReturnsPage() throws Exception {
         Mockito.when(queryService.list(0, 20))
                 .thenReturn(new WinningNumberPageDto(List.of(sample(1102), sample(1101)), 0, 20, 2L, 1));
 
@@ -74,7 +79,8 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    void GET_stats_frequency_정상응답() throws Exception {
+    @DisplayName("GET /stats/frequency 는 정상 응답을 반환한다")
+    void getStatsFrequencyReturnsOk() throws Exception {
         List<NumberFrequencyDto> data = List.of(
                 new NumberFrequencyDto(1, 123),
                 new NumberFrequencyDto(2, 118)
@@ -91,3 +97,4 @@ class WinningNumberControllerTest {
                 .andExpect(jsonPath("$.data[1].count").value(118));
     }
 }
+

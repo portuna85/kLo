@@ -7,6 +7,7 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
+import org.junit.jupiter.api.DisplayName;
 
 /**
  * 아키텍처 규칙 테스트.
@@ -23,6 +24,7 @@ import com.tngtech.archunit.lang.ArchRule;
         packages = "com.kraft.lotto",
         importOptions = {ImportOption.DoNotIncludeTests.class}
 )
+@DisplayName("아키텍처 규칙 (ArchUnit)")
 class ArchitectureTest {
 
     @ArchTest

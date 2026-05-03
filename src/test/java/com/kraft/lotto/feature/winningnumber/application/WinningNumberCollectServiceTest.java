@@ -1,7 +1,7 @@
 package com.kraft.lotto.feature.winningnumber.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.atLeastOnce;
@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -36,6 +37,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("WinningNumberCollectService")
 class WinningNumberCollectServiceTest {
 
     @Mock
@@ -68,7 +70,8 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    void targetRound_없으면_API가_empty_반환할때까지_수집() {
+    @DisplayName("targetRound 가 없으면 API 가 empty 를 반환할 때까지 수집한다")
+    void collectsUntilApiReturnsEmptyWhenNoTargetRound() {
         when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1102));
         when(repository.existsByRound(anyInt())).thenAnswer(inv -> existing.contains(inv.getArgument(0)));
         when(repository.save(any())).thenAnswer(inv -> {
@@ -91,7 +94,8 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    void targetRound_있으면_그회차까지만_수집() {
+    @DisplayName("targetRound 가 있으면 그 회차까지만 수집한다")
+    void collectsUpToTargetRoundOnly() {
         when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1101));
         when(repository.existsByRound(anyInt())).thenReturn(false);
         when(lottoApiClient.fetch(1101)).thenReturn(Optional.of(sample(1101)));
@@ -103,7 +107,8 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    void 이미_저장된_회차는_skipped로_카운트() {
+    @DisplayName("이미 저장된 회차는 skipped 로 카운트된다")
+    void countsExistingRoundAsSkipped() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0), Optional.of(2));
         // round 1: 이미 존재, round 2: 신규, round 3: empty
         Map<Integer, Boolean> exists = new HashMap<>();
@@ -122,7 +127,8 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    void 저장_실패는_failed로_집계되고_다음_회차로_진행() {
+    @DisplayName("저장 실패는 failed 로 집계되고 다음 회차로 진행된다")
+    void countsSaveFailureAsFailedAndContinues() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0), Optional.of(2));
         when(repository.existsByRound(anyInt())).thenReturn(false);
         when(lottoApiClient.fetch(1)).thenReturn(Optional.of(sample(1)));
@@ -140,19 +146,21 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    void 외부_API_예외는_BusinessException_EXTERNAL_API_FAILURE로_변환() {
+    @DisplayName("외부 API 예외는 BusinessException(EXTERNAL_API_FAILURE) 로 변환된다")
+    void wrapsExternalApiExceptionAsBusinessException() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0));
         when(lottoApiClient.fetch(1)).thenThrow(new LottoApiClientException("boom"));
 
-        assertThatThrownBy(() -> service.collect(null))
-                .isInstanceOf(BusinessException.class)
-                .extracting(e -> ((BusinessException) e).getErrorCode())
+        assertThatExceptionOfType(BusinessException.class)
+                .isThrownBy(() -> service.collect(null))
+                .extracting(BusinessException::getErrorCode)
                 .isEqualTo(ErrorCode.EXTERNAL_API_FAILURE);
         verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
-    void collected_0이면_이벤트_미발행() {
+    @DisplayName("collected 가 0 이면 이벤트를 발행하지 않는다")
+    void doesNotPublishEventWhenCollectedIsZero() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0));
         when(lottoApiClient.fetch(1)).thenReturn(Optional.empty());
 
@@ -162,3 +170,4 @@ class WinningNumberCollectServiceTest {
         verify(eventPublisher, never()).publishEvent(any());
     }
 }
+

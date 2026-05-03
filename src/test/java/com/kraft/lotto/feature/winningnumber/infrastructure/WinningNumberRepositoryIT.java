@@ -10,6 +10,7 @@ import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,8 +27,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("it")
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@DisplayName("WinningNumberRepository (Testcontainers + Flyway)")
 class WinningNumberRepositoryIT {
 
     @Container
@@ -66,6 +68,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
+    @DisplayName("회차로 저장하고 조회한다")
     void savesAndFindsByRound() {
         repository.save(entityOf(1100, LocalDate.of(2026, 5, 1), 1, 7, 13, 22, 34, 45, 8));
         em.flush();
@@ -81,6 +84,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
+    @DisplayName("매퍼 라운드트립이 도메인을 보존한다")
     void mapperRoundtripPreservesDomain() {
         repository.save(entityOf(1101, LocalDate.of(2026, 5, 8), 3, 9, 15, 21, 27, 33, 40));
         em.flush();
@@ -94,6 +98,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
+    @DisplayName("findTopByOrderByRoundDesc 가 최신 회차를 반환한다")
     void findTopByOrderByRoundDescReturnsLatest() {
         repository.save(entityOf(1200, LocalDate.of(2026, 5, 1), 1, 7, 13, 22, 34, 45, 8));
         repository.save(entityOf(1202, LocalDate.of(2026, 5, 15), 2, 8, 14, 23, 35, 44, 9));
@@ -107,6 +112,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
+    @DisplayName("findMaxRound 가 정상 동작한다")
     void findMaxRoundWorks() {
         repository.save(entityOf(1300, LocalDate.of(2026, 5, 1), 1, 7, 13, 22, 34, 45, 8));
         repository.save(entityOf(1302, LocalDate.of(2026, 5, 15), 2, 8, 14, 23, 35, 44, 9));
@@ -117,6 +123,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
+    @DisplayName("existsByRound 가 올바른 결과를 반환한다")
     void existsByRoundReturnsCorrectly() {
         repository.save(entityOf(1400, LocalDate.of(2026, 5, 1), 1, 7, 13, 22, 34, 45, 8));
         em.flush();
@@ -127,6 +134,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
+    @DisplayName("findAllByOrderByRoundDesc 가 페이지네이션을 수행한다")
     void findAllByOrderByRoundDescPaginates() {
         for (int r = 1500; r < 1510; r++) {
             repository.save(entityOf(r, LocalDate.of(2026, 5, 1).plusWeeks(r - 1500),
@@ -143,6 +151,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
+    @DisplayName("보너스가 본번호와 같으면 CHECK 제약으로 거부된다")
     void rejectsBonusEqualToMainNumberByCheckConstraint() {
         WinningNumberEntity bad = new WinningNumberEntity(
                 1600, LocalDate.of(2026, 6, 1),
@@ -156,6 +165,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
+    @DisplayName("정렬되지 않은 본번호는 CHECK 제약으로 거부된다")
     void rejectsOutOfOrderNumbersByCheckConstraint() {
         WinningNumberEntity bad = new WinningNumberEntity(
                 1601, LocalDate.of(2026, 6, 8),
@@ -169,6 +179,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
+    @DisplayName("음수 1등 당첨금은 CHECK 제약으로 거부된다")
     void rejectsNegativeFirstPrizeByCheckConstraint() {
         WinningNumberEntity bad = new WinningNumberEntity(
                 1602, LocalDate.of(2026, 6, 15),
@@ -180,3 +191,4 @@ class WinningNumberRepositoryIT {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 }
+
