@@ -94,8 +94,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AdminAuthenticationEntryPoint adminAuthenticationEntryPoint() {
-        return new AdminAuthenticationEntryPoint(new ObjectMapper());
+    public AdminAuthenticationEntryPoint adminAuthenticationEntryPoint(ObjectMapper objectMapper) {
+        return new AdminAuthenticationEntryPoint(objectMapper);
     }
 
     public static class AdminAuthenticationEntryPoint
