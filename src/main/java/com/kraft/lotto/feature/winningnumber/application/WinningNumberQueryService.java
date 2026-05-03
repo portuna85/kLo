@@ -1,6 +1,5 @@
 package com.kraft.lotto.feature.winningnumber.application;
 
-import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberEntity;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberMapper;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberRepository;
 import com.kraft.lotto.feature.winningnumber.web.dto.NumberFrequencyDto;
@@ -64,13 +63,13 @@ public class WinningNumberQueryService {
      */
     public List<NumberFrequencyDto> frequency() {
         long[] counts = new long[46]; // index 1..45
-        for (WinningNumberEntity e : repository.findAllOrderByRoundAsc()) {
-            counts[e.getN1()]++;
-            counts[e.getN2()]++;
-            counts[e.getN3()]++;
-            counts[e.getN4()]++;
-            counts[e.getN5()]++;
-            counts[e.getN6()]++;
+        for (Object[] row : repository.findAllNumbersForFrequency()) {
+            counts[(Integer) row[0]]++;
+            counts[(Integer) row[1]]++;
+            counts[(Integer) row[2]]++;
+            counts[(Integer) row[3]]++;
+            counts[(Integer) row[4]]++;
+            counts[(Integer) row[5]]++;
         }
         List<NumberFrequencyDto> result = new ArrayList<>(45);
         for (int n = 1; n <= 45; n++) {

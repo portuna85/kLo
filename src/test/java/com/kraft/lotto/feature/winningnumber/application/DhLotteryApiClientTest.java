@@ -2,10 +2,12 @@ package com.kraft.lotto.feature.winningnumber.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.net.URI;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kraft.lotto.feature.winningnumber.domain.WinningNumber;
@@ -132,7 +134,7 @@ class DhLotteryApiClientTest {
                   "drwNo": 1102
                 }
                 """;
-        when(restClient.get().uri(anyString()).retrieve().body(String.class))
+        when(restClient.get().uri(any(URI.class)).retrieve().body(String.class))
                 .thenThrow(new RestClientException("temporary network failure"))
                 .thenReturn(successBody);
 

@@ -2,6 +2,7 @@ package com.kraft.lotto.support;
 
 import jakarta.validation.ConstraintViolationException;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -28,9 +29,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
         var fieldError = ex.getBindingResult().getFieldErrors().stream().findFirst().orElse(null);
-        String message = (fieldError == null)
-                ? ErrorCode.REQUEST_VALIDATION_ERROR.getDefaultMessage()
-                : "%s: %s".formatted(fieldError.getField(), fieldError.getDefaultMessage());
+        String message;
+        if (fieldError == null) {
+            message = ErrorCode.REQUEST_VALIDATION_ERROR.getDefaultMessage();
+        } else {
+            String fieldMsg = Objects.requireNonNullElse(fieldError.getDefaultMessage(), "유효하지 않은 값");
+            message = "%s: %s".formatted(fieldError.getField(), fieldMsg);
+        }
         ErrorCode code = resolveFieldValidationCode(fieldError == null ? "" : fieldError.getField());
         return ResponseEntity.status(code.getHttpStatus())
                 .body(ApiResponse.failure(code, message));

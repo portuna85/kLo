@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kraft.lotto.feature.winningnumber.domain.LottoCombination;
 import com.kraft.lotto.feature.winningnumber.domain.WinningNumber;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.net.URI;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * 동행복권(dhlottery.co.kr) JSON API 어댑터.
@@ -58,8 +60,13 @@ public class DhLotteryApiClient implements LottoApiClient {
         while (true) {
             attempt++;
             try {
+                URI uri = UriComponentsBuilder.fromHttpUrl(baseUrl)
+                        .queryParam("method", "getLottoNumber")
+                        .queryParam("drwNo", round)
+                        .build()
+                        .toUri();
                 String body = restClient.get()
-                        .uri(baseUrl + "?method=getLottoNumber&drwNo=" + round)
+                        .uri(uri)
                         .retrieve()
                         .body(String.class);
                 if (body == null || body.isBlank()) {

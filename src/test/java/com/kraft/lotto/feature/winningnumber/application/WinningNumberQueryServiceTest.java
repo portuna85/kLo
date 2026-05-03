@@ -107,7 +107,8 @@ class WinningNumberQueryServiceTest {
     @DisplayName("frequency 는 본번호만 집계하고 1~45 모두 반환한다")
     void frequencyAggregatesOnlyMainNumbersAndReturnsAll45() {
         // 두 회차 모두 본번호 [1,7,13,22,34,45] / 보너스 8 → 보너스는 집계 제외
-        when(repository.findAllOrderByRoundAsc()).thenReturn(List.of(entity(1), entity(2)));
+        Object[] row = {1, 7, 13, 22, 34, 45};
+        when(repository.findAllNumbersForFrequency()).thenReturn(List.of(row, row));
 
         var result = service.frequency();
 
@@ -118,7 +119,7 @@ class WinningNumberQueryServiceTest {
         assertThat(result.get(0).count()).isEqualTo(2);
         assertThat(result.get(6).count()).isEqualTo(2);
         assertThat(result.get(44).count()).isEqualTo(2);
-        // 보너스인 8번은 0회 (보너스는 집계 제외)
+        // 8번은 보너스(집계 제외)가 아닌 projection에 없으므로 0회
         assertThat(result.get(7).count()).isZero();
         // 사용되지 않은 2번은 0회
         assertThat(result.get(1).count()).isZero();

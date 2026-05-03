@@ -335,7 +335,10 @@
     out.textContent = '수집 요청 중…';
     out.className = 'small mt-2 text-muted';
 
-    const auth = 'Basic ' + btoa(`${username}:${password}`);
+    // TextEncoder로 UTF-8 인코딩하여 비ASCII 문자 포함 패스워드를 안전하게 처리
+    const credBytes = new TextEncoder().encode(`${username}:${password}`);
+    const credBinary = Array.from(credBytes, (b) => String.fromCharCode(b)).join('');
+    const auth = 'Basic ' + btoa(credBinary);
     try {
       const res = await fetch('/api/admin/winning-numbers/refresh', {
         method: 'POST',
