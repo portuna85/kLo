@@ -2,24 +2,27 @@ package com.kraft.lotto.infra.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kraft.lotto.infra.config.KraftAdminProperties;
+import com.kraft.lotto.infra.config.KraftRecommendRateLimitProperties;
 import com.kraft.lotto.support.ApiError;
 import com.kraft.lotto.support.ApiResponse;
 import com.kraft.lotto.support.ErrorCode;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 @Configuration
 @ConditionalOnWebApplication
@@ -27,9 +30,14 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   AdminAuthenticationEntryPoint entryPoint) throws Exception {
+                                                   AdminAuthenticationEntryPoint entryPoint,
+                                                   RecommendRateLimitFilter recommendRateLimitFilter) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf.ignoringRequestMatchers(
+                        "/api/**",
+                        "/actuator/**"
+                ))
+                .addFilterBefore(recommendRateLimitFilter, BasicAuthenticationFilter.class)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(h -> h
                         .contentSecurityPolicy(csp -> csp.policyDirectives(
@@ -62,6 +70,13 @@ public class SecurityConfig {
                 .httpBasic(basic -> basic.authenticationEntryPoint(entryPoint))
                 .exceptionHandling(eh -> eh.authenticationEntryPoint(entryPoint));
         return http.build();
+    }
+
+    @Bean
+    public RecommendRateLimitFilter recommendRateLimitFilter(KraftRecommendRateLimitProperties properties,
+                                                             MeterRegistry meterRegistry,
+                                                             ObjectMapper objectMapper) {
+        return new RecommendRateLimitFilter(properties, objectMapper, meterRegistry);
     }
 
     @Bean
