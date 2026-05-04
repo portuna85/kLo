@@ -48,11 +48,14 @@ jobs:
           EOF
           chmod 600 .env
 
+      - name: Fix logs directory permissions
+        run: |
+          rm -rf ./logs || true
+          mkdir -p ./logs
+          chmod 777 ./logs
+
       - name: Build & restart services
         run: |
-          sudo rm -rf ./logs
-          mkdir -p ./logs
-          chmod 777 ./logs          
           docker compose up -d --build --remove-orphans
           docker image prune -f
 
