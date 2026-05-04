@@ -10,6 +10,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -29,9 +30,24 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   AdminAuthenticationEntryPoint entryPoint,
-                                                   RecommendRateLimitFilter recommendRateLimitFilter) throws Exception {
+    @Order(1)
+    public SecurityFilterChain adminSecurityFilterChain(HttpSecurity http,
+                                                        AdminAuthenticationEntryPoint entryPoint) throws Exception {
+        http
+                .securityMatcher("/api/admin/**", "/actuator/metrics/**")
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth.anyRequest().hasRole("ADMIN"))
+                .httpBasic(basic -> basic.authenticationEntryPoint(entryPoint))
+                .exceptionHandling(eh -> eh.authenticationEntryPoint(entryPoint));
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
+    public SecurityFilterChain appSecurityFilterChain(HttpSecurity http,
+                                                      AdminAuthenticationEntryPoint entryPoint,
+                                                      RecommendRateLimitFilter recommendRateLimitFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
                         "/api/**",
@@ -63,8 +79,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/winning-numbers/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/docs", "/docs/", "/docs/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/actuator/metrics/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .httpBasic(basic -> basic.authenticationEntryPoint(entryPoint))

@@ -204,4 +204,13 @@ class WinningNumberControllerTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.error.code").value("LOTTO_INVALID_PAGE_REQUEST"));
     }
+
+    @Test
+    @DisplayName("GET /{round} 는 round가 1 미만이면 400 LOTTO_INVALID_TARGET_ROUND 를 반환한다")
+    void getByRoundReturns400WhenRoundIsLessThanOne() throws Exception {
+        mockMvc.perform(get("/api/winning-numbers/0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("LOTTO_INVALID_TARGET_ROUND"));
+    }
 }

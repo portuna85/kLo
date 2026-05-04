@@ -112,10 +112,24 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
     }
 
     private static String resolveClientIp(HttpServletRequest request) {
+        String remoteAddr = request.getRemoteAddr();
+        if (!isTrustedProxy(remoteAddr)) {
+            return remoteAddr;
+        }
+
         String fwd = request.getHeader("X-Forwarded-For");
         if (fwd != null && !fwd.isBlank()) {
             return fwd.split(",")[0].trim();
         }
-        return request.getRemoteAddr();
+        return remoteAddr;
+    }
+
+    private static boolean isTrustedProxy(String remoteAddr) {
+        try {
+            java.net.InetAddress addr = java.net.InetAddress.getByName(remoteAddr);
+            return addr.isLoopbackAddress() || addr.isSiteLocalAddress() || addr.isLinkLocalAddress();
+        } catch (java.net.UnknownHostException ex) {
+            return false;
+        }
     }
 }
