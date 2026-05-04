@@ -95,7 +95,7 @@ public class GlobalExceptionHandler {
         if (propertyPath.endsWith("count")) {
             return ErrorCode.LOTTO_INVALID_COUNT;
         }
-        if (propertyPath.endsWith("targetRound")) {
+        if (propertyPath.endsWith("targetRound") || propertyPath.endsWith("round")) {
             return ErrorCode.LOTTO_INVALID_TARGET_ROUND;
         }
         if (propertyPath.endsWith("page") || propertyPath.endsWith("size")) {

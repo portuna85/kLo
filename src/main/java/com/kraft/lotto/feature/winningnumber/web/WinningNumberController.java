@@ -35,7 +35,7 @@ public class WinningNumberController {
     }
 
     @GetMapping("/{round}")
-    public ApiResponse<WinningNumberDto> byRound(@PathVariable("round") int round) {
+    public ApiResponse<WinningNumberDto> byRound(@PathVariable("round") @Min(1) int round) {
         return ApiResponse.success(queryService.getByRound(round));
     }
 

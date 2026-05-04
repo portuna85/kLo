@@ -78,8 +78,8 @@ class RecommendRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("X-Forwarded-For 헤더의 첫 번째 IP를 클라이언트 식별자로 사용한다")
-    void usesFirstIpFromXForwardedFor() throws Exception {
+    @DisplayName("신뢰된 프록시(사설/루프백)에서만 X-Forwarded-For 헤더를 신뢰한다")
+    void usesXForwardedForOnlyFromTrustedProxy() throws Exception {
         MockHttpServletRequest req = postRecommend("127.0.0.1");
         req.addHeader("X-Forwarded-For", "203.0.113.1, 10.0.0.5");
 
@@ -87,6 +87,22 @@ class RecommendRateLimitFilterTest {
             executeRequest(req);
         }
         assertThat(executeRequest(req)).isEqualTo(429);
+    }
+
+    @Test
+    @DisplayName("신뢰되지 않은 원격지에서는 X-Forwarded-For를 무시하고 remoteAddr로 제한한다")
+    void ignoresXForwardedForForUntrustedRemote() throws Exception {
+        MockHttpServletRequest req = postRecommend("203.0.113.9");
+        req.addHeader("X-Forwarded-For", "198.51.100.1");
+
+        for (int i = 0; i < MAX_REQUESTS; i++) {
+            assertThat(executeRequest(req)).isEqualTo(200);
+        }
+        assertThat(executeRequest(req)).isEqualTo(429);
+
+        MockHttpServletRequest another = postRecommend("203.0.113.10");
+        another.addHeader("X-Forwarded-For", "198.51.100.1");
+        assertThat(executeRequest(another)).isEqualTo(200);
     }
 
     @Test
