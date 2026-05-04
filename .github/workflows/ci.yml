@@ -36,8 +36,9 @@ jobs:
 
       - name: Build (compile + bootJar)
         run: |
+          ./gradlew --no-daemon clean classes
           mkdir -p build/generated-snippets
-          ./gradlew --no-daemon clean build -x test
+          ./gradlew --no-daemon build -x test -x clean
 
       - name: Run tests
         run: ./gradlew --no-daemon test
