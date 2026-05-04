@@ -51,7 +51,7 @@ server:
     mime-types: text/html,text/css,application/javascript,application/json
   http2:
     enabled: true
-  forward-headers-strategy: framework
+  forward-headers-strategy: NATIVE   # framework → NATIVE 변경
 
 management:
   endpoints:
