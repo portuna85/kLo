@@ -50,6 +50,9 @@ jobs:
 
       - name: Build & restart services
         run: |
+          sudo rm -rf ./logs
+          mkdir -p ./logs
+          chmod 777 ./logs          
           docker compose up -d --build --remove-orphans
           docker image prune -f
 
