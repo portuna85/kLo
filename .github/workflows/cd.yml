@@ -50,6 +50,8 @@ jobs:
           KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS=30
           KRAFT_RECOMMEND_RATE_LIMIT_WINDOW_SECONDS=60
           KRAFT_LOG_PATH=./logs
+          KRAFT_HEALTHCHECK_URL=http://localhost:8080/actuator/health/liveness
+          KRAFT_HEALTHCHECK_TIMEOUT_SECONDS=2
           EOF
           chmod 600 .env
 
@@ -59,7 +61,7 @@ jobs:
           mkdir -p ./logs
           chmod 777 ./logs
 
-      - name: Build & restart services
+      - name: Build and restart services
         run: |
           docker compose up -d --build --remove-orphans
           docker image prune -f
@@ -69,21 +71,28 @@ jobs:
           echo "Waiting for app health..."
           for i in $(seq 1 40); do
             STATUS=$(docker inspect --format='{{.State.Health.Status}}' kraft-lotto-app 2>/dev/null || echo "starting")
-            echo "[$i/40] status=$STATUS"
+            HTTP_CODE=$(curl -sS -o /tmp/kraft-health.json -w '%{http_code}' http://localhost:8080/actuator/health/liveness || true)
+            BODY=$(cat /tmp/kraft-health.json 2>/dev/null || true)
+            echo "[$i/40] docker-health=$STATUS http=$HTTP_CODE body=$BODY"
             if [ "$STATUS" = "healthy" ]; then
-              echo "✅ App is healthy"
+              echo "App container is healthy"
               exit 0
             fi
             sleep 5
           done
-          echo "❌ Health check timed out"
+          echo "Health check timed out"
+          echo "::group::Container health detail"
+          docker inspect --format='{{json .State.Health}}' kraft-lotto-app || true
+          echo
+          echo "::endgroup::"
           docker compose logs --tail=200 app
           exit 1
 
       - name: Smoke test
         run: |
-          curl -fsS http://localhost:8080/actuator/health | grep -q '"status":"UP"'
-          echo "✅ Smoke test passed"
+          curl -fsS http://localhost:8080/actuator/health/readiness | tee /tmp/kraft-readiness.json
+          grep -q '"status":"UP"' /tmp/kraft-readiness.json
+          echo "Smoke test passed"
 
       - name: Cleanup .env
         if: always()

@@ -61,6 +61,13 @@ management:
   endpoint:
     health:
       show-details: never
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState,ping
+        readiness:
+          include: readinessState,db
 
 # API 문서는 Spring REST Docs 산출물(static/docs)로 제공됩니다.
 

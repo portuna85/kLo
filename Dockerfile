@@ -39,7 +39,9 @@ RUN apt-get update \
  && useradd --system --gid kraft --home /app kraft
 
 COPY --from=build /workspace/build/libs/*.jar /app/app.jar
+COPY docker/healthcheck.sh /app/healthcheck.sh
 RUN mkdir -p /app/logs \
+ && chmod +x /app/healthcheck.sh \
  && chown -R kraft:kraft /app
 USER kraft
 
@@ -47,11 +49,13 @@ EXPOSE 8080
 
 # 컨테이너 환경 기본 JVM 튜닝 (cgroup 메모리 인식 + Asia/Seoul)
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Duser.timezone=Asia/Seoul" \
-    KRAFT_LOG_PATH="/app/logs"
+    KRAFT_LOG_PATH="/app/logs" \
+    KRAFT_HEALTHCHECK_URL="http://localhost:8080/actuator/health/liveness" \
+    KRAFT_HEALTHCHECK_TIMEOUT_SECONDS="2"
 
 VOLUME ["/app/logs"]
 
 HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=5 \
-  CMD curl -fsS http://localhost:8080/actuator/health || exit 1
+  CMD /app/healthcheck.sh
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

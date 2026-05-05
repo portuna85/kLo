@@ -79,7 +79,7 @@ public class SecurityConfig {
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                         .requestMatchers("/api/recommend/**").permitAll()
                         .requestMatchers("/api/winning-numbers/**").permitAll()
-                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/docs", "/docs/", "/docs/**").permitAll()
                         .anyRequest().authenticated()
                 )

@@ -88,6 +88,14 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    @DisplayName("actuator health group endpoints are accessible without auth")
+    void actuatorHealthGroupsAreAccessibleWithoutAuth() throws Exception {
+        mockMvc().perform(get("/actuator/health/liveness"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"));
+    }
+
+    @Test
     @DisplayName("admin 엔드포인트는 미인증 시 401 UNAUTHORIZED_ADMIN 을 반환한다")
     void adminEndpointReturns401WhenUnauthenticated() throws Exception {
         mockMvc().perform(post("/api/admin/winning-numbers/refresh")
