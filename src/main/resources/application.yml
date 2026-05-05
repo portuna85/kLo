@@ -72,11 +72,6 @@ management:
 # API 문서는 Spring REST Docs 산출물(static/docs)로 제공됩니다.
 
 kraft:
-  admin:
-    # 민감 기본값 제거 — .env 에서 반드시 주입
-    username: ${KRAFT_ADMIN_USERNAME}
-    password: ${KRAFT_ADMIN_PASSWORD}
-    allowed-ip-ranges: ${KRAFT_ADMIN_ALLOWED_IP_RANGES:127.0.0.1/32,::1/128}
   api:
     client: ${KRAFT_API_CLIENT:mock}
     url: ${KRAFT_API_URL:https://www.dhlottery.co.kr/common.do}

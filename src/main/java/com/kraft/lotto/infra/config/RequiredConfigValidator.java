@@ -31,8 +31,6 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
         REQUIRED.put("spring.datasource.url",      "DB JDBC URL (env: KRAFT_DB_URL)");
         REQUIRED.put("spring.datasource.username", "DB 사용자 (env: KRAFT_DB_USER)");
         REQUIRED.put("spring.datasource.password", "DB 비밀번호 (env: KRAFT_DB_PASSWORD)");
-        REQUIRED.put("kraft.admin.username",       "관리자 ID (env: KRAFT_ADMIN_USERNAME)");
-        REQUIRED.put("kraft.admin.password",       "관리자 비밀번호 (env: KRAFT_ADMIN_PASSWORD)");
     }
 
     @Override

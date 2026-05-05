@@ -6,9 +6,6 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -56,18 +53,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.status(ErrorCode.LOTTO_INVALID_NUMBER.getHttpStatus())
                 .body(ApiResponse.failure(ErrorCode.LOTTO_INVALID_NUMBER, ex.getMessage()));
-    }
-
-    @ExceptionHandler({AuthenticationException.class, AuthenticationCredentialsNotFoundException.class})
-    public ResponseEntity<ApiResponse<Void>> handleAuthentication(Exception ex) {
-        return ResponseEntity.status(ErrorCode.UNAUTHORIZED_ADMIN.getHttpStatus())
-                .body(ApiResponse.failure(ErrorCode.UNAUTHORIZED_ADMIN));
-    }
-
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
-        return ResponseEntity.status(ErrorCode.UNAUTHORIZED_ADMIN.getHttpStatus())
-                .body(ApiResponse.failure(ErrorCode.UNAUTHORIZED_ADMIN));
     }
 
     @ExceptionHandler(Exception.class)

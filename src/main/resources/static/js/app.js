@@ -361,56 +361,44 @@
     }
   };
 
-  // ───────────────────────── 관리자: 수집 트리거 ─────────────────────────
-  const onAdminRefresh = async (e) => {
+  // ───────────────────────── 당첨번호 수집 트리거 ─────────────────────────
+  const onCollectRefresh = async (e) => {
     e.preventDefault();
-    const alog = Logger.step('admin-refresh');
+    const clog = Logger.step('collect-refresh');
     const fd = new FormData(e.currentTarget);
-    const username = String(fd.get('username') || '').trim();
-    const password = String(fd.get('password') || '');
     const targetRoundRaw = String(fd.get('targetRound') || '').trim();
     const targetRound = targetRoundRaw === '' ? null : targetRoundRaw;
-    const out = document.getElementById('admin-result');
+    const out = document.getElementById('collect-result');
     const btn = e.currentTarget.querySelector('[type="submit"]');
 
     out.textContent = '수집 요청 중…';
     out.className = 'small mt-2 text-muted';
-    alog.info('수집 요청', { targetRound });
-
-    // TextEncoder로 UTF-8 바이트를 그대로 btoa 인코딩 (비ASCII 패스워드 안전 처리)
-    const credBytes = new TextEncoder().encode(`${username}:${password}`);
-    const credBinary = Array.from(credBytes, (b) => String.fromCharCode(b)).join('');
-    const auth = 'Basic ' + btoa(credBinary);
+    clog.info('수집 요청', { targetRound });
 
     await withLoading(btn, async () => {
       try {
-        const data = await api('/api/admin/winning-numbers/refresh', {
+        const data = await api('/api/winning-numbers/refresh', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': auth
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(targetRound == null ? {} : { targetRound })
         });
         out.textContent = `수집 완료 · 신규 ${data.collected} · 스킵 ${data.skipped} · 실패 ${data.failed} · 최신 ${data.latestRound}회`;
         out.className = 'small mt-2 text-success';
         toast(`수집 완료: 신규 ${data.collected} · 최신 ${data.latestRound}회`);
-        alog.info('수집 성공', { collected: data.collected, latestRound: data.latestRound });
+        clog.info('수집 성공', { collected: data.collected, latestRound: data.latestRound });
         listState.page = 0;
         loadLatest();
         loadList();
         loadFrequency();
       } catch (err) {
-        if (err.code === 'UNAUTHORIZED_ADMIN') {
-          out.textContent = '인증 실패: 아이디/비밀번호를 확인하세요.';
-        } else if (err.name === 'TypeError') {
+        if (err.name === 'TypeError') {
           out.textContent = `네트워크 오류: ${err.message}`;
         } else {
           out.textContent = `실패: ${err.message}`;
         }
         out.className = 'small mt-2 text-danger';
-        alog.warn('수집 실패', { code: err.code, message: err.message });
-        toast(`관리자 수집 실패: ${err.message}`, true);
+        clog.warn('수집 실패', { code: err.code, message: err.message });
+        toast(`수집 실패: ${err.message}`, true);
       }
     });
   };
@@ -457,7 +445,7 @@
     });
     document.getElementById('form-recommend')?.addEventListener('submit', onRecommend);
     document.getElementById('form-by-round')?.addEventListener('submit', onByRound);
-    document.getElementById('form-admin-refresh')?.addEventListener('submit', onAdminRefresh);
+    document.getElementById('form-collect-refresh')?.addEventListener('submit', onCollectRefresh);
     document.getElementById('list-prev')?.addEventListener('click', () => {
       if (listState.page > 0) { listState.page -= 1; loadList(); }
     });

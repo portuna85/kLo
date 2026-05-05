@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.context.ActiveProfiles;
@@ -31,9 +30,7 @@ import org.springframework.web.context.WebApplicationContext;
  * <p>실제 Spring Security 필터 체인이 적용된 상태에서 다음을 검증한다:
  * <ul>
  *     <li>public endpoint는 인증 없이 접근 가능</li>
- *     <li>{@code /api/admin/**} 는 미인증 시 401 + {@code UNAUTHORIZED_ADMIN}</li>
- *     <li>잘못된 자격증명도 401</li>
- *     <li>ADMIN 권한 인증 시 정상 응답</li>
+ *     <li>당첨번호 수집 트리거도 인증 없이 접근 가능</li>
  * </ul>
  */
 @SpringBootTest
@@ -96,64 +93,31 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("admin 엔드포인트는 미인증 시 401 UNAUTHORIZED_ADMIN 을 반환한다")
-    void adminEndpointReturns401WhenUnauthenticated() throws Exception {
-        mockMvc().perform(post("/api/admin/winning-numbers/refresh")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED_ADMIN"));
-    }
-
-    @Test
-    @DisplayName("admin 엔드포인트는 잘못된 자격증명에도 401을 반환한다")
-    void adminEndpointReturns401WhenCredentialsInvalid() throws Exception {
-        // testadmin / wrongpw (test 프로필 비밀번호는 testpw)
-        String basic = basicAuth("testadmin", "wrongpw");
-
-        mockMvc().perform(post("/api/admin/winning-numbers/refresh")
-                        .header(HttpHeaders.AUTHORIZATION, basic)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED_ADMIN"));
-    }
-
-    @Test
-    @DisplayName("admin 엔드포인트는 ADMIN 자격증명으로 접근 가능하다")
-    void adminEndpointIsAccessibleWithAdminCredentials() throws Exception {
-        Mockito.when(collectService.collect(Mockito.any()))
+    @DisplayName("당첨번호 수집 트리거는 인증 없이 접근 가능하다")
+    void winningNumberRefreshIsAccessibleWithoutAuth() throws Exception {
+        Mockito.when(collectService.collect(Mockito.nullable(Integer.class)))
                 .thenReturn(new CollectResponse(0, 0, 0, 0));
 
-        // application-test.yml: kraft.admin.username=testadmin / password=testpw
-        String basic = basicAuth("testadmin", "testpw");
-
-        mockMvc().perform(post("/api/admin/winning-numbers/refresh")
-                        .header(HttpHeaders.AUTHORIZATION, basic)
+        mockMvc().perform(post("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
-    @DisplayName("admin 엔드포인트는 비허용 IP에서 403 FORBIDDEN_ADMIN_IP 를 반환한다")
-    void adminEndpointReturns403WhenIpNotAllowed() throws Exception {
-        String basic = basicAuth("testadmin", "testpw");
+    @DisplayName("당첨번호 수집 트리거는 외부 IP에서도 별도 IP 제한 없이 접근 가능하다")
+    void winningNumberRefreshDoesNotRequireIpWhitelist() throws Exception {
+        Mockito.when(collectService.collect(Mockito.nullable(Integer.class)))
+                .thenReturn(new CollectResponse(0, 0, 0, 0));
 
-        mockMvc().perform(post("/api/admin/winning-numbers/refresh")
+        mockMvc().perform(post("/api/winning-numbers/refresh")
                         .with(request -> {
                             request.setRemoteAddr("203.0.113.10");
                             return request;
                         })
-                        .header(HttpHeaders.AUTHORIZATION, basic)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("FORBIDDEN_ADMIN_IP"));
-    }
-
-    private static String basicAuth(String username, String password) {
-        return "Basic " + java.util.Base64.getEncoder()
-                .encodeToString((username + ":" + password).getBytes());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 }
 

@@ -11,12 +11,6 @@ spring:
     locations: classpath:db/migration
 
 kraft:
-  admin:
-    username: testadmin
-    password: testpw
-    allowed-ip-ranges:
-      - 127.0.0.1/32
-      - ::1/128
   api:
     client: mock
     url: http://localhost

@@ -58,12 +58,12 @@ include::{snippets}/winning-numbers-frequency/http-request.adoc[]
 include::{snippets}/winning-numbers-frequency/http-response.adoc[]
 include::{snippets}/winning-numbers-frequency/response-fields.adoc[]
 
-== 관리자 API
+== 당첨번호 수집 API
 
-=== POST /api/admin/winning-numbers/refresh
+=== POST /api/winning-numbers/refresh
 
-include::{snippets}/admin-winning-numbers-refresh/http-request.adoc[]
-include::{snippets}/admin-winning-numbers-refresh/request-fields.adoc[]
-include::{snippets}/admin-winning-numbers-refresh/http-response.adoc[]
-include::{snippets}/admin-winning-numbers-refresh/response-fields.adoc[]
+include::{snippets}/winning-numbers-refresh/http-request.adoc[]
+include::{snippets}/winning-numbers-refresh/request-fields.adoc[]
+include::{snippets}/winning-numbers-refresh/http-response.adoc[]
+include::{snippets}/winning-numbers-refresh/response-fields.adoc[]
 

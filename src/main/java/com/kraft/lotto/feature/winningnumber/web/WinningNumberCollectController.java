@@ -11,15 +11,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 관리자 전용 당첨번호 수집 트리거 API. SecurityConfig의 {@code /api/admin/**} 정책에 의해 ROLE_ADMIN만 접근할 수 있다.
+ * 당첨번호 수집 트리거 API. 인증 없이 누구나 최신 회차 데이터를 갱신할 수 있다.
  */
 @RestController
-@RequestMapping("/api/admin/winning-numbers")
-public class AdminWinningNumberController {
+@RequestMapping("/api/winning-numbers")
+public class WinningNumberCollectController {
 
     private final WinningNumberCollectService collectService;
 
-    public AdminWinningNumberController(WinningNumberCollectService collectService) {
+    public WinningNumberCollectController(WinningNumberCollectService collectService) {
         this.collectService = collectService;
     }
 

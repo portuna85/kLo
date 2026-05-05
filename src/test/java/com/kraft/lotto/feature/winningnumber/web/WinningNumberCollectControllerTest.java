@@ -1,7 +1,6 @@
 package com.kraft.lotto.feature.winningnumber.web;
 
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessRequest;
@@ -10,6 +9,7 @@ import static org.springframework.restdocs.operation.preprocess.Preprocessors.pr
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -36,12 +36,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-@WebMvcTest(controllers = AdminWinningNumberController.class)
+@WebMvcTest(controllers = WinningNumberCollectController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
 @ExtendWith(RestDocumentationExtension.class)
-@DisplayName("AdminWinningNumberController WebMvc")
-class AdminWinningNumberControllerTest {
+@DisplayName("WinningNumberCollectController WebMvc")
+class WinningNumberCollectControllerTest {
 
     @Autowired
     WebApplicationContext context;
@@ -59,12 +59,12 @@ class AdminWinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("POST /collect 본문이 없으면 targetRound 를 null 로 위임한다")
+    @DisplayName("POST /refresh 본문이 없으면 targetRound 를 null 로 위임한다")
     void postCollectDelegatesNullTargetRoundWhenBodyAbsent() throws Exception {
         Mockito.when(collectService.collect(isNull()))
                 .thenReturn(new CollectResponse(3, 0, 0, 1103));
 
-        mockMvc.perform(post("/api/admin/winning-numbers/refresh"))
+        mockMvc.perform(post("/api/winning-numbers/refresh"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.collected").value(3))
@@ -72,15 +72,15 @@ class AdminWinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("POST /collect 는 지정된 targetRound 로 위임한다")
+    @DisplayName("POST /refresh 는 지정된 targetRound 로 위임한다")
     void postCollectDelegatesSpecifiedTargetRound() throws Exception {
         Mockito.when(collectService.collect(1103))
                 .thenReturn(new CollectResponse(2, 1, 0, 1103));
 
-        mockMvc.perform(post("/api/admin/winning-numbers/refresh")
+        mockMvc.perform(post("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"targetRound\":\"1103\"}"))
-                .andDo(document("admin-winning-numbers-refresh",
+                .andDo(document("winning-numbers-refresh",
                         preprocessRequest(prettyPrint()),
                         preprocessResponse(prettyPrint()),
                         requestFields(
@@ -104,20 +104,20 @@ class AdminWinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("POST /collect 외부 API 실패 시 502 BAD_GATEWAY 를 반환한다")
+    @DisplayName("POST /refresh 외부 API 실패 시 502 BAD_GATEWAY 를 반환한다")
     void postCollectReturns502OnExternalApiFailure() throws Exception {
         Mockito.when(collectService.collect(isNull()))
                 .thenThrow(new BusinessException(ErrorCode.EXTERNAL_API_FAILURE));
 
-        mockMvc.perform(post("/api/admin/winning-numbers/refresh"))
+        mockMvc.perform(post("/api/winning-numbers/refresh"))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.error.code").value("EXTERNAL_API_FAILURE"));
     }
 
     @Test
-    @DisplayName("POST /collect 는 targetRound가 1 미만이면 400 LOTTO_INVALID_TARGET_ROUND 를 반환한다")
+    @DisplayName("POST /refresh 는 targetRound가 1 미만이면 400 LOTTO_INVALID_TARGET_ROUND 를 반환한다")
     void postCollectReturns400OnInvalidTargetRound() throws Exception {
-        mockMvc.perform(post("/api/admin/winning-numbers/refresh")
+        mockMvc.perform(post("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"targetRound\":\"0\"}"))
                 .andExpect(status().isBadRequest())

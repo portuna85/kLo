@@ -14,7 +14,6 @@ import org.springframework.test.context.ActiveProfiles;
  * <p>{@code kraft.*} prefix 의 {@code @ConfigurationProperties} 들이 정상 바인딩되는지 검증한다.
  * test 프로필 기준값:
  * <ul>
- *     <li>kraft.admin.username=testadmin / password=testpw</li>
  *     <li>kraft.api.client=mock / url=http://localhost</li>
  *     <li>kraft.recommend.max-attempts=1000</li>
  * </ul>
@@ -25,21 +24,10 @@ import org.springframework.test.context.ActiveProfiles;
 class KraftPropertiesBindingTest {
 
     @Autowired
-    KraftAdminProperties admin;
-
-    @Autowired
     KraftApiProperties api;
 
     @Autowired
     KraftRecommendProperties recommend;
-
-    @Test
-    @DisplayName("admin properties 가 정상 바인딩된다")
-    void bindsAdminProperties() {
-        assertThat(admin.username()).isEqualTo("testadmin");
-        assertThat(admin.password()).isEqualTo("testpw");
-        assertThat(admin.allowedIpRanges()).contains("127.0.0.1/32");
-    }
 
     @Test
     @DisplayName("api properties 가 정상 바인딩된다")
