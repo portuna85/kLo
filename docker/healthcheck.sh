@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-URL="${KRAFT_HEALTHCHECK_URL:-http://localhost:8080/actuator/health/liveness}"
-TIMEOUT="${KRAFT_HEALTHCHECK_TIMEOUT_SECONDS:-2}"
+URL="${KRAFT_HEALTHCHECK_URL:-http://localhost:8080/actuator/health/readiness}"
+TIMEOUT="${KRAFT_HEALTHCHECK_TIMEOUT_SECONDS:-3}"
 BODY_FILE="/tmp/kraft-healthcheck-body.$$"
 
 cleanup() {
@@ -10,7 +10,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-HTTP_CODE="$(curl -sS --max-time "$TIMEOUT" -o "$BODY_FILE" -w '%{http_code}' "$URL")" || {
+HTTP_CODE="$(curl -sS --connect-timeout "$TIMEOUT" --max-time "$TIMEOUT" -o "$BODY_FILE" -w '%{http_code}' "$URL")" || {
   RC=$?
   echo "healthcheck request failed: url=$URL rc=$RC"
   [ -s "$BODY_FILE" ] && cat "$BODY_FILE"
@@ -23,7 +23,7 @@ if [ "$HTTP_CODE" != "200" ]; then
   exit 1
 fi
 
-if ! grep -q '"status":"UP"' "$BODY_FILE"; then
+if ! grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"' "$BODY_FILE"; then
   echo "healthcheck response is not UP: url=$URL"
   cat "$BODY_FILE"
   exit 1

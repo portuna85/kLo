@@ -50,8 +50,8 @@ jobs:
           KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS=30
           KRAFT_RECOMMEND_RATE_LIMIT_WINDOW_SECONDS=60
           KRAFT_LOG_PATH=./logs
-          KRAFT_HEALTHCHECK_URL=http://localhost:8080/actuator/health/liveness
-          KRAFT_HEALTHCHECK_TIMEOUT_SECONDS=2
+          KRAFT_HEALTHCHECK_URL=http://localhost:8080/actuator/health/readiness
+          KRAFT_HEALTHCHECK_TIMEOUT_SECONDS=3
           EOF
           chmod 600 .env
 
@@ -64,34 +64,55 @@ jobs:
       - name: Build and restart services
         run: |
           docker compose up -d --build --remove-orphans
+          docker compose ps
           docker image prune -f
 
-      - name: Wait for app to be healthy
+      - name: Wait for app readiness
         run: |
-          echo "Waiting for app health..."
-          for i in $(seq 1 40); do
-            STATUS=$(docker inspect --format='{{.State.Health.Status}}' kraft-lotto-app 2>/dev/null || echo "starting")
-            HTTP_CODE=$(curl -sS -o /tmp/kraft-health.json -w '%{http_code}' http://localhost:8080/actuator/health/liveness || true)
-            BODY=$(cat /tmp/kraft-health.json 2>/dev/null || true)
-            echo "[$i/40] docker-health=$STATUS http=$HTTP_CODE body=$BODY"
-            if [ "$STATUS" = "healthy" ]; then
-              echo "App container is healthy"
+          set -u
+
+          CONTAINER_NAME="kraft-lotto-app"
+          HEALTH_URL="http://localhost:8080/actuator/health/readiness"
+          BODY_FILE="/tmp/kraft-readiness.json"
+          MAX_ATTEMPTS=60
+          SLEEP_SECONDS=5
+
+          echo "Waiting for app readiness: $HEALTH_URL"
+          for i in $(seq 1 "$MAX_ATTEMPTS"); do
+            rm -f "$BODY_FILE"
+            STATUS=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' "$CONTAINER_NAME" 2>/dev/null || echo "missing")
+            HTTP_CODE=$(curl -sS --connect-timeout 3 --max-time 5 -o "$BODY_FILE" -w '%{http_code}' "$HEALTH_URL" || true)
+            BODY=$(tr -d '\n' < "$BODY_FILE" 2>/dev/null || true)
+            echo "[$i/$MAX_ATTEMPTS] docker-health=$STATUS http=$HTTP_CODE body=$BODY"
+
+            if [ "$HTTP_CODE" = "200" ] && grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"' "$BODY_FILE"; then
+              if [ "$STATUS" != "healthy" ]; then
+                echo "::warning::HTTP readiness is UP but Docker health is '$STATUS'. Continuing with host-level readiness."
+              fi
+              echo "App is ready"
               exit 0
             fi
-            sleep 5
+
+            sleep "$SLEEP_SECONDS"
           done
-          echo "Health check timed out"
+
+          echo "Readiness check timed out"
           echo "::group::Container health detail"
-          docker inspect --format='{{json .State.Health}}' kraft-lotto-app || true
+          docker inspect --format='{{json .State.Health}}' "$CONTAINER_NAME" || true
           echo
           echo "::endgroup::"
+          echo "::group::Docker compose status"
+          docker compose ps || true
+          echo "::endgroup::"
+          echo "::group::Application logs"
           docker compose logs --tail=200 app
+          echo "::endgroup::"
           exit 1
 
       - name: Smoke test
         run: |
           curl -fsS http://localhost:8080/actuator/health/readiness | tee /tmp/kraft-readiness.json
-          grep -q '"status":"UP"' /tmp/kraft-readiness.json
+          grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"' /tmp/kraft-readiness.json
           echo "Smoke test passed"
 
       - name: Cleanup .env

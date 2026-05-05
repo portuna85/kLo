@@ -50,12 +50,12 @@ EXPOSE 8080
 # 컨테이너 환경 기본 JVM 튜닝 (cgroup 메모리 인식 + Asia/Seoul)
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Duser.timezone=Asia/Seoul" \
     KRAFT_LOG_PATH="/app/logs" \
-    KRAFT_HEALTHCHECK_URL="http://localhost:8080/actuator/health/liveness" \
-    KRAFT_HEALTHCHECK_TIMEOUT_SECONDS="2"
+    KRAFT_HEALTHCHECK_URL="http://localhost:8080/actuator/health/readiness" \
+    KRAFT_HEALTHCHECK_TIMEOUT_SECONDS="3"
 
 VOLUME ["/app/logs"]
 
-HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=5 \
+HEALTHCHECK --interval=15s --timeout=5s --start-period=45s --retries=10 \
   CMD /app/healthcheck.sh
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
