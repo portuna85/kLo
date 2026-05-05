@@ -35,6 +35,7 @@ jobs:
           KRAFT_IN_CONTAINER=true
           KRAFT_ADMIN_USERNAME=${{ secrets.KRAFT_ADMIN_USERNAME }}
           KRAFT_ADMIN_PASSWORD=${{ secrets.KRAFT_ADMIN_PASSWORD }}
+          KRAFT_ADMIN_ALLOWED_IP_RANGES=${{ secrets.KRAFT_ADMIN_ALLOWED_IP_RANGES }}
           KRAFT_API_CLIENT=dhlottery
           KRAFT_API_URL=https://www.dhlottery.co.kr/common.do
           KRAFT_API_CONNECT_TIMEOUT_MS=2000

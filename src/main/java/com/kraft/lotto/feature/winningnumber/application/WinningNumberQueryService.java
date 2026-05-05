@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class WinningNumberQueryService {
 
+    static final int MAX_ROUND = 3000;
     static final int DEFAULT_PAGE_SIZE = 20;
     static final int MAX_PAGE_SIZE = 100;
 
@@ -38,8 +39,8 @@ public class WinningNumberQueryService {
     }
 
     public WinningNumberDto getByRound(int round) {
-        if (round <= 0) {
-            throw new BusinessException(ErrorCode.WINNING_NUMBER_NOT_FOUND);
+        if (round <= 0 || round > MAX_ROUND) {
+            throw new BusinessException(ErrorCode.LOTTO_INVALID_TARGET_ROUND);
         }
         return repository.findById(round)
                 .map(WinningNumberMapper::toDomain)

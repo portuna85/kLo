@@ -1,6 +1,6 @@
 package com.kraft.lotto.feature.winningnumber.web.dto;
 
-import jakarta.validation.constraints.Min;
+import com.kraft.lotto.feature.winningnumber.web.validation.ValidRound;
 
 /**
  * POST /api/admin/winning-numbers/refresh 요청 본문.
@@ -10,7 +10,7 @@ import jakarta.validation.constraints.Min;
  * </ul>
  */
 public record CollectRequest(
-        @Min(value = 1, message = "targetRound는 1 이상이어야 합니다.")
-        Integer targetRound
+        @ValidRound(allowNull = true, message = "targetRound는 숫자 형식의 유효한 회차 범위여야 합니다.")
+        String targetRound
 ) {
 }

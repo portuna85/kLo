@@ -32,10 +32,12 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain adminSecurityFilterChain(HttpSecurity http,
-                                                        AdminAuthenticationEntryPoint entryPoint) throws Exception {
+                                                        AdminAuthenticationEntryPoint entryPoint,
+                                                        AdminIpWhitelistFilter adminIpWhitelistFilter) throws Exception {
         http
                 .securityMatcher("/api/admin/**", "/actuator/metrics/**")
                 .csrf(AbstractHttpConfigurer::disable)
+                .addFilterBefore(adminIpWhitelistFilter, BasicAuthenticationFilter.class)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.anyRequest().hasRole("ADMIN"))
                 .httpBasic(basic -> basic.authenticationEntryPoint(entryPoint))
@@ -91,6 +93,11 @@ public class SecurityConfig {
                                                              MeterRegistry meterRegistry,
                                                              ObjectMapper objectMapper) {
         return new RecommendRateLimitFilter(properties, objectMapper, meterRegistry);
+    }
+
+    @Bean
+    public AdminIpWhitelistFilter adminIpWhitelistFilter(KraftAdminProperties properties, ObjectMapper objectMapper) {
+        return new AdminIpWhitelistFilter(properties.allowedIpRanges(), objectMapper);
     }
 
     @Bean

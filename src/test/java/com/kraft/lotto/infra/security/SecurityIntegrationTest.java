@@ -126,6 +126,23 @@ class SecurityIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true));
     }
 
+    @Test
+    @DisplayName("admin 엔드포인트는 비허용 IP에서 403 FORBIDDEN_ADMIN_IP 를 반환한다")
+    void adminEndpointReturns403WhenIpNotAllowed() throws Exception {
+        String basic = basicAuth("testadmin", "testpw");
+
+        mockMvc().perform(post("/api/admin/winning-numbers/refresh")
+                        .with(request -> {
+                            request.setRemoteAddr("203.0.113.10");
+                            return request;
+                        })
+                        .header(HttpHeaders.AUTHORIZATION, basic)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN_ADMIN_IP"));
+    }
+
     private static String basicAuth(String username, String password) {
         return "Basic " + java.util.Base64.getEncoder()
                 .encodeToString((username + ":" + password).getBytes());

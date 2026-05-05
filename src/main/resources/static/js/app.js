@@ -369,7 +369,7 @@
     const username = String(fd.get('username') || '').trim();
     const password = String(fd.get('password') || '');
     const targetRoundRaw = String(fd.get('targetRound') || '').trim();
-    const targetRound = targetRoundRaw === '' ? null : Number(targetRoundRaw);
+    const targetRound = targetRoundRaw === '' ? null : targetRoundRaw;
     const out = document.getElementById('admin-result');
     const btn = e.currentTarget.querySelector('[type="submit"]');
 

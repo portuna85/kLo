@@ -79,12 +79,12 @@ class AdminWinningNumberControllerTest {
 
         mockMvc.perform(post("/api/admin/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"targetRound\":1103}"))
+                        .content("{\"targetRound\":\"1103\"}"))
                 .andDo(document("admin-winning-numbers-refresh",
                         preprocessRequest(prettyPrint()),
                         preprocessResponse(prettyPrint()),
                         requestFields(
-                                fieldWithPath("targetRound").type(JsonFieldType.NUMBER)
+                                fieldWithPath("targetRound").type(JsonFieldType.STRING)
                                         .optional()
                                         .description("수집 종료 대상 회차(생략 시 미추첨 회차 전까지 자동 수집)")
                         ),
@@ -119,7 +119,7 @@ class AdminWinningNumberControllerTest {
     void postCollectReturns400OnInvalidTargetRound() throws Exception {
         mockMvc.perform(post("/api/admin/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"targetRound\":0}"))
+                        .content("{\"targetRound\":\"0\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.error.code").value("LOTTO_INVALID_TARGET_ROUND"));

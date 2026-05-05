@@ -38,6 +38,7 @@ class KraftPropertiesBindingTest {
     void bindsAdminProperties() {
         assertThat(admin.username()).isEqualTo("testadmin");
         assertThat(admin.password()).isEqualTo("testpw");
+        assertThat(admin.allowedIpRanges()).contains("127.0.0.1/32");
     }
 
     @Test

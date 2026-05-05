@@ -123,10 +123,10 @@ class WinningNumberControllerTest {
     @Test
     @DisplayName("GET /{round} 는 회차가 없으면 404 NOT_FOUND 를 반환한다")
     void getByRoundReturns404WhenNotFound() throws Exception {
-        Mockito.when(queryService.getByRound(9999))
+        Mockito.when(queryService.getByRound(2999))
                 .thenThrow(new BusinessException(ErrorCode.WINNING_NUMBER_NOT_FOUND));
 
-        mockMvc.perform(get("/api/winning-numbers/9999"))
+        mockMvc.perform(get("/api/winning-numbers/2999"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.error.code").value("WINNING_NUMBER_NOT_FOUND"));
@@ -209,6 +209,24 @@ class WinningNumberControllerTest {
     @DisplayName("GET /{round} 는 round가 1 미만이면 400 LOTTO_INVALID_TARGET_ROUND 를 반환한다")
     void getByRoundReturns400WhenRoundIsLessThanOne() throws Exception {
         mockMvc.perform(get("/api/winning-numbers/0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("LOTTO_INVALID_TARGET_ROUND"));
+    }
+
+    @Test
+    @DisplayName("GET /{round} 는 round가 숫자 형식이 아니면 400 LOTTO_INVALID_TARGET_ROUND 를 반환한다")
+    void getByRoundReturns400WhenRoundIsNotNumeric() throws Exception {
+        mockMvc.perform(get("/api/winning-numbers/10a"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("LOTTO_INVALID_TARGET_ROUND"));
+    }
+
+    @Test
+    @DisplayName("GET /{round} 는 round가 상한을 넘으면 400 LOTTO_INVALID_TARGET_ROUND 를 반환한다")
+    void getByRoundReturns400WhenRoundExceedsMax() throws Exception {
+        mockMvc.perform(get("/api/winning-numbers/3001"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.error.code").value("LOTTO_INVALID_TARGET_ROUND"));
