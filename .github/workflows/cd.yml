@@ -17,6 +17,10 @@ jobs:
     timeout-minutes: 20
 
     steps:
+      - name: Fix permissions
+        run: |
+          sudo chown -R $USER:$USER $GITHUB_WORKSPACE || true
+
       - name: Checkout
         uses: actions/checkout@v5
 
