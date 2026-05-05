@@ -74,10 +74,10 @@ class WinningNumberQueryServiceTest {
     @Test
     @DisplayName("getByRound 결과가 없으면 NOT_FOUND 를 던진다")
     void getByRoundThrowsNotFoundWhenAbsent() {
-        when(repository.findById(9999)).thenReturn(Optional.empty());
+        when(repository.findById(2999)).thenReturn(Optional.empty());
 
         assertThatExceptionOfType(BusinessException.class)
-                .isThrownBy(() -> service.getByRound(9999))
+                .isThrownBy(() -> service.getByRound(2999))
                 .extracting(BusinessException::getErrorCode)
                 .isEqualTo(ErrorCode.WINNING_NUMBER_NOT_FOUND);
     }
