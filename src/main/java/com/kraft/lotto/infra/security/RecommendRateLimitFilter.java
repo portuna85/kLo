@@ -44,7 +44,11 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !"POST".equalsIgnoreCase(request.getMethod()) || !"/api/recommend".equals(request.getRequestURI());
+        if (!"POST".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+        String uri = request.getRequestURI();
+        return !("/api/recommend".equals(uri) || "/api/winning-numbers/refresh".equals(uri));
     }
 
     @Override
@@ -59,7 +63,7 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
 
         // 신규 IP이고 추적 용량 초과 시 차단 (메모리 보호)
         if (!requestHistory.containsKey(key) && requestHistory.size() >= MAX_TRACKED_IPS) {
-            meterRegistry.counter("kraft.api.recommend.rate_limit.blocked").increment();
+            meterRegistry.counter("kraft.api.rate_limit.blocked").increment();
             writeRateLimitResponse(response);
             return;
         }
@@ -77,12 +81,12 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
         }
 
         if (!allowed) {
-            meterRegistry.counter("kraft.api.recommend.rate_limit.blocked").increment();
+            meterRegistry.counter("kraft.api.rate_limit.blocked").increment();
             writeRateLimitResponse(response);
             return;
         }
 
-        meterRegistry.counter("kraft.api.recommend.rate_limit.allowed").increment();
+        meterRegistry.counter("kraft.api.rate_limit.allowed").increment();
         filterChain.doFilter(request, response);
     }
 

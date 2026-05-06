@@ -55,7 +55,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/winning-numbers/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/docs", "/docs/", "/docs/**").permitAll()
-                        .anyRequest().permitAll()
+                        .anyRequest().denyAll()
                 );
         return http.build();
     }

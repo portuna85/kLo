@@ -105,7 +105,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("당첨번호 수집 트리거는 외부 IP에서도 별도 IP 제한 없이 접근 가능하다")
+    @DisplayName("당첨번호 수집 트리거는 외부 IP에서도 허용 횟수 내 접근 가능하다")
     void winningNumberRefreshDoesNotRequireIpWhitelist() throws Exception {
         Mockito.when(collectService.collect(Mockito.nullable(Integer.class)))
                 .thenReturn(new CollectResponse(0, 0, 0, 0));
@@ -118,6 +118,40 @@ class SecurityIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("당첨번호 수집 트리거는 IP 기반 rate limit 초과 시 429를 반환한다")
+    void winningNumberRefreshIsRateLimitedByIp() throws Exception {
+        Mockito.when(collectService.collect(Mockito.nullable(Integer.class)))
+                .thenReturn(new CollectResponse(0, 0, 0, 0));
+
+        MockMvc mvc = mockMvc();
+        for (int i = 0; i < 30; i++) {
+            mvc.perform(post("/api/winning-numbers/refresh")
+                            .with(request -> {
+                                request.setRemoteAddr("203.0.113.30");
+                                return request;
+                            })
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk());
+        }
+
+        mvc.perform(post("/api/winning-numbers/refresh")
+                        .with(request -> {
+                            request.setRemoteAddr("203.0.113.30");
+                            return request;
+                        })
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.error.code").value("TOO_MANY_REQUESTS"));
+    }
+
+    @Test
+    @DisplayName("명시 허용되지 않은 endpoint 는 denyAll 로 차단한다")
+    void unknownEndpointIsDenied() throws Exception {
+        mockMvc().perform(get("/admin/unknown"))
+                .andExpect(status().isForbidden());
     }
 }
 

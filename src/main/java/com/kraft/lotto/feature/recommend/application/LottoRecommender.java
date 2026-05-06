@@ -21,22 +21,26 @@ import java.util.Set;
 public class LottoRecommender {
 
     private final List<ExclusionRule> rules;
-    private final Random random;
+    private final LottoNumberGenerator numberGenerator;
     private final int maxAttempts;
 
-    public LottoRecommender(List<ExclusionRule> rules, Random random, int maxAttempts) {
+    public LottoRecommender(List<ExclusionRule> rules, LottoNumberGenerator numberGenerator, int maxAttempts) {
         if (rules == null) {
             throw new IllegalArgumentException("rules must not be null");
         }
-        if (random == null) {
-            throw new IllegalArgumentException("random must not be null");
+        if (numberGenerator == null) {
+            throw new IllegalArgumentException("numberGenerator must not be null");
         }
         if (maxAttempts <= 0) {
             throw new IllegalArgumentException("maxAttempts must be positive: " + maxAttempts);
         }
         this.rules = List.copyOf(rules);
-        this.random = random;
+        this.numberGenerator = numberGenerator;
         this.maxAttempts = maxAttempts;
+    }
+
+    public LottoRecommender(List<ExclusionRule> rules, Random random, int maxAttempts) {
+        this(rules, new RandomLottoNumberGenerator(random), maxAttempts);
     }
 
     public List<LottoCombination> recommend(int count) {
@@ -52,7 +56,7 @@ public class LottoRecommender {
                         "추천 조합 생성 시도 한도(" + maxAttempts + ")를 초과했습니다.");
             }
             attempts++;
-            LottoCombination candidate = randomCombination();
+            LottoCombination candidate = numberGenerator.generate();
             if (emitted.contains(candidate)) {
                 continue;
             }
@@ -74,11 +78,4 @@ public class LottoRecommender {
         return false;
     }
 
-    private LottoCombination randomCombination() {
-        Set<Integer> picked = new LinkedHashSet<>(LottoCombination.SIZE);
-        while (picked.size() < LottoCombination.SIZE) {
-            picked.add(random.nextInt(LottoCombination.MAX_NUMBER) + LottoCombination.MIN_NUMBER);
-        }
-        return new LottoCombination(new ArrayList<>(picked));
-    }
 }

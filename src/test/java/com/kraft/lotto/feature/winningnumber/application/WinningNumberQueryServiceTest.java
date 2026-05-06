@@ -83,10 +83,12 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("getByRound 에 0 이하 회차를 주면 NOT_FOUND 를 던진다")
+    @DisplayName("getByRound 에 0 이하 회차를 주면 LOTTO_INVALID_TARGET_ROUND 를 던진다")
     void getByRoundThrowsNotFoundWhenRoundIsNonPositive() {
         assertThatExceptionOfType(BusinessException.class)
-                .isThrownBy(() -> service.getByRound(0));
+                .isThrownBy(() -> service.getByRound(0))
+                .extracting(BusinessException::getErrorCode)
+                .isEqualTo(ErrorCode.LOTTO_INVALID_TARGET_ROUND);
     }
 
     @Test
