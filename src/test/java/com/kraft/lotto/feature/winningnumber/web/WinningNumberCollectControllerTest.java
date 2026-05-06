@@ -95,6 +95,7 @@ class WinningNumberCollectControllerTest {
                                 fieldWithPath("data.skipped").type(JsonFieldType.NUMBER).description("이미 존재하여 건너뛴 회차 수"),
                                 fieldWithPath("data.failed").type(JsonFieldType.NUMBER).description("검증/저장 실패 회차 수"),
                                 fieldWithPath("data.latestRound").type(JsonFieldType.NUMBER).description("수집 후 최신 회차"),
+                                fieldWithPath("data.failedRounds").type(JsonFieldType.ARRAY).description("저장 실패가 발생한 회차 목록"),
                                 fieldWithPath("error").type(JsonFieldType.NULL).optional().description("오류 정보(성공 시 null)")
                         )
                 ))
