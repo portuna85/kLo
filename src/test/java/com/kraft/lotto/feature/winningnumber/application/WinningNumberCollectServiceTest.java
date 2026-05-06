@@ -27,6 +27,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -142,6 +147,7 @@ class WinningNumberCollectServiceTest {
 
         assertThat(result.collected()).isEqualTo(1);
         assertThat(result.failed()).isEqualTo(1);
+        assertThat(result.failedRounds()).containsExactly(1);
         verify(eventPublisher, atLeastOnce()).publishEvent(any(WinningNumbersCollectedEvent.class));
     }
 
@@ -165,6 +171,55 @@ class WinningNumberCollectServiceTest {
                 .isThrownBy(() -> service.collect(0))
                 .extracting(BusinessException::getErrorCode)
                 .isEqualTo(ErrorCode.LOTTO_INVALID_TARGET_ROUND);
+    }
+
+    @Test
+    @DisplayName("targetRound 가 최신 저장 회차 이하이면 API 호출 없이 skipped 로 응답한다")
+    void returnsSkippedWhenTargetRoundIsAlreadyCollected() {
+        when(repository.findMaxRound()).thenReturn(Optional.of(1100));
+
+        CollectResponse result = service.collect(1099);
+
+        assertThat(result.collected()).isZero();
+        assertThat(result.skipped()).isEqualTo(1);
+        assertThat(result.failed()).isZero();
+        assertThat(result.latestRound()).isEqualTo(1100);
+        assertThat(result.failedRounds()).isEmpty();
+        verify(lottoApiClient, never()).fetch(anyInt());
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("수집이 이미 실행 중이면 동시 실행 요청을 거부한다")
+    void rejectsConcurrentCollectExecution() throws Exception {
+        CountDownLatch fetchEntered = new CountDownLatch(1);
+        CountDownLatch releaseFetch = new CountDownLatch(1);
+        when(repository.findMaxRound()).thenReturn(Optional.of(0), Optional.of(0));
+        when(lottoApiClient.fetch(1)).thenAnswer(inv -> {
+            fetchEntered.countDown();
+            releaseFetch.await(2, TimeUnit.SECONDS);
+            return Optional.empty();
+        });
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            var first = executor.submit(() -> service.collect(null));
+            assertThat(fetchEntered.await(1, TimeUnit.SECONDS)).isTrue();
+
+            AtomicReference<ErrorCode> errorCode = new AtomicReference<>();
+            assertThatExceptionOfType(BusinessException.class)
+                    .isThrownBy(() -> service.collect(null))
+                    .satisfies(ex -> errorCode.set(ex.getErrorCode()))
+                    .extracting(BusinessException::getErrorCode)
+                    .isEqualTo(ErrorCode.TOO_MANY_REQUESTS);
+
+            releaseFetch.countDown();
+            assertThat(first.get(1, TimeUnit.SECONDS).collected()).isZero();
+            assertThat(errorCode.get()).isEqualTo(ErrorCode.TOO_MANY_REQUESTS);
+        } finally {
+            releaseFetch.countDown();
+            executor.shutdownNow();
+        }
     }
 
     @Test

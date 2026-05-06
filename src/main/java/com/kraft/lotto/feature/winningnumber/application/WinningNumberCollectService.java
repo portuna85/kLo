@@ -2,20 +2,20 @@ package com.kraft.lotto.feature.winningnumber.application;
 
 import com.kraft.lotto.feature.winningnumber.domain.WinningNumber;
 import com.kraft.lotto.feature.winningnumber.event.WinningNumbersCollectedEvent;
-import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberMapper;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberRepository;
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
 import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
 import java.time.Clock;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 외부 API에서 당첨번호를 끌어와 DB에 저장하는 application 서비스.
@@ -30,8 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
  *   <li>최종적으로 {@link WinningNumbersCollectedEvent}를 발행한다 (collected==0이어도 발행하여 캐시 reload는 매번 트리거되지 않음 → collected&gt;0일 때만 발행).</li>
  * </ol>
  *
- * 본 서비스는 round 단위 자체 트랜잭션을 위해 {@link Transactional}을 사용하지 않는다.
- * 저장은 JPA 디폴트 트랜잭션(메서드 호출 단위)에 위임한다.
+ * 본 서비스는 전체 수집 루프에 트랜잭션을 걸지 않는다.
+ * 저장은 WinningNumberPersister가 회차별로 담당한다.
  */
 @Service
 public class WinningNumberCollectService {
@@ -42,35 +42,53 @@ public class WinningNumberCollectService {
 
     private final LottoApiClient lottoApiClient;
     private final WinningNumberRepository repository;
+    private final WinningNumberPersister persister;
     private final ApplicationEventPublisher eventPublisher;
-    private final Clock clock;
+    private final AtomicBoolean running = new AtomicBoolean(false);
 
     @Autowired
     public WinningNumberCollectService(LottoApiClient lottoApiClient,
                                        WinningNumberRepository repository,
+                                       WinningNumberPersister persister,
                                        ApplicationEventPublisher eventPublisher) {
-        this(lottoApiClient, repository, eventPublisher, Clock.systemDefaultZone());
+        this.lottoApiClient = lottoApiClient;
+        this.repository = repository;
+        this.persister = persister;
+        this.eventPublisher = eventPublisher;
     }
 
     WinningNumberCollectService(LottoApiClient lottoApiClient,
                                 WinningNumberRepository repository,
                                 ApplicationEventPublisher eventPublisher,
                                 Clock clock) {
-        this.lottoApiClient = lottoApiClient;
-        this.repository = repository;
-        this.eventPublisher = eventPublisher;
-        this.clock = clock;
+        this(lottoApiClient, repository, new WinningNumberPersister(repository, clock), eventPublisher);
     }
 
     public CollectResponse collect(Integer targetRound) {
         if (targetRound != null && targetRound <= 0) {
             throw new BusinessException(ErrorCode.LOTTO_INVALID_TARGET_ROUND);
         }
+        if (!running.compareAndSet(false, true)) {
+            throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS, "당첨번호 수집이 이미 실행 중입니다.");
+        }
+        try {
+            return doCollect(targetRound);
+        } finally {
+            running.set(false);
+        }
+    }
 
-        int startRound = repository.findMaxRound().orElse(0) + 1;
+    private CollectResponse doCollect(Integer targetRound) {
+        int latestBeforeCollect = repository.findMaxRound().orElse(0);
+        if (targetRound != null && targetRound <= latestBeforeCollect) {
+            log.info("targetRound already collected: targetRound={}, latestRound={}", targetRound, latestBeforeCollect);
+            return new CollectResponse(0, 1, 0, latestBeforeCollect, List.of());
+        }
+
+        int startRound = latestBeforeCollect + 1;
         int collected = 0;
         int skipped = 0;
-        int failed = 0;
+        List<Integer> failedRounds = new ArrayList<>();
 
         int processed = 0;
         int round = startRound;
@@ -83,7 +101,7 @@ public class WinningNumberCollectService {
                 fetched = lottoApiClient.fetch(round);
             } catch (LottoApiClientException ex) {
                 log.warn("외부 API 호출 실패: round={}", round, ex);
-                publishIfAny(collected, skipped, failed);
+                publishIfAny(collected, skipped, failedRounds.size());
                 throw new BusinessException(ErrorCode.EXTERNAL_API_FAILURE, ex.getMessage(), ex);
             }
             if (fetched.isEmpty()) {
@@ -97,22 +115,26 @@ public class WinningNumberCollectService {
                 if (repository.existsByRound(round)) {
                     skipped++;
                 } else {
-                    repository.save(WinningNumberMapper.toEntity(fetched.get(), LocalDateTime.now(clock)));
-                    collected++;
+                    if (persister.saveIfAbsent(round, fetched.get())) {
+                        collected++;
+                    } else {
+                        skipped++;
+                    }
                 }
             } catch (RuntimeException ex) {
                 log.warn("당첨번호 저장 실패: round={}", round, ex);
-                failed++;
+                failedRounds.add(round);
             }
             round++;
             processed++;
         }
 
         int latestRound = repository.findMaxRound().orElse(0);
+        int failed = failedRounds.size();
         publishIfAny(collected, skipped, failed);
-        log.info("collect summary: collected={}, skipped={}, failed={}, latestRound={}",
-                collected, skipped, failed, latestRound);
-        return new CollectResponse(collected, skipped, failed, latestRound);
+        log.info("collect summary: collected={}, skipped={}, failed={}, latestRound={}, failedRounds={}",
+                collected, skipped, failed, latestRound, failedRounds);
+        return new CollectResponse(collected, skipped, failed, latestRound, failedRounds);
     }
 
     private void publishIfAny(int collected, int skipped, int failed) {

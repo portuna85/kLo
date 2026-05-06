@@ -101,12 +101,20 @@ public class DhLotteryApiClient implements LottoApiClient {
             count("kraft.api.dhlottery.call.failure", "reason", "json_parse");
             throw new LottoApiClientException("외부 API 응답 파싱 실패 (round=" + round + ")", ex);
         }
-        String returnValue = node.path("returnValue").asText("");
+        String returnValue = requiredText(node, "returnValue", round);
         if ("fail".equalsIgnoreCase(returnValue)) {
             log.debug("dhlottery returned fail for round={}", round);
             return Optional.empty();
         }
+        if (!"success".equalsIgnoreCase(returnValue)) {
+            count("kraft.api.dhlottery.call.failure", "reason", "unexpected_return_value");
+            throw new LottoApiClientException(
+                    "외부 API 응답 returnValue가 예상과 다릅니다 (round=" + round + ", returnValue=" + returnValue + ")");
+        }
         try {
+            requireFields(node, round, "drwNo", "drwNoDate", "drwtNo1", "drwtNo2", "drwtNo3",
+                    "drwtNo4", "drwtNo5", "drwtNo6", "bnusNo", "firstWinamnt",
+                    "firstPrzwnerCo", "totSellamnt");
             int drwNo = node.path("drwNo").asInt();
             if (drwNo != round) {
                 throw new LottoApiClientException(
@@ -142,6 +150,23 @@ public class DhLotteryApiClient implements LottoApiClient {
             throw new LottoApiClientException(
                     "외부 API 응답 변환 실패 (round=" + round + "): " + ex.getMessage(), ex);
         }
+    }
+
+    private static void requireFields(JsonNode node, int round, String... fieldNames) {
+        for (String fieldName : fieldNames) {
+            if (node.path(fieldName).isMissingNode() || node.path(fieldName).isNull()) {
+                throw new LottoApiClientException(
+                        "외부 API 응답 필드가 누락되었습니다 (round=" + round + ", field=" + fieldName + ")");
+            }
+        }
+    }
+
+    private static String requiredText(JsonNode node, String fieldName, int round) {
+        if (node.path(fieldName).isMissingNode() || node.path(fieldName).isNull()) {
+            throw new LottoApiClientException(
+                    "외부 API 응답 필드가 누락되었습니다 (round=" + round + ", field=" + fieldName + ")");
+        }
+        return node.path(fieldName).asText();
     }
 
     private void sleepBackoff() {

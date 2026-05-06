@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import com.kraft.lotto.feature.recommend.domain.BirthdayBiasRule;
 import com.kraft.lotto.feature.recommend.domain.ExclusionRule;
 import com.kraft.lotto.feature.winningnumber.domain.LottoCombination;
-import com.kraft.lotto.infra.config.KraftRecommendProperties;
 import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
 import java.util.List;
@@ -19,10 +18,8 @@ class RecommendServiceTest {
 
     private static final long FIXED_SEED = 1L;
 
-    private final KraftRecommendProperties props = new KraftRecommendProperties(100_000);
-
     private RecommendService service(List<ExclusionRule> rules) {
-        return new RecommendService(rules, props, new Random(FIXED_SEED));
+        return new RecommendService(rules, new LottoRecommender(rules, new Random(FIXED_SEED), 100_000));
     }
 
     private static ExclusionRule excludeAll() {
@@ -55,6 +52,26 @@ class RecommendServiceTest {
     }
 
     @Test
+    @DisplayName("count 가 1 이면 조합 1개를 반환한다")
+    void returnsOneCombinationWhenCountIsOne() {
+        var service = service(List.of(new BirthdayBiasRule()));
+
+        var response = service.recommend(1);
+
+        assertThat(response.combinations()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("count 가 10 이면 조합 10개를 반환한다")
+    void returnsTenCombinationsWhenCountIsTen() {
+        var service = service(List.of(new BirthdayBiasRule()));
+
+        var response = service.recommend(10);
+
+        assertThat(response.combinations()).hasSize(10);
+    }
+
+    @Test
     @DisplayName("정상 count 는 요청한 개수만큼 조합을 반환한다")
     void returnsRequestedNumberOfCombinations() {
         var service = service(List.of(new BirthdayBiasRule()));
@@ -67,8 +84,8 @@ class RecommendServiceTest {
     @Test
     @DisplayName("모든 조합이 제외되면 LOTTO_GENERATION_TIMEOUT 예외가 발생한다")
     void throwsGenerationTimeoutWhenAllExcluded() {
-        var service = new RecommendService(List.of(excludeAll()),
-                new KraftRecommendProperties(50), new Random(FIXED_SEED));
+        List<ExclusionRule> rules = List.of(excludeAll());
+        var service = new RecommendService(rules, new LottoRecommender(rules, new Random(FIXED_SEED), 50));
 
         assertThatExceptionOfType(BusinessException.class)
                 .isThrownBy(() -> service.recommend(1))

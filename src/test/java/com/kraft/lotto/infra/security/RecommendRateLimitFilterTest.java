@@ -38,7 +38,15 @@ class RecommendRateLimitFilterTest {
     }
 
     private MockHttpServletRequest postRecommend(String remoteAddr) {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/recommend");
+        return post("/api/recommend", remoteAddr);
+    }
+
+    private MockHttpServletRequest postRefresh(String remoteAddr) {
+        return post("/api/winning-numbers/refresh", remoteAddr);
+    }
+
+    private MockHttpServletRequest post(String path, String remoteAddr) {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
         request.setRemoteAddr(remoteAddr);
         return request;
     }
@@ -65,6 +73,24 @@ class RecommendRateLimitFilterTest {
         }
 
         assertThat(executeRequest(postRecommend("10.0.0.2"))).isEqualTo(429);
+    }
+
+    @Test
+    @DisplayName("당첨번호 refresh 요청도 동일한 IP 기반 rate limit 을 적용한다")
+    void blocksRefreshRequestsOverLimit() throws Exception {
+        for (int i = 0; i < MAX_REQUESTS; i++) {
+            executeRequest(postRefresh("10.0.0.7"));
+        }
+
+        assertThat(executeRequest(postRefresh("10.0.0.7"))).isEqualTo(429);
+    }
+
+    @Test
+    @DisplayName("rate limit 대상이 아닌 요청은 필터링하지 않는다")
+    void ignoresNonLimitedEndpoint() throws Exception {
+        for (int i = 0; i < MAX_REQUESTS + 1; i++) {
+            assertThat(executeRequest(post("/api/winning-numbers/latest", "10.0.0.8"))).isEqualTo(200);
+        }
     }
 
     @Test

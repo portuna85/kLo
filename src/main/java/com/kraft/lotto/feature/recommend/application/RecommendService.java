@@ -4,12 +4,9 @@ import com.kraft.lotto.feature.recommend.domain.ExclusionRule;
 import com.kraft.lotto.feature.recommend.web.dto.CombinationDto;
 import com.kraft.lotto.feature.recommend.web.dto.RecommendResponse;
 import com.kraft.lotto.feature.recommend.web.dto.RuleDto;
-import com.kraft.lotto.infra.config.KraftRecommendProperties;
 import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
-import java.security.SecureRandom;
 import java.util.List;
-import java.util.Random;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,26 +25,18 @@ public class RecommendService {
     static final int MAX_COUNT = 10;
 
     private final List<ExclusionRule> rules;
-    private final int maxAttempts;
-    private final Random random;
+    private final LottoRecommender recommender;
 
     @Autowired
-    public RecommendService(List<ExclusionRule> rules, KraftRecommendProperties properties) {
-        this(rules, properties, new SecureRandom());
-    }
-
-    // package-private constructor for tests to inject deterministic Random.
-    RecommendService(List<ExclusionRule> rules, KraftRecommendProperties properties, Random random) {
+    public RecommendService(List<ExclusionRule> rules, LottoRecommender recommender) {
         this.rules = List.copyOf(rules);
-        this.maxAttempts = properties.maxAttempts();
-        this.random = random;
+        this.recommender = recommender;
     }
 
     public RecommendResponse recommend(int count) {
         if (count < MIN_COUNT || count > MAX_COUNT) {
             throw new BusinessException(ErrorCode.LOTTO_INVALID_COUNT);
         }
-        LottoRecommender recommender = new LottoRecommender(rules, random, maxAttempts);
         try {
             var combinations = recommender.recommend(count).stream()
                     .map(c -> new CombinationDto(c.numbers()))

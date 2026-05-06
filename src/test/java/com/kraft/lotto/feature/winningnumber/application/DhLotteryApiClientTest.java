@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kraft.lotto.feature.winningnumber.domain.WinningNumber;
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
@@ -66,6 +67,34 @@ class DhLotteryApiClientTest {
         Optional<WinningNumber> result = client.parse(99999, body);
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("parse 는 필수 필드가 누락되면 예외를 던진다")
+    void parseThrowsWhenRequiredFieldIsMissing() {
+        String body = """
+                {
+                  "returnValue": "success",
+                  "drwNoDate": "2024-01-06",
+                  "drwtNo1": 6, "drwtNo2": 13, "drwtNo3": 23,
+                  "drwtNo4": 24, "drwtNo5": 28, "drwtNo6": 33,
+                  "bnusNo": 38, "firstWinamnt": 0, "firstPrzwnerCo": 0, "totSellamnt": 0
+                }
+                """;
+
+        assertThatThrownBy(() -> client.parse(1102, body))
+                .isInstanceOf(LottoApiClientException.class)
+                .hasMessageContaining("필드가 누락");
+    }
+
+    @Test
+    @DisplayName("parse 는 예상하지 못한 returnValue 에 대해 예외를 던진다")
+    void parseThrowsWhenReturnValueIsUnexpected() {
+        String body = "{\"returnValue\":\"pending\"}";
+
+        assertThatThrownBy(() -> client.parse(1102, body))
+                .isInstanceOf(LottoApiClientException.class)
+                .hasMessageContaining("returnValue");
     }
 
     @Test
@@ -146,4 +175,25 @@ class DhLotteryApiClientTest {
         assertThat(result).isPresent();
         assertThat(result.get().round()).isEqualTo(1102);
     }
+
+    @Test
+    @DisplayName("fetch 는 재시도를 모두 소진하면 LottoApiClientException 을 던진다")
+    void fetchThrowsWhenRetryExhausted() {
+        RestClient restClient = mock(RestClient.class, RETURNS_DEEP_STUBS);
+        AtomicInteger calls = new AtomicInteger();
+        when(restClient.get().uri(any(URI.class)).retrieve().body(String.class))
+                .thenAnswer(inv -> {
+                    calls.incrementAndGet();
+                    throw new RestClientException("network down");
+                });
+        DhLotteryApiClient retryingClient = new DhLotteryApiClient(
+                restClient, new ObjectMapper(), "http://localhost", 2, 0, null);
+
+        assertThatThrownBy(() -> retryingClient.fetch(1102))
+                .isInstanceOf(LottoApiClientException.class)
+                .hasMessageContaining("attempts=3");
+
+        assertThat(calls.get()).isEqualTo(3);
+    }
+
 }
