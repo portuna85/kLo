@@ -79,6 +79,9 @@ kraft:
     read-timeout-ms: ${KRAFT_API_READ_TIMEOUT_MS:3000}
     max-retries: ${KRAFT_API_MAX_RETRIES:2}
     retry-backoff-ms: ${KRAFT_API_RETRY_BACKOFF_MS:200}
+  admin:
+    api-token: ${KRAFT_ADMIN_API_TOKEN:}
+    token-header: ${KRAFT_ADMIN_TOKEN_HEADER:X-Kraft-Admin-Token}
   recommend:
     max-attempts: ${KRAFT_RECOMMEND_MAX_ATTEMPTS:100000}
     rate-limit:

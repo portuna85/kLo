@@ -72,6 +72,12 @@
       <form id="form-collect-refresh" novalidate>
         <div class="modal-body">
           <div class="mb-2">
+            <label class="form-label small text-muted mb-1" for="collect-admin-token">관리자 토큰</label>
+            <input id="collect-admin-token" name="adminToken" type="password"
+                   class="form-control form-control-sm" autocomplete="off"
+                   placeholder="X-Kraft-Admin-Token" required />
+          </div>
+          <div class="mb-2">
             <label class="form-label small text-muted mb-1" for="collect-target-round">
               대상 회차 <span class="text-muted">(선택, 비우면 최신까지 자동)</span>
             </label>

@@ -368,8 +368,15 @@
     const fd = new FormData(e.currentTarget);
     const targetRoundRaw = String(fd.get('targetRound') || '').trim();
     const targetRound = targetRoundRaw === '' ? null : targetRoundRaw;
+    const adminToken = String(fd.get('adminToken') || '').trim();
     const out = document.getElementById('collect-result');
     const btn = e.currentTarget.querySelector('[type="submit"]');
+
+    if (!adminToken) {
+      out.textContent = '관리자 토큰을 입력해 주세요.';
+      out.className = 'small mt-2 text-danger';
+      return;
+    }
 
     out.textContent = '수집 요청 중…';
     out.className = 'small mt-2 text-muted';
@@ -379,7 +386,10 @@
       try {
         const data = await api('/api/winning-numbers/refresh', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Kraft-Admin-Token': adminToken
+          },
           body: JSON.stringify(targetRound == null ? {} : { targetRound })
         });
         out.textContent = `수집 완료 · 신규 ${data.collected} · 스킵 ${data.skipped} · 실패 ${data.failed} · 최신 ${data.latestRound}회`;
