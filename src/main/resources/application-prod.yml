@@ -1,7 +1,8 @@
 # ============================================================
-#  로컬 개발 전용 오버라이드 (단일 프로파일 정책)
-#  - 비밀값/환경 의존 값은 모두 .env 에서 주입됩니다.
+#  운영 환경 전용 오버라이드
+#  - 비밀값/환경 의존 값은 모두 환경 변수 또는 배포 매니페스트에서 주입합니다.
 #  - 본 파일에는 절대 비밀값을 적지 않습니다.
+#  - 운영에서는 템플릿/정적 리소스 캐시와 실제 동행복권 API 클라이언트를 기본값으로 사용합니다.
 # ============================================================
 
 spring:
@@ -9,19 +10,16 @@ spring:
     properties:
       hibernate:
         format_sql: false
-        use_sql_comments: true
-  # 템플릿/정적 리소스를 매 요청 새로 읽어 hot-reload 를 보장합니다.
+        use_sql_comments: false
   thymeleaf:
-    cache: false
+    cache: true
   web:
     resources:
       cache:
         cachecontrol:
-          max-age: 0
-          no-cache: true
+          max-age: 30d
+          cache-public: true
 
-
-# 로컬에서는 health 상세 정보까지 모두 노출하여 디버깅을 돕습니다.
 management:
   endpoints:
     web:
@@ -40,5 +38,5 @@ logging:
 
 kraft:
   api:
-    # KRAFT_API_CLIENT 미주입 시 mock 폴백
-    client: ${KRAFT_API_CLIENT:mock}
+    # 운영에서는 KRAFT_API_CLIENT 미주입 시 mock 이 아닌 실제 동행복권 클라이언트를 사용합니다.
+    client: ${KRAFT_API_CLIENT:real}
