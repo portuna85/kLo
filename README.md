@@ -44,6 +44,13 @@ KRAFT_API_MAX_RETRIES=2
 KRAFT_API_RETRY_BACKOFF_MS=200
 ```
 
+당첨번호 수집 트리거는 관리자 API이므로 별도 토큰을 설정해야 합니다.
+
+```env
+KRAFT_ADMIN_API_TOKEN=change-me-admin-token
+KRAFT_ADMIN_TOKEN_HEADER=X-Kraft-Admin-Token
+```
+
 ## 로컬 실행
 
 ```bash
@@ -71,14 +78,16 @@ KRAFT_API_RETRY_BACKOFF_MS=200
 | `GET` | `/api/winning-numbers/{round}` | 특정 회차 조회 |
 | `GET` | `/api/winning-numbers` | 당첨번호 목록 조회 |
 | `GET` | `/api/winning-numbers/stats/frequency` | 번호별 출현 빈도 |
-| `POST` | `/api/winning-numbers/refresh` | 당첨번호 수집 트리거 |
+| `POST` | `/api/winning-numbers/refresh` | 당첨번호 수집 트리거(관리자 토큰 필요) |
 | `GET` | `/actuator/health` | 헬스체크 |
 
 ## 보안 정책
 
-- `/`, 정적 리소스, 공개 API, health, docs만 명시적으로 허용합니다.
+- `/`, 정적 리소스, 조회 API, 추천 API, health, docs만 명시적으로 허용합니다.
 - 명시 허용되지 않은 요청은 `denyAll` 정책으로 차단합니다.
-- `POST /api/recommend`와 `POST /api/winning-numbers/refresh`는 IP 기반 rate limit을 적용합니다.
+- `POST /api/winning-numbers/refresh`는 `X-Kraft-Admin-Token` 관리자 토큰 헤더가 필요합니다.
+- `POST /api/recommend`와 `POST /api/winning-numbers/refresh`는 IP 기반 rate limit을 적용하며, endpoint별 제한값과 `Retry-After` 응답 헤더를 사용합니다.
+- 기본 제한값은 추천 API `30회/60초`, 수집 API `10회/300초`입니다.
 - 신뢰 가능한 프록시(루프백/사설/link-local)에서 들어온 요청에 한해 `X-Forwarded-For`의 첫 번째 IP를 클라이언트 IP로 사용합니다.
 
 ## 당첨번호 수집 정책

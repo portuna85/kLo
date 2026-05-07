@@ -1,11 +1,13 @@
 package com.kraft.lotto.infra.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kraft.lotto.infra.config.KraftAdminProperties;
 import com.kraft.lotto.infra.config.KraftRecommendRateLimitProperties;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -20,7 +22,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain appSecurityFilterChain(HttpSecurity http,
-                                                      RecommendRateLimitFilter recommendRateLimitFilter) throws Exception {
+                                                      RecommendRateLimitFilter recommendRateLimitFilter,
+                                                      AdminApiTokenFilter adminApiTokenFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
                         "/api/**",
@@ -30,6 +33,7 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
                 .addFilterBefore(recommendRateLimitFilter, BasicAuthenticationFilter.class)
+                .addFilterBefore(adminApiTokenFilter, RecommendRateLimitFilter.class)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(h -> h
                         .contentSecurityPolicy(csp -> csp.policyDirectives(
@@ -52,12 +56,20 @@ public class SecurityConfig {
                         .requestMatchers("/", "/index", "/error", "/favicon.ico").permitAll()
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                         .requestMatchers("/api/recommend/**").permitAll()
-                        .requestMatchers("/api/winning-numbers/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/winning-numbers/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/winning-numbers/refresh").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/docs", "/docs/", "/docs/**").permitAll()
                         .anyRequest().denyAll()
                 );
         return http.build();
+    }
+
+    @Bean
+    public AdminApiTokenFilter adminApiTokenFilter(KraftAdminProperties properties,
+                                                   MeterRegistry meterRegistry,
+                                                   ObjectMapper objectMapper) {
+        return new AdminApiTokenFilter(properties, objectMapper, meterRegistry);
     }
 
     @Bean

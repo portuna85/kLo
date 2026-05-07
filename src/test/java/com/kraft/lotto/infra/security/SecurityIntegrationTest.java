@@ -2,6 +2,7 @@ package com.kraft.lotto.infra.security;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -30,7 +31,7 @@ import org.springframework.web.context.WebApplicationContext;
  * <p>실제 Spring Security 필터 체인이 적용된 상태에서 다음을 검증한다:
  * <ul>
  *     <li>public endpoint는 인증 없이 접근 가능</li>
- *     <li>당첨번호 수집 트리거도 인증 없이 접근 가능</li>
+ *     <li>당첨번호 수집 트리거는 관리자 토큰이 있어야 접근 가능</li>
  * </ul>
  */
 @SpringBootTest
@@ -93,24 +94,23 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("당첨번호 수집 트리거는 인증 없이 접근 가능하다")
-    void winningNumberRefreshIsAccessibleWithoutAuth() throws Exception {
-        Mockito.when(collectService.collect(Mockito.nullable(Integer.class)))
-                .thenReturn(new CollectResponse(0, 0, 0, 0));
-
+    @DisplayName("당첨번호 수집 트리거는 관리자 토큰 없이는 401을 반환한다")
+    void winningNumberRefreshRequiresAdminToken() throws Exception {
         mockMvc().perform(post("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED_ADMIN_API"));
     }
 
     @Test
-    @DisplayName("당첨번호 수집 트리거는 외부 IP에서도 허용 횟수 내 접근 가능하다")
-    void winningNumberRefreshDoesNotRequireIpWhitelist() throws Exception {
+    @DisplayName("당첨번호 수집 트리거는 올바른 관리자 토큰이 있으면 접근 가능하다")
+    void winningNumberRefreshIsAccessibleWithAdminToken() throws Exception {
         Mockito.when(collectService.collect(Mockito.nullable(Integer.class)))
                 .thenReturn(new CollectResponse(0, 0, 0, 0));
 
         mockMvc().perform(post("/api/winning-numbers/refresh")
+                        .header("X-Kraft-Admin-Token", "test-admin-token")
                         .with(request -> {
                             request.setRemoteAddr("203.0.113.10");
                             return request;
@@ -129,6 +129,7 @@ class SecurityIntegrationTest {
         MockMvc mvc = mockMvc();
         for (int i = 0; i < 30; i++) {
             mvc.perform(post("/api/winning-numbers/refresh")
+                            .header("X-Kraft-Admin-Token", "test-admin-token")
                             .with(request -> {
                                 request.setRemoteAddr("203.0.113.30");
                                 return request;
@@ -138,12 +139,14 @@ class SecurityIntegrationTest {
         }
 
         mvc.perform(post("/api/winning-numbers/refresh")
+                        .header("X-Kraft-Admin-Token", "test-admin-token")
                         .with(request -> {
                             request.setRemoteAddr("203.0.113.30");
                             return request;
                         })
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isTooManyRequests())
+                .andExpect(header().string("Retry-After", "60"))
                 .andExpect(jsonPath("$.error.code").value("TOO_MANY_REQUESTS"));
     }
 
