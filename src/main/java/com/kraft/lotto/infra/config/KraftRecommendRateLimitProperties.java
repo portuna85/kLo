@@ -3,14 +3,46 @@ package com.kraft.lotto.infra.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "kraft.recommend.rate-limit")
-public record KraftRecommendRateLimitProperties(int maxRequests, int windowSeconds) {
+public record KraftRecommendRateLimitProperties(
+        int maxRequests,
+        int windowSeconds,
+        Endpoint recommend,
+        Endpoint collect
+) {
+
+    public KraftRecommendRateLimitProperties(int maxRequests, int windowSeconds) {
+        this(maxRequests, windowSeconds, null, null);
+    }
 
     public KraftRecommendRateLimitProperties {
-        if (maxRequests <= 0) {
-            throw new IllegalArgumentException("kraft.recommend.rate-limit.max-requests must be positive");
+        validatePositive("kraft.recommend.rate-limit.max-requests", maxRequests);
+        validatePositive("kraft.recommend.rate-limit.window-seconds", windowSeconds);
+        recommend = Endpoint.withDefaults(recommend, maxRequests, windowSeconds);
+        collect = Endpoint.withDefaults(collect, maxRequests, windowSeconds);
+    }
+
+    public Endpoint endpoint(String endpointName) {
+        if ("collect".equals(endpointName)) {
+            return collect;
         }
-        if (windowSeconds <= 0) {
-            throw new IllegalArgumentException("kraft.recommend.rate-limit.window-seconds must be positive");
+        return recommend;
+    }
+
+    private static void validatePositive(String propertyName, int value) {
+        if (value <= 0) {
+            throw new IllegalArgumentException(propertyName + " must be positive");
+        }
+    }
+
+    public record Endpoint(int maxRequests, int windowSeconds) {
+
+        public Endpoint {
+            validatePositive("rate-limit endpoint max-requests", maxRequests);
+            validatePositive("rate-limit endpoint window-seconds", windowSeconds);
+        }
+
+        static Endpoint withDefaults(Endpoint endpoint, int defaultMaxRequests, int defaultWindowSeconds) {
+            return endpoint == null ? new Endpoint(defaultMaxRequests, defaultWindowSeconds) : endpoint;
         }
     }
 }

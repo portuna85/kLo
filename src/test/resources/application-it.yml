@@ -23,3 +23,12 @@ kraft:
     token-header: X-Kraft-Admin-Token
   recommend:
     max-attempts: 1000
+    rate-limit:
+      max-requests: 30
+      window-seconds: 60
+      recommend:
+        max-requests: 30
+        window-seconds: 60
+      collect:
+        max-requests: 30
+        window-seconds: 60
