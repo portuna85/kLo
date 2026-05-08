@@ -4,14 +4,18 @@
  * ============================================================ */
 :root,
 [data-bs-theme="light"] {
-  --kraft-bg: #f7f8fb;
+  --kraft-bg: #eef7fd;
   --kraft-surface: #ffffff;
-  --kraft-muted: #6b7280;
+  --kraft-muted: #64748b;
+  --bs-primary: #0ea5e9;
+  --bs-primary-rgb: 14, 165, 233;
 }
 [data-bs-theme="dark"] {
-  --kraft-bg: #0e1116;
-  --kraft-surface: #161a22;
-  --kraft-muted: #9aa3b2;
+  --kraft-bg: #0c1a25;
+  --kraft-surface: #152433;
+  --kraft-muted: #94a3b8;
+  --bs-primary: #38bdf8;
+  --bs-primary-rgb: 56, 189, 248;
 }
 
 html, body { background: var(--kraft-bg); }
