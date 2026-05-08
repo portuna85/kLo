@@ -4,14 +4,14 @@
  * ============================================================ */
 :root,
 [data-bs-theme="light"] {
-  --kraft-bg: #fff5f5;
+  --kraft-bg: #ffebeb;
   --kraft-surface: #ffffff;
   --kraft-muted: #64748b;
   --bs-primary: #ef4444;
   --bs-primary-rgb: 239, 68, 68;
 }
 [data-bs-theme="dark"] {
-  --kraft-bg: #1a0505;
+  --kraft-bg: #450a0a;
   --kraft-surface: #2d1010;
   --kraft-muted: #94a3b8;
   --bs-primary: #f87171;
