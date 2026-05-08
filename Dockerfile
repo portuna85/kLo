@@ -38,7 +38,7 @@ RUN apt-get update \
  && groupadd --system kraft \
  && useradd --system --gid kraft --home /app kraft
 
-COPY --from=build /workspace/build/libs/*.jar /app/app.jar
+COPY --from=build /workspace/build/libs/app.jar /app/app.jar
 COPY docker/healthcheck.sh /app/healthcheck.sh
 RUN mkdir -p /app/logs \
  && chmod +x /app/healthcheck.sh \

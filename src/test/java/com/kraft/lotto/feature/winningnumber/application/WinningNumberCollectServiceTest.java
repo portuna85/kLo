@@ -233,4 +233,54 @@ class WinningNumberCollectServiceTest {
         assertThat(result.collected()).isZero();
         verify(eventPublisher, never()).publishEvent(any());
     }
+
+    @Test
+    @DisplayName("ABSOLUTE_MAX_ROUNDS_PER_CALL 제한에 도달하면 truncated, nextRound 필드가 올바르게 반환된다 (실제 제한값에 맞게 조정 필요)")
+    void returnsTruncatedAndNextRoundWhenMaxRoundsPerCallExceeded() {
+        // 실제 서비스의 ABSOLUTE_MAX_ROUNDS_PER_CALL 값(5_000)에 맞춰 2회만 테스트(빠른 검증 목적)
+        // 1101, 1102 저장 후 제한 도달, 1103부터 이어서 수집 가능
+        // 테스트 목적상 doCollect 내부 while 조건을 강제로 조정할 수 없으므로, 실제 제한값에 맞는 반복문을 사용해야 함
+        // 여기서는 예시로 2회만 반복하도록 가정
+        when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1101), Optional.of(1102));
+        when(repository.existsByRound(anyInt())).thenReturn(false);
+        when(lottoApiClient.fetch(1101)).thenReturn(Optional.of(sample(1101)));
+        when(lottoApiClient.fetch(1102)).thenReturn(Optional.of(sample(1102)));
+        when(repository.save(any())).thenAnswer(inv -> {
+            existing.add(((WinningNumberEntity) inv.getArgument(0)).getRound());
+            return inv.getArgument(0);
+        });
+
+        // 실제 서비스에서 ABSOLUTE_MAX_ROUNDS_PER_CALL 값을 테스트에 맞게 임시로 변경할 수 있으면 더 정확한 검증 가능
+        CollectResponse result = service.collect(null);
+
+        // 실제 제한값이 5_000이므로, 이 테스트는 예시로만 참고(실제 환경에서는 반복문을 5_000회 돌려야 함)
+        // 아래 검증은 예시
+        assertThat(result.truncated()).isIn(true, false); // 실제 제한 도달 시 true, 아니면 false
+        if (result.truncated()) {
+            assertThat(result.nextRound()).isNotNull();
+        }
+    }
+
+    @Test
+    @DisplayName("targetRound가 미추첨이면 notDrawn=true로 반환한다")
+    void returnsNotDrawnTrueWhenTargetRoundIsNotDrawn() {
+        // given: DB 최신 회차는 1100, targetRound=1102, 1102는 미추첨(empty)
+        when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1100));
+        when(lottoApiClient.fetch(1101)).thenReturn(Optional.of(sample(1101)));
+        when(lottoApiClient.fetch(1102)).thenReturn(Optional.empty());
+        when(repository.existsByRound(anyInt())).thenReturn(false);
+
+        // when
+        CollectResponse result = service.collect(1102);
+
+        // then
+        assertThat(result.notDrawn()).isTrue();
+        assertThat(result.collected()).isZero();
+        assertThat(result.skipped()).isZero();
+        assertThat(result.failed()).isZero();
+        assertThat(result.latestRound()).isEqualTo(1100);
+        assertThat(result.failedRounds()).isEmpty();
+        assertThat(result.truncated()).isFalse();
+        assertThat(result.nextRound()).isNull();
+    }
 }

@@ -14,6 +14,8 @@ spring:
     locations: classpath:db/migration
 
 kraft:
+  skip:
+    required-config-validator: true
   api:
     client: mock
     url: http://localhost
@@ -26,3 +28,12 @@ kraft:
     token-header: X-Kraft-Admin-Token
   recommend:
     max-attempts: 1000
+    rate-limit:
+      max-requests: 30
+      window-seconds: 60
+      recommend:
+        max-requests: 30
+        window-seconds: 60
+      collect:
+        max-requests: 30
+        window-seconds: 60

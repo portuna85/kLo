@@ -57,6 +57,12 @@ class RecommendRateLimitFilterTest {
         return response.getStatus();
     }
 
+    private MockHttpServletResponse executeAndReturnResponse(MockHttpServletRequest request) throws Exception {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilter(request, response, mock(FilterChain.class));
+        return response;
+    }
+
     @Test
     @DisplayName("허용 횟수 이하 요청은 통과된다")
     void allowsRequestsWithinLimit() throws Exception {
@@ -76,13 +82,14 @@ class RecommendRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("당첨번호 refresh 요청도 동일한 IP 기반 rate limit 을 적용한다")
+    @DisplayName("당첨번호 refresh 요청은 독립된 endpoint 버킷으로 rate limit 을 적용한다")
     void blocksRefreshRequestsOverLimit() throws Exception {
         for (int i = 0; i < MAX_REQUESTS; i++) {
             executeRequest(postRefresh("10.0.0.7"));
         }
 
         assertThat(executeRequest(postRefresh("10.0.0.7"))).isEqualTo(429);
+        assertThat(executeRequest(postRecommend("10.0.0.7"))).isEqualTo(200);
     }
 
     @Test
@@ -142,6 +149,44 @@ class RecommendRateLimitFilterTest {
         filter.doFilter(postRecommend("10.0.0.6"), response, mock(FilterChain.class));
 
         assertThat(response.getContentAsString()).contains("TOO_MANY_REQUESTS");
+    }
+
+
+    @Test
+    @DisplayName("차단 응답은 Retry-After 헤더를 포함한다")
+    void blockedResponseContainsRetryAfterHeader() throws Exception {
+        for (int i = 0; i < MAX_REQUESTS; i++) {
+            executeRequest(postRecommend("10.0.0.11"));
+        }
+
+        MockHttpServletResponse response = executeAndReturnResponse(postRecommend("10.0.0.11"));
+
+        assertThat(response.getStatus()).isEqualTo(429);
+        assertThat(response.getHeader("Retry-After")).isEqualTo(String.valueOf(WINDOW_SECONDS));
+    }
+
+    @Test
+    @DisplayName("endpoint 별 제한값을 다르게 적용할 수 있다")
+    void appliesDifferentEndpointLimits() throws Exception {
+        RecommendRateLimitFilter splitFilter = new RecommendRateLimitFilter(
+                new KraftRecommendRateLimitProperties(
+                        3,
+                        60,
+                        new KraftRecommendRateLimitProperties.Endpoint(3, 60),
+                        new KraftRecommendRateLimitProperties.Endpoint(1, 120)
+                ),
+                new ObjectMapper(),
+                new SimpleMeterRegistry()
+        );
+
+        MockHttpServletResponse firstCollect = new MockHttpServletResponse();
+        splitFilter.doFilter(postRefresh("10.0.0.12"), firstCollect, mock(FilterChain.class));
+        MockHttpServletResponse secondCollect = new MockHttpServletResponse();
+        splitFilter.doFilter(postRefresh("10.0.0.12"), secondCollect, mock(FilterChain.class));
+
+        assertThat(firstCollect.getStatus()).isEqualTo(200);
+        assertThat(secondCollect.getStatus()).isEqualTo(429);
+        assertThat(secondCollect.getHeader("Retry-After")).isEqualTo("120");
     }
 
     @Test

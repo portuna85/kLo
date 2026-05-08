@@ -29,6 +29,9 @@ class KraftPropertiesBindingTest {
     @Autowired
     KraftRecommendProperties recommend;
 
+    @Autowired
+    KraftRecommendRateLimitProperties rateLimit;
+
     @Test
     @DisplayName("api properties 가 정상 바인딩된다")
     void bindsApiProperties() {
@@ -44,5 +47,14 @@ class KraftPropertiesBindingTest {
     @DisplayName("recommend properties 가 정상 바인딩된다")
     void bindsRecommendProperties() {
         assertThat(recommend.maxAttempts()).isEqualTo(1000);
+    }
+
+    @Test
+    @DisplayName("rate limit properties 가 endpoint 별로 바인딩된다")
+    void bindsRateLimitProperties() {
+        assertThat(rateLimit.endpoint("recommend").maxRequests()).isEqualTo(30);
+        assertThat(rateLimit.endpoint("recommend").windowSeconds()).isEqualTo(60);
+        assertThat(rateLimit.endpoint("collect").maxRequests()).isEqualTo(30);
+        assertThat(rateLimit.endpoint("collect").windowSeconds()).isEqualTo(60);
     }
 }

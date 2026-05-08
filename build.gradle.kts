@@ -26,6 +26,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-security")
+    // implementation("org.springframework.boot:spring-boot-actuator-health") // 존재하지 않는 모듈이므로 주석 처리
 
     // View — Thymeleaf + Bootstrap 5 (webjars)
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
@@ -61,9 +62,23 @@ tasks.named("asciidoctor") {
     inputs.dir(snippetsDir)
 }
 
+
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    archiveFileName.set("app.jar")
+}
+
+// 문서 포함 jar를 위한 별도 task
+tasks.register<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJarWithDocs") {
+    group = "build"
+    description = "Builds bootJar with REST Docs included."
     dependsOn("asciidoctor")
+    archiveFileName.set("app-with-docs.jar")
     from(layout.buildDirectory.dir("docs/asciidoc")) {
         into("BOOT-INF/classes/static/docs")
     }
+    with(tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar").get())
+}
+
+tasks.jar {
+    enabled = false
 }
