@@ -152,11 +152,14 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
         if (!"POST".equalsIgnoreCase(request.getMethod())) {
             return null;
         }
-        String uri = request.getRequestURI();
-        if ("/api/recommend".equals(uri)) {
+        String path = request.getServletPath();
+        if (path == null || path.isEmpty()) {
+            path = request.getRequestURI();
+        }
+        if ("/api/recommend".equals(path)) {
             return Endpoint.RECOMMEND;
         }
-        if ("/api/winning-numbers/refresh".equals(uri)) {
+        if ("/api/winning-numbers/refresh".equals(path)) {
             return Endpoint.COLLECT;
         }
         return null;

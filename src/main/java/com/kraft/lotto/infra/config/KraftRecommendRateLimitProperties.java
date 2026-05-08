@@ -21,6 +21,10 @@ public record KraftRecommendRateLimitProperties(
         collect = Endpoint.withDefaults(collect, maxRequests, windowSeconds);
     }
 
+    public KraftRecommendRateLimitProperties() {
+        this(30, 60);
+    }
+
     public Endpoint endpoint(String endpointName) {
         if ("collect".equals(endpointName)) {
             return collect;

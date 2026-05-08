@@ -98,6 +98,7 @@ class SecurityIntegrationTest {
     @DisplayName("당첨번호 수집 트리거는 관리자 토큰 없이는 401을 반환한다")
     void winningNumberRefreshRequiresAdminToken() throws Exception {
         mockMvc().perform(post("/api/winning-numbers/refresh")
+                        .servletPath("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
@@ -111,6 +112,7 @@ class SecurityIntegrationTest {
                 .thenReturn(new CollectResponse(0, 0, 0, 0));
 
         mockMvc().perform(post("/api/winning-numbers/refresh")
+                        .servletPath("/api/winning-numbers/refresh")
                         .header("X-Kraft-Admin-Token", "test-admin-token")
                         .with(request -> {
                             request.setRemoteAddr("203.0.113.10");
@@ -130,9 +132,10 @@ class SecurityIntegrationTest {
         MockMvc mvc = mockMvc();
         for (int i = 0; i < 30; i++) {
             mvc.perform(post("/api/winning-numbers/refresh")
+                            .servletPath("/api/winning-numbers/refresh")
                             .header("X-Kraft-Admin-Token", "test-admin-token")
                             .with(request -> {
-                                request.setRemoteAddr("203.0.113.30");
+                                request.setRemoteAddr("203.0.113.31");
                                 return request;
                             })
                             .contentType(MediaType.APPLICATION_JSON))
@@ -140,9 +143,10 @@ class SecurityIntegrationTest {
         }
 
         mvc.perform(post("/api/winning-numbers/refresh")
+                        .servletPath("/api/winning-numbers/refresh")
                         .header("X-Kraft-Admin-Token", "test-admin-token")
                         .with(request -> {
-                            request.setRemoteAddr("203.0.113.30");
+                            request.setRemoteAddr("203.0.113.31");
                             return request;
                         })
                         .contentType(MediaType.APPLICATION_JSON))
@@ -157,18 +161,20 @@ class SecurityIntegrationTest {
         MockMvc mvc = mockMvc();
         for (int i = 0; i < 30; i++) {
             mvc.perform(post("/api/winning-numbers/refresh")
+                    .servletPath("/api/winning-numbers/refresh")
                     .header("X-Kraft-Admin-Token", "invalid-token")
                     .with(request -> {
-                        request.setRemoteAddr("203.0.113.40");
+                        request.setRemoteAddr("203.0.113.41");
                         return request;
                     })
                     .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
         }
         mvc.perform(post("/api/winning-numbers/refresh")
+                .servletPath("/api/winning-numbers/refresh")
                 .header("X-Kraft-Admin-Token", "invalid-token")
                 .with(request -> {
-                    request.setRemoteAddr("203.0.113.40");
+                    request.setRemoteAddr("203.0.113.41");
                     return request;
                 })
                 .contentType(MediaType.APPLICATION_JSON))

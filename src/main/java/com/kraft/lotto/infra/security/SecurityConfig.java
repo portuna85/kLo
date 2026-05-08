@@ -33,8 +33,8 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
-                .addFilterBefore(recommendRateLimitFilter, BasicAuthenticationFilter.class)
-                .addFilterBefore(adminApiTokenFilter, RecommendRateLimitFilter.class)
+                .addFilterBefore(adminApiTokenFilter, BasicAuthenticationFilter.class)
+                .addFilterBefore(recommendRateLimitFilter, AdminApiTokenFilter.class)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(h -> h
                         .contentSecurityPolicy(csp -> csp.policyDirectives(
@@ -58,7 +58,7 @@ public class SecurityConfig {
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                         .requestMatchers("/api/recommend/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/winning-numbers/**").permitAll()
-                        // .requestMatchers(HttpMethod.POST, "/api/winning-numbers/refresh").permitAll() // 보호 엔드포인트는 permitAll에서 제외
+                        .requestMatchers(HttpMethod.POST, "/api/winning-numbers/refresh").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/docs", "/docs/", "/docs/**").permitAll()
                         .anyRequest().denyAll()
@@ -81,8 +81,8 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
-                .addFilterBefore(recommendRateLimitFilter, BasicAuthenticationFilter.class)
-                .addFilterBefore(adminApiTokenFilter, RecommendRateLimitFilter.class)
+                .addFilterBefore(adminApiTokenFilter, BasicAuthenticationFilter.class)
+                .addFilterBefore(recommendRateLimitFilter, AdminApiTokenFilter.class)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(h -> h
                         .contentSecurityPolicy(csp -> csp.policyDirectives(
@@ -106,7 +106,7 @@ public class SecurityConfig {
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                         .requestMatchers("/api/recommend/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/winning-numbers/**").permitAll()
-                        // .requestMatchers(HttpMethod.POST, "/api/winning-numbers/refresh").permitAll() // 보호 엔드포인트는 permitAll에서 제외
+                        .requestMatchers(HttpMethod.POST, "/api/winning-numbers/refresh").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                         .requestMatchers("/docs", "/docs/", "/docs/**").permitAll()
                         .anyRequest().denyAll()

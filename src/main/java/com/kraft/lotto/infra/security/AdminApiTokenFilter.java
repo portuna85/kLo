@@ -42,9 +42,12 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        // getServletPath()를 사용하여 context path와 무관하게 보호 경로를 정확히 매칭
+        String path = request.getServletPath();
+        if (path == null || path.isEmpty()) {
+            path = request.getRequestURI();
+        }
         return !(PROTECTED_METHOD.equalsIgnoreCase(request.getMethod())
-                && PROTECTED_PATH.equals(request.getServletPath()));
+                && PROTECTED_PATH.equals(path));
     }
 
     @Override
