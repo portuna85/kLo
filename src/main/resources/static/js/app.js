@@ -106,7 +106,20 @@
   const api = async (url, init) => {
     const method = (init && init.method) || 'GET';
     const flog = Logger.step(`api ${method} ${url}`);
-    flog.debug('request', { headers: init?.headers, hasBody: !!(init && init.body) });
+    // 민감 header 마스킹 유틸 적용
+    const maskHeaders = (headers) => {
+      if (!headers) return headers;
+      const SENSITIVE = [
+        'authorization', 'token', 'admin-token', 'x-kraft-admin-token'
+      ];
+      const masked = {};
+      for (const k in headers) {
+        if (SENSITIVE.includes(k.toLowerCase())) masked[k] = '[REDACTED]';
+        else masked[k] = headers[k];
+      }
+      return masked;
+    };
+    flog.debug('request', { headers: maskHeaders(init?.headers), hasBody: !!(init && init.body) });
     const t = flog.time('roundtrip');
     let res;
     try {

@@ -36,6 +36,7 @@ import org.springframework.web.context.WebApplicationContext;
  */
 @SpringBootTest
 @ActiveProfiles("test")
+@org.springframework.test.context.TestPropertySource(properties = "kraft.admin.api-token=test-admin-token")
 @DisplayName("Security 통합 테스트")
 class SecurityIntegrationTest {
 
@@ -151,10 +152,34 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    @DisplayName("잘못된 관리자 토큰으로 반복 요청 시에도 rate limit이 적용된다")
+    void winningNumberRefreshWithInvalidTokenIsRateLimitedByIp() throws Exception {
+        MockMvc mvc = mockMvc();
+        for (int i = 0; i < 30; i++) {
+            mvc.perform(post("/api/winning-numbers/refresh")
+                    .header("X-Kraft-Admin-Token", "invalid-token")
+                    .with(request -> {
+                        request.setRemoteAddr("203.0.113.40");
+                        return request;
+                    })
+                    .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+        }
+        mvc.perform(post("/api/winning-numbers/refresh")
+                .header("X-Kraft-Admin-Token", "invalid-token")
+                .with(request -> {
+                    request.setRemoteAddr("203.0.113.40");
+                    return request;
+                })
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isTooManyRequests())
+            .andExpect(jsonPath("$.error.code").value("TOO_MANY_REQUESTS"));
+    }
+
+    @Test
     @DisplayName("명시 허용되지 않은 endpoint 는 denyAll 로 차단한다")
     void unknownEndpointIsDenied() throws Exception {
         mockMvc().perform(get("/admin/unknown"))
                 .andExpect(status().isForbidden());
     }
 }
-

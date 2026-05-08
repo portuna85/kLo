@@ -40,6 +40,7 @@ class AdminApiTokenFilterTest {
     @DisplayName("관리자 토큰이 없으면 401을 반환한다")
     void blocksMissingToken() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/winning-numbers/refresh");
+        request.setServletPath("/api/winning-numbers/refresh");
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain chain = mock(FilterChain.class);
 
@@ -54,6 +55,7 @@ class AdminApiTokenFilterTest {
     @DisplayName("관리자 토큰이 틀리면 401을 반환한다")
     void blocksInvalidToken() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/winning-numbers/refresh");
+        request.setServletPath("/api/winning-numbers/refresh");
         request.addHeader("X-Kraft-Admin-Token", "wrong-token");
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain chain = mock(FilterChain.class);
@@ -69,6 +71,7 @@ class AdminApiTokenFilterTest {
     @DisplayName("관리자 토큰이 맞으면 요청을 통과시킨다")
     void allowsValidToken() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/winning-numbers/refresh");
+        request.setServletPath("/api/winning-numbers/refresh");
         request.addHeader("X-Kraft-Admin-Token", "secret-token");
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain chain = mock(FilterChain.class);
@@ -88,6 +91,7 @@ class AdminApiTokenFilterTest {
                 new SimpleMeterRegistry()
         );
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/winning-numbers/refresh");
+        request.setServletPath("/api/winning-numbers/refresh");
         request.addHeader("X-Kraft-Admin-Token", "secret-token");
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain chain = mock(FilterChain.class);

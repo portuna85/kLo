@@ -18,6 +18,7 @@ import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
 import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
 import com.kraft.lotto.support.GlobalExceptionHandler;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -62,20 +63,22 @@ class WinningNumberCollectControllerTest {
     @DisplayName("POST /refresh 본문이 없으면 targetRound 를 null 로 위임한다")
     void postCollectDelegatesNullTargetRoundWhenBodyAbsent() throws Exception {
         Mockito.when(collectService.collect(isNull()))
-                .thenReturn(new CollectResponse(3, 0, 0, 1103));
+                .thenReturn(new CollectResponse(3, 0, 0, 1103, List.of(), true, 2000, false));
 
         mockMvc.perform(post("/api/winning-numbers/refresh"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.collected").value(3))
-                .andExpect(jsonPath("$.data.latestRound").value(1103));
+                .andExpect(jsonPath("$.data.latestRound").value(1103))
+                .andExpect(jsonPath("$.data.truncated").value(true))
+                .andExpect(jsonPath("$.data.nextRound").value(2000));
     }
 
     @Test
     @DisplayName("POST /refresh 는 지정된 targetRound 로 위임한다")
     void postCollectDelegatesSpecifiedTargetRound() throws Exception {
         Mockito.when(collectService.collect(1103))
-                .thenReturn(new CollectResponse(2, 1, 0, 1103));
+                .thenReturn(new CollectResponse(2, 1, 0, 1103, List.of(), false, null, false));
 
         mockMvc.perform(post("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -96,12 +99,17 @@ class WinningNumberCollectControllerTest {
                                 fieldWithPath("data.failed").type(JsonFieldType.NUMBER).description("검증/저장 실패 회차 수"),
                                 fieldWithPath("data.latestRound").type(JsonFieldType.NUMBER).description("수집 후 최신 회차"),
                                 fieldWithPath("data.failedRounds").type(JsonFieldType.ARRAY).description("저장 실패가 발생한 회차 목록"),
+                                fieldWithPath("data.truncated").type(JsonFieldType.BOOLEAN).description("ABSOLUTE_MAX_ROUNDS_PER_CALL 제한에 걸려 중단되었는지 여부 (true면 추가 수집 필요)"),
+                                fieldWithPath("data.nextRound").type(JsonFieldType.NUMBER).optional().description("제한에 걸린 경우 다음 수집 시작 가능 회차(없으면 null)"),
+                                fieldWithPath("data.notDrawn").type(JsonFieldType.BOOLEAN).description("targetRound가 미추첨이면 true, 아니면 false"),
                                 fieldWithPath("error").type(JsonFieldType.NULL).optional().description("오류 정보(성공 시 null)")
                         )
                 ))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.collected").value(2))
-                .andExpect(jsonPath("$.data.skipped").value(1));
+                .andExpect(jsonPath("$.data.skipped").value(1))
+                .andExpect(jsonPath("$.data.truncated").value(false))
+                .andExpect(jsonPath("$.data.nextRound").doesNotExist());
     }
 
     @Test

@@ -82,7 +82,7 @@ public class WinningNumberCollectService {
         int latestBeforeCollect = repository.findMaxRound().orElse(0);
         if (targetRound != null && targetRound <= latestBeforeCollect) {
             log.info("targetRound already collected: targetRound={}, latestRound={}", targetRound, latestBeforeCollect);
-            return new CollectResponse(0, 1, 0, latestBeforeCollect, List.of());
+            return new CollectResponse(0, 1, 0, latestBeforeCollect, List.of(), false, null, false);
         }
 
         int startRound = latestBeforeCollect + 1;
@@ -92,25 +92,33 @@ public class WinningNumberCollectService {
 
         int processed = 0;
         int round = startRound;
+        boolean truncated = false;
+        Integer nextRound = null;
         while (processed < ABSOLUTE_MAX_ROUNDS_PER_CALL) {
             if (targetRound != null && round > targetRound) {
                 break;
             }
+
             Optional<WinningNumber> fetched;
             try {
                 fetched = lottoApiClient.fetch(round);
             } catch (LottoApiClientException ex) {
                 log.warn("외부 API 호출 실패: round={}", round, ex);
-                publishIfAny(collected, skipped, failedRounds.size());
+                if (collected > 0) {
+                    eventPublisher.publishEvent(WinningNumbersCollectedEvent.of(collected, skipped, failedRounds.size()));
+                }
                 throw new BusinessException(ErrorCode.EXTERNAL_API_FAILURE, ex.getMessage(), ex);
             }
             if (fetched.isEmpty()) {
                 if (targetRound != null) {
-                    // 명시적 targetRound가 미추첨이면 이는 사용자 오류로 본다.
+                    // 명시적 targetRound가 미추첨이면 notDrawn=true로 CollectResponse 반환
                     log.info("미추첨 회차 도달(stop): round={}, targetRound={}", round, targetRound);
+                    int latestRound = repository.findMaxRound().orElse(0);
+                    return new CollectResponse(0, 0, 0, latestRound, List.of(), false, null, true);
                 }
                 break;
             }
+
             try {
                 if (repository.existsByRound(round)) {
                     skipped++;
@@ -128,18 +136,18 @@ public class WinningNumberCollectService {
             round++;
             processed++;
         }
-
+        // ABSOLUTE_MAX_ROUNDS_PER_CALL 제한에 도달한 경우
+        if (processed >= ABSOLUTE_MAX_ROUNDS_PER_CALL) {
+            truncated = true;
+            nextRound = round;
+        }
         int latestRound = repository.findMaxRound().orElse(0);
         int failed = failedRounds.size();
-        publishIfAny(collected, skipped, failed);
-        log.info("collect summary: collected={}, skipped={}, failed={}, latestRound={}, failedRounds={}",
-                collected, skipped, failed, latestRound, failedRounds);
-        return new CollectResponse(collected, skipped, failed, latestRound, failedRounds);
-    }
-
-    private void publishIfAny(int collected, int skipped, int failed) {
         if (collected > 0) {
             eventPublisher.publishEvent(WinningNumbersCollectedEvent.of(collected, skipped, failed));
         }
+        log.info("collect summary: collected={}, skipped={}, failed={}, latestRound={}, failedRounds={}, truncated={}, nextRound={}",
+                collected, skipped, failed, latestRound, failedRounds, truncated, nextRound);
+        return new CollectResponse(collected, skipped, failed, latestRound, failedRounds, truncated, nextRound, false);
     }
 }

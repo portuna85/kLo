@@ -15,6 +15,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
 @ConditionalOnWebApplication
@@ -22,8 +23,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain appSecurityFilterChain(HttpSecurity http,
-                                                      RecommendRateLimitFilter recommendRateLimitFilter,
-                                                      AdminApiTokenFilter adminApiTokenFilter) throws Exception {
+                                                     RecommendRateLimitFilter recommendRateLimitFilter,
+                                                     AdminApiTokenFilter adminApiTokenFilter) {
         http
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
                         "/api/**",
@@ -57,8 +58,56 @@ public class SecurityConfig {
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                         .requestMatchers("/api/recommend/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/winning-numbers/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/winning-numbers/refresh").permitAll()
+                        // .requestMatchers(HttpMethod.POST, "/api/winning-numbers/refresh").permitAll() // 보호 엔드포인트는 permitAll에서 제외
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        .requestMatchers("/docs", "/docs/", "/docs/**").permitAll()
+                        .anyRequest().denyAll()
+                );
+        return http.build();
+    }
+
+    @Bean
+    @Profile("prod")
+    public SecurityFilterChain prodSecurityFilterChain(HttpSecurity http,
+                                                      RecommendRateLimitFilter recommendRateLimitFilter,
+                                                      AdminApiTokenFilter adminApiTokenFilter) {
+        http
+                .csrf(csrf -> csrf.ignoringRequestMatchers(
+                        "/api/**",
+                        "/actuator/health",
+                        "/actuator/health/**",
+                        "/actuator/info"
+                ))
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
+                .addFilterBefore(recommendRateLimitFilter, BasicAuthenticationFilter.class)
+                .addFilterBefore(adminApiTokenFilter, RecommendRateLimitFilter.class)
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .headers(h -> h
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "default-src 'self'; " +
+                                "img-src 'self' data:; " +
+                                "style-src 'self' 'unsafe-inline'; " +
+                                "font-src 'self' data:; " +
+                                "script-src 'self'; " +
+                                "connect-src 'self'; " +
+                                "frame-ancestors 'none'; " +
+                                "base-uri 'self'; " +
+                                "form-action 'self'"))
+                        .referrerPolicy(rp -> rp.policy(
+                                ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .permissionsPolicyHeader(pp -> pp.policy(
+                                "geolocation=(), microphone=(), camera=(), payment=(), usb=()"))
+                        .frameOptions(Customizer.withDefaults())
+                )
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/", "/index", "/error", "/favicon.ico").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+                        .requestMatchers("/api/recommend/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/winning-numbers/**").permitAll()
+                        // .requestMatchers(HttpMethod.POST, "/api/winning-numbers/refresh").permitAll() // 보호 엔드포인트는 permitAll에서 제외
+                        .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                         .requestMatchers("/docs", "/docs/", "/docs/**").permitAll()
                         .anyRequest().denyAll()
                 );

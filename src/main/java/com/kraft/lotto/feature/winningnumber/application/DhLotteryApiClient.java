@@ -34,6 +34,10 @@ public class DhLotteryApiClient implements LottoApiClient {
     private final int retryBackoffMs;
     private final MeterRegistry meterRegistry;
 
+    private static final List<String> ALLOWED_FAILURE_REASONS = List.of(
+            "blank_body", "network", "json_parse", "validation", "transform", "unexpected_return_value"
+    );
+
     public DhLotteryApiClient(RestClient restClient, ObjectMapper objectMapper, String baseUrl) {
         this(restClient, objectMapper, baseUrl, 0, 0, null);
     }
@@ -55,7 +59,7 @@ public class DhLotteryApiClient implements LottoApiClient {
     @Override
     public Optional<WinningNumber> fetch(int round) {
         int attempts = maxRetries + 1;
-        count("kraft.api.dhlottery.call.total", "round", String.valueOf(round));
+        count("kraft.api.dhlottery.call.total");
         int attempt = 0;
         while (true) {
             attempt++;
@@ -115,24 +119,24 @@ public class DhLotteryApiClient implements LottoApiClient {
             requireFields(node, round, "drwNo", "drwNoDate", "drwtNo1", "drwtNo2", "drwtNo3",
                     "drwtNo4", "drwtNo5", "drwtNo6", "bnusNo", "firstWinamnt",
                     "firstPrzwnerCo", "totSellamnt");
-            int drwNo = node.path("drwNo").asInt();
+            int drwNo = requiredInt(node, "drwNo", round);
             if (drwNo != round) {
                 throw new LottoApiClientException(
                         "응답 회차 불일치: 요청=" + round + ", 응답=" + drwNo);
             }
             LocalDate drawDate = LocalDate.parse(node.path("drwNoDate").asText());
             List<Integer> mains = List.of(
-                    node.path("drwtNo1").asInt(),
-                    node.path("drwtNo2").asInt(),
-                    node.path("drwtNo3").asInt(),
-                    node.path("drwtNo4").asInt(),
-                    node.path("drwtNo5").asInt(),
-                    node.path("drwtNo6").asInt()
+                    requiredInt(node, "drwtNo1", round),
+                    requiredInt(node, "drwtNo2", round),
+                    requiredInt(node, "drwtNo3", round),
+                    requiredInt(node, "drwtNo4", round),
+                    requiredInt(node, "drwtNo5", round),
+                    requiredInt(node, "drwtNo6", round)
             );
-            int bonus = node.path("bnusNo").asInt();
-            long firstPrize = node.path("firstWinamnt").asLong();
-            int firstWinners = node.path("firstPrzwnerCo").asInt();
-            long totalSales = node.path("totSellamnt").asLong();
+            int bonus = requiredInt(node, "bnusNo", round);
+            long firstPrize = requiredLong(node, "firstWinamnt", round);
+            int firstWinners = requiredInt(node, "firstPrzwnerCo", round);
+            long totalSales = requiredLong(node, "totSellamnt", round);
             return Optional.of(new WinningNumber(
                     drwNo,
                     drawDate,
@@ -150,6 +154,38 @@ public class DhLotteryApiClient implements LottoApiClient {
             throw new LottoApiClientException(
                     "외부 API 응답 변환 실패 (round=" + round + "): " + ex.getMessage(), ex);
         }
+    }
+
+    /**
+     * 필수 int 필드: 존재, null 아님, 정수 타입, int 범위 검증.
+     */
+    private static int requiredInt(JsonNode node, String fieldName, int round) {
+        JsonNode value = node.get(fieldName);
+        if (value == null || value.isNull()) {
+            throw new LottoApiClientException("외부 API 응답 필드가 누락되었습니다 (round=" + round + ", field=" + fieldName + ")");
+        }
+        if (!value.isInt() && !value.isLong() && !value.isNumber()) {
+            throw new LottoApiClientException("외부 API 응답 필드가 정수가 아닙니다 (round=" + round + ", field=" + fieldName + ", value=" + value + ")");
+        }
+        long longVal = value.asLong();
+        if (longVal < Integer.MIN_VALUE || longVal > Integer.MAX_VALUE) {
+            throw new LottoApiClientException("외부 API 응답 필드가 int 범위를 벗어납니다 (round=" + round + ", field=" + fieldName + ", value=" + longVal + ")");
+        }
+        return (int) longVal;
+    }
+
+    /**
+     * 필수 long 필드: 존재, null 아님, 숫자 타입, long 범위 검증.
+     */
+    private static long requiredLong(JsonNode node, String fieldName, int round) {
+        JsonNode value = node.get(fieldName);
+        if (value == null || value.isNull()) {
+            throw new LottoApiClientException("외부 API 응답 필드가 누락되었습니다 (round=" + round + ", field=" + fieldName + ")");
+        }
+        if (!value.isLong() && !value.isInt() && !value.isNumber()) {
+            throw new LottoApiClientException("외부 API 응답 필드가 숫자가 아닙니다 (round=" + round + ", field=" + fieldName + ", value=" + value + ")");
+        }
+        return value.asLong();
     }
 
     private static void requireFields(JsonNode node, int round, String... fieldNames) {
@@ -184,6 +220,13 @@ public class DhLotteryApiClient implements LottoApiClient {
     private void count(String metricName, String... tags) {
         if (meterRegistry == null) {
             return;
+        }
+        // metricName이 failure이고 reason 태그가 있으면 값 제한
+        if ("kraft.api.dhlottery.call.failure".equals(metricName) && tags.length >= 2 && "reason".equals(tags[0])) {
+            String reason = tags[1];
+            if (!ALLOWED_FAILURE_REASONS.contains(reason)) {
+                tags[1] = "other";
+            }
         }
         meterRegistry.counter(metricName, tags).increment();
     }

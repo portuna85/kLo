@@ -9,14 +9,28 @@ import java.util.List;
  * - {@code failed}: 데이터 검증/저장 실패 회차 수 (외부 API 미추첨 응답은 종료 신호로 처리되어 포함되지 않음)
  * - {@code latestRound}: 수집 완료 후 DB에 존재하는 최신 회차 (없으면 0)
  * - {@code failedRounds}: 저장 실패가 발생한 회차 목록
+ * - {@code truncated}: ABSOLUTE_MAX_ROUNDS_PER_CALL 제한에 걸려 중단되었는지 여부
+ * - {@code nextRound}: 제한에 걸린 경우 다음 수집 시작 가능 회차(없으면 null)
  */
-public record CollectResponse(int collected, int skipped, int failed, int latestRound, List<Integer> failedRounds) {
-
+public record CollectResponse(
+        int collected,
+        int skipped,
+        int failed,
+        int latestRound,
+        List<Integer> failedRounds,
+        boolean truncated,
+        Integer nextRound,
+        boolean notDrawn
+) {
     public CollectResponse {
         failedRounds = List.copyOf(failedRounds);
     }
 
     public CollectResponse(int collected, int skipped, int failed, int latestRound) {
-        this(collected, skipped, failed, latestRound, List.of());
+        this(collected, skipped, failed, latestRound, List.of(), false, null, false);
+    }
+
+    public CollectResponse(int collected, int skipped, int failed, int latestRound, List<Integer> failedRounds) {
+        this(collected, skipped, failed, latestRound, failedRounds, false, null, false);
     }
 }
