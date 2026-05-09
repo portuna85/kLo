@@ -76,6 +76,42 @@ class DhLotteryApiClientTest {
                 .hasMessageContaining("정수가 아닙니다");
     }
 
+    @Test
+    @DisplayName("parse 는 숫자 필드가 소수이면 예외를 던진다")
+    void parseThrowsWhenNumberFieldIsDecimal() {
+        String body = """
+                {
+                  "returnValue": "success",
+                  "drwNoDate": "2024-01-06",
+                  "drwtNo1": 6.5, "drwtNo2": 13, "drwtNo3": 23,
+                  "drwtNo4": 24, "drwtNo5": 28, "drwtNo6": 33,
+                  "bnusNo": 38, "firstWinamnt": 0, "firstPrzwnerCo": 0, "totSellamnt": 0,
+                  "drwNo": 1102
+                }
+                """;
+        assertThatThrownBy(() -> client.parse(1102, body))
+                .isInstanceOf(LottoApiClientException.class)
+                .hasMessageContaining("정수가 아닙니다");
+    }
+
+    @Test
+    @DisplayName("parse 는 long 범위를 벗어난 금액 필드이면 예외를 던진다")
+    void parseThrowsWhenLongFieldOverflows() {
+        String body = """
+                {
+                  "returnValue": "success",
+                  "drwNoDate": "2024-01-06",
+                  "drwtNo1": 6, "drwtNo2": 13, "drwtNo3": 23,
+                  "drwtNo4": 24, "drwtNo5": 28, "drwtNo6": 33,
+                  "bnusNo": 38, "firstWinamnt": 9223372036854775808, "firstPrzwnerCo": 0, "totSellamnt": 0,
+                  "drwNo": 1102
+                }
+                """;
+        assertThatThrownBy(() -> client.parse(1102, body))
+                .isInstanceOf(LottoApiClientException.class)
+                .hasMessageContaining("long 범위를 벗어납니다");
+    }
+
     private final DhLotteryApiClient client =
             new DhLotteryApiClient(null, new ObjectMapper(), "http://localhost");
 

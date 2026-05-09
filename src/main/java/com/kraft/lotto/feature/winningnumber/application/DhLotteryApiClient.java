@@ -164,14 +164,13 @@ public class DhLotteryApiClient implements LottoApiClient {
         if (value == null || value.isNull()) {
             throw new LottoApiClientException("외부 API 응답 필드가 누락되었습니다 (round=" + round + ", field=" + fieldName + ")");
         }
-        if (!value.isInt() && !value.isLong() && !value.isNumber()) {
+        if (!value.isIntegralNumber()) {
             throw new LottoApiClientException("외부 API 응답 필드가 정수가 아닙니다 (round=" + round + ", field=" + fieldName + ", value=" + value + ")");
         }
-        long longVal = value.asLong();
-        if (longVal < Integer.MIN_VALUE || longVal > Integer.MAX_VALUE) {
-            throw new LottoApiClientException("외부 API 응답 필드가 int 범위를 벗어납니다 (round=" + round + ", field=" + fieldName + ", value=" + longVal + ")");
+        if (!value.canConvertToInt()) {
+            throw new LottoApiClientException("외부 API 응답 필드가 int 범위를 벗어납니다 (round=" + round + ", field=" + fieldName + ", value=" + value + ")");
         }
-        return (int) longVal;
+        return value.asInt();
     }
 
     /**
@@ -182,8 +181,11 @@ public class DhLotteryApiClient implements LottoApiClient {
         if (value == null || value.isNull()) {
             throw new LottoApiClientException("외부 API 응답 필드가 누락되었습니다 (round=" + round + ", field=" + fieldName + ")");
         }
-        if (!value.isLong() && !value.isInt() && !value.isNumber()) {
-            throw new LottoApiClientException("외부 API 응답 필드가 숫자가 아닙니다 (round=" + round + ", field=" + fieldName + ", value=" + value + ")");
+        if (!value.isIntegralNumber()) {
+            throw new LottoApiClientException("외부 API 응답 필드가 정수가 아닙니다 (round=" + round + ", field=" + fieldName + ", value=" + value + ")");
+        }
+        if (!value.canConvertToLong()) {
+            throw new LottoApiClientException("외부 API 응답 필드가 long 범위를 벗어납니다 (round=" + round + ", field=" + fieldName + ", value=" + value + ")");
         }
         return value.asLong();
     }
