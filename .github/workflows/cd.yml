@@ -50,17 +50,19 @@ jobs:
           KRAFT_RECOMMEND_MAX_ATTEMPTS=100000
           KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS=30
           KRAFT_RECOMMEND_RATE_LIMIT_WINDOW_SECONDS=60
-          KRAFT_LOG_PATH=./logs
+          KRAFT_LOG_PATH=/app/logs
           KRAFT_HEALTHCHECK_URL=http://localhost:8080/actuator/health/readiness
           KRAFT_HEALTHCHECK_TIMEOUT_SECONDS=3
           EOF
           chmod 600 .env
 
-      - name: Fix logs directory permissions
+      - name: Prepare logs directory for bind mount
         run: |
           mkdir -p ./logs
-          sudo chown -R 1000:1000 ./logs
-          sudo chmod -R 755 ./logs
+          # Host UID/GID and container UID/GID can differ.
+          # Keep ownership with runner and open write permission for container user.
+          sudo chown -R $USER:$USER ./logs || true
+          sudo chmod -R 777 ./logs
 
       - name: Stop existing services
         run: |
