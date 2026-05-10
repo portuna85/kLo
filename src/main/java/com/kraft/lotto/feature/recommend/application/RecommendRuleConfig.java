@@ -7,6 +7,7 @@ import com.kraft.lotto.feature.recommend.domain.LongRunRule;
 import com.kraft.lotto.feature.recommend.domain.PastWinningCache;
 import com.kraft.lotto.feature.recommend.domain.PastWinningRule;
 import com.kraft.lotto.feature.recommend.domain.SingleDecadeRule;
+import com.kraft.lotto.infra.config.KraftRecommendProperties;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,8 +33,8 @@ public class RecommendRuleConfig {
     }
 
     @Bean
-    public BirthdayBiasRule birthdayBiasRule() {
-        return new BirthdayBiasRule();
+    public BirthdayBiasRule birthdayBiasRule(KraftRecommendProperties properties) {
+        return new BirthdayBiasRule(properties.rules().birthdayThreshold());
     }
 
     @Bean
@@ -42,13 +43,13 @@ public class RecommendRuleConfig {
     }
 
     @Bean
-    public LongRunRule longRunRule() {
-        return new LongRunRule();
+    public LongRunRule longRunRule(KraftRecommendProperties properties) {
+        return new LongRunRule(properties.rules().longRunThreshold());
     }
 
     @Bean
-    public SingleDecadeRule singleDecadeRule() {
-        return new SingleDecadeRule();
+    public SingleDecadeRule singleDecadeRule(KraftRecommendProperties properties) {
+        return new SingleDecadeRule(properties.rules().decadeThreshold());
     }
 
     /**

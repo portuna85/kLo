@@ -35,7 +35,7 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment env, SpringApplication app) {
-        if (isRunningUnderTest()) {
+        if (isRunningUnderTest(env)) {
             return;
         }
         List<String> problems = new ArrayList<>();
@@ -117,8 +117,9 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
         }
     }
 
-    private static boolean isRunningUnderTest() {
+    private static boolean isRunningUnderTest(ConfigurableEnvironment env) {
         return System.getProperty("org.gradle.test.worker") != null
-                || "true".equalsIgnoreCase(System.getProperty("kraft.skip.required-config-validator"));
+                || "true".equalsIgnoreCase(System.getProperty("kraft.skip.required-config-validator"))
+                || Boolean.parseBoolean(env.getProperty("kraft.skip.required-config-validator", "false"));
     }
 }

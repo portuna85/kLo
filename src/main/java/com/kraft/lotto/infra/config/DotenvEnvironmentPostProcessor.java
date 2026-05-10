@@ -94,7 +94,7 @@ public class DotenvEnvironmentPostProcessor
         return null;
     }
 
-    private static Map<String, Object> parse(Path file) {
+    private Map<String, Object> parse(Path file) {
         Map<String, Object> out = new LinkedHashMap<>();
         try (BufferedReader r = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             String line;
@@ -114,7 +114,7 @@ public class DotenvEnvironmentPostProcessor
         } catch (IOException ex) {
             // .env 읽기 실패는 치명적이지 않으므로 경고만 남긴다.
             // (DeferredLog 는 부트 완료 후 실제 출력)
-            new DeferredLog().warn(".env 읽기 실패: " + file + " — " + ex.getMessage());
+            log.warn(".env 읽기 실패: " + file + " — " + ex.getMessage());
         }
         return out;
     }

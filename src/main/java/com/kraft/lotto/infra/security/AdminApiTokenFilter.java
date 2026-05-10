@@ -43,7 +43,7 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         return !(PROTECTED_METHOD.equalsIgnoreCase(request.getMethod())
-                && PROTECTED_PATH.equals(request.getRequestURI()));
+                && PROTECTED_PATH.equals(pathWithinApplication(request)));
     }
 
     @Override
@@ -81,5 +81,18 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
         byte[] providedBytes = provided.getBytes(StandardCharsets.UTF_8);
         byte[] expectedBytes = expected.getBytes(StandardCharsets.UTF_8);
         return MessageDigest.isEqual(providedBytes, expectedBytes);
+    }
+
+    private static String pathWithinApplication(HttpServletRequest request) {
+        String servletPath = request.getServletPath();
+        if (servletPath != null && !servletPath.isBlank()) {
+            return servletPath;
+        }
+        String requestUri = request.getRequestURI();
+        String contextPath = request.getContextPath();
+        if (contextPath != null && !contextPath.isBlank() && requestUri.startsWith(contextPath)) {
+            return requestUri.substring(contextPath.length());
+        }
+        return requestUri;
     }
 }

@@ -47,6 +47,9 @@ class KraftPropertiesBindingTest {
     @DisplayName("recommend properties 가 정상 바인딩된다")
     void bindsRecommendProperties() {
         assertThat(recommend.maxAttempts()).isEqualTo(1000);
+        assertThat(recommend.rules().birthdayThreshold()).isEqualTo(31);
+        assertThat(recommend.rules().longRunThreshold()).isEqualTo(5);
+        assertThat(recommend.rules().decadeThreshold()).isEqualTo(5);
     }
 
     @Test

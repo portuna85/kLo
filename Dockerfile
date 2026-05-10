@@ -23,9 +23,8 @@ RUN --mount=type=cache,target=/root/.gradle \
 # 3) 소스 복사 후 bootJar
 COPY src ./src
 RUN --mount=type=cache,target=/root/.gradle \
-    ./gradlew --no-daemon clean -x test \
- && mkdir -p build/generated-snippets \
- && ./gradlew --no-daemon bootJar -x test
+    mkdir -p build/generated-snippets \
+ && ./gradlew --no-daemon clean bootJar -x test
 
 # ---- Runtime stage ----
 FROM eclipse-temurin:25-jre

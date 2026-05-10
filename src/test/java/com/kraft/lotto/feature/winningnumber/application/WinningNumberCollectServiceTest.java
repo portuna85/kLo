@@ -75,7 +75,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("targetRound 가 없으면 API 가 empty 를 반환할 때까지 수집한다")
+    @DisplayName("targetRound ?? ?????API ?? empty ???????????? ??????")
     void collectsUntilApiReturnsEmptyWhenNoTargetRound() {
         when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1102));
         when(repository.existsByRound(anyInt())).thenAnswer(inv -> existing.contains(inv.getArgument(0)));
@@ -99,7 +99,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("targetRound 가 있으면 그 회차까지만 수집한다")
+    @DisplayName("targetRound ?? ?????????????????????")
     void collectsUpToTargetRoundOnly() {
         when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1101));
         when(repository.existsByRound(anyInt())).thenReturn(false);
@@ -112,10 +112,10 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("이미 저장된 회차는 skipped 로 카운트된다")
+    @DisplayName("test")
     void countsExistingRoundAsSkipped() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0), Optional.of(2));
-        // round 1: 이미 존재, round 2: 신규, round 3: empty
+        // round 1: ??? ???, round 2: ???, round 3: empty
         Map<Integer, Boolean> exists = new HashMap<>();
         exists.put(1, true);
         exists.put(2, false);
@@ -132,7 +132,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("저장 실패는 failed 로 집계되고 다음 회차로 진행된다")
+    @DisplayName("?????????failed ???????? ??? ???????????")
     void countsSaveFailureAsFailedAndContinues() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0), Optional.of(2));
         when(repository.existsByRound(anyInt())).thenReturn(false);
@@ -152,7 +152,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("외부 API 예외는 BusinessException(EXTERNAL_API_FAILURE) 로 변환된다")
+    @DisplayName("test")
     void wrapsExternalApiExceptionAsBusinessException() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0));
         when(lottoApiClient.fetch(1)).thenThrow(new LottoApiClientException("boom"));
@@ -165,7 +165,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("targetRound 가 1 미만이면 BusinessException(LOTTO_INVALID_TARGET_ROUND) 를 던진다")
+    @DisplayName("test")
     void throwsInvalidTargetRoundWhenTargetRoundIsNonPositive() {
         assertThatExceptionOfType(BusinessException.class)
                 .isThrownBy(() -> service.collect(0))
@@ -174,7 +174,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("targetRound 가 최신 저장 회차 이하이면 API 호출 없이 skipped 로 응답한다")
+    @DisplayName("targetRound ?? ??? ??????? ?????? API ??? ??? skipped ????????")
     void returnsSkippedWhenTargetRoundIsAlreadyCollected() {
         when(repository.findMaxRound()).thenReturn(Optional.of(1100));
 
@@ -190,7 +190,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("수집이 이미 실행 중이면 동시 실행 요청을 거부한다")
+    @DisplayName("???????? ??? ???????? ??? ???????????")
     void rejectsConcurrentCollectExecution() throws Exception {
         CountDownLatch fetchEntered = new CountDownLatch(1);
         CountDownLatch releaseFetch = new CountDownLatch(1);
@@ -223,7 +223,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("collected 가 0 이면 이벤트를 발행하지 않는다")
+    @DisplayName("test")
     void doesNotPublishEventWhenCollectedIsZero() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0));
         when(lottoApiClient.fetch(1)).thenReturn(Optional.empty());
@@ -235,13 +235,10 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("ABSOLUTE_MAX_ROUNDS_PER_CALL 제한에 도달하면 truncated, nextRound 필드가 올바르게 반환된다 (실제 제한값에 맞게 조정 필요)")
+    @DisplayName("test")
     void returnsTruncatedAndNextRoundWhenMaxRoundsPerCallExceeded() {
-        // 실제 서비스의 ABSOLUTE_MAX_ROUNDS_PER_CALL 값(5_000)에 맞춰 2회만 테스트(빠른 검증 목적)
-        // 1101, 1102 저장 후 제한 도달, 1103부터 이어서 수집 가능
-        // 테스트 목적상 doCollect 내부 while 조건을 강제로 조정할 수 없으므로, 실제 제한값에 맞는 반복문을 사용해야 함
-        // 여기서는 예시로 2회만 반복하도록 가정
-        when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1101), Optional.of(1102));
+        service = new WinningNumberCollectService(lottoApiClient, repository, eventPublisher, clock, 2);
+        when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1102));
         when(repository.existsByRound(anyInt())).thenReturn(false);
         when(lottoApiClient.fetch(1101)).thenReturn(Optional.of(sample(1101)));
         when(lottoApiClient.fetch(1102)).thenReturn(Optional.of(sample(1102)));
@@ -250,37 +247,35 @@ class WinningNumberCollectServiceTest {
             return inv.getArgument(0);
         });
 
-        // 실제 서비스에서 ABSOLUTE_MAX_ROUNDS_PER_CALL 값을 테스트에 맞게 임시로 변경할 수 있으면 더 정확한 검증 가능
         CollectResponse result = service.collect(null);
 
-        // 실제 제한값이 5_000이므로, 이 테스트는 예시로만 참고(실제 환경에서는 반복문을 5_000회 돌려야 함)
-        // 아래 검증은 예시
-        assertThat(result.truncated()).isIn(true, false); // 실제 제한 도달 시 true, 아니면 false
-        if (result.truncated()) {
-            assertThat(result.nextRound()).isNotNull();
-        }
+        assertThat(result.truncated()).isTrue();
+        assertThat(result.nextRound()).isEqualTo(1103);
+        assertThat(result.collected()).isEqualTo(2);
     }
 
     @Test
-    @DisplayName("targetRound가 미추첨이면 notDrawn=true로 반환한다")
+    @DisplayName("targetRound?? ????????notDrawn=true????????")
     void returnsNotDrawnTrueWhenTargetRoundIsNotDrawn() {
-        // given: DB 최신 회차는 1100, targetRound=1102, 1102는 미추첨(empty)
-        when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1100));
+        when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1101));
         when(lottoApiClient.fetch(1101)).thenReturn(Optional.of(sample(1101)));
         when(lottoApiClient.fetch(1102)).thenReturn(Optional.empty());
         when(repository.existsByRound(anyInt())).thenReturn(false);
+        when(repository.save(any())).thenAnswer(inv -> {
+            existing.add(((WinningNumberEntity) inv.getArgument(0)).getRound());
+            return inv.getArgument(0);
+        });
 
-        // when
         CollectResponse result = service.collect(1102);
 
-        // then
         assertThat(result.notDrawn()).isTrue();
-        assertThat(result.collected()).isZero();
+        assertThat(result.collected()).isEqualTo(1);
         assertThat(result.skipped()).isZero();
         assertThat(result.failed()).isZero();
-        assertThat(result.latestRound()).isEqualTo(1100);
+        assertThat(result.latestRound()).isEqualTo(1101);
         assertThat(result.failedRounds()).isEmpty();
         assertThat(result.truncated()).isFalse();
         assertThat(result.nextRound()).isNull();
+        verify(eventPublisher).publishEvent(any(WinningNumbersCollectedEvent.class));
     }
 }

@@ -1,8 +1,10 @@
 name: CD - Deploy to kraft-server
 
 on:
-  push:
+  workflow_run:
+    workflows: [ "CI" ]
     branches: [ main ]
+    types: [ completed ]
   workflow_dispatch:
 
 concurrency:
@@ -15,6 +17,7 @@ jobs:
     runs-on: [ self-hosted, linux, x64 ]
     environment: production
     timeout-minutes: 20
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Fix permissions
@@ -29,7 +32,6 @@ jobs:
           cat > .env <<EOF
           SPRING_PROFILES_ACTIVE=prod
           KRAFT_APP_PORT=8080
-          KRAFT_DB_PORT=3306
           KRAFT_DB_NAME=${{ secrets.KRAFT_DB_NAME }}
           KRAFT_DB_URL=jdbc:mariadb://mariadb:3306/${{ secrets.KRAFT_DB_NAME }}?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Seoul&connectTimeout=3000
           KRAFT_DB_USER=${{ secrets.KRAFT_DB_USER }}
@@ -56,9 +58,9 @@ jobs:
 
       - name: Fix logs directory permissions
         run: |
-          rm -rf ./logs || true
           mkdir -p ./logs
-          chmod 777 ./logs
+          sudo chown -R 1000:1000 ./logs
+          sudo chmod -R 755 ./logs
 
       - name: Stop existing services
         run: |
@@ -69,11 +71,7 @@ jobs:
           # 2. Docker Compose 컨테이너 정리
           docker compose down --remove-orphans || true
 
-          # 3. Docker 외부 프로세스가 8080 점유 시 강제 해제
-          sudo fuser -k 8080/tcp 2>/dev/null || true
-
-          # 4. 포트 해제 대기
-          sleep 2
+          docker compose ps || true
 
       - name: Build and restart services
         run: |

@@ -44,6 +44,7 @@ public class WinningNumberCollectService {
     private final WinningNumberRepository repository;
     private final WinningNumberPersister persister;
     private final ApplicationEventPublisher eventPublisher;
+    private final int maxRoundsPerCall;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     @Autowired
@@ -51,10 +52,19 @@ public class WinningNumberCollectService {
                                        WinningNumberRepository repository,
                                        WinningNumberPersister persister,
                                        ApplicationEventPublisher eventPublisher) {
+        this(lottoApiClient, repository, persister, eventPublisher, ABSOLUTE_MAX_ROUNDS_PER_CALL);
+    }
+
+    private WinningNumberCollectService(LottoApiClient lottoApiClient,
+                                        WinningNumberRepository repository,
+                                        WinningNumberPersister persister,
+                                        ApplicationEventPublisher eventPublisher,
+                                        int maxRoundsPerCall) {
         this.lottoApiClient = lottoApiClient;
         this.repository = repository;
         this.persister = persister;
         this.eventPublisher = eventPublisher;
+        this.maxRoundsPerCall = maxRoundsPerCall;
     }
 
     WinningNumberCollectService(LottoApiClient lottoApiClient,
@@ -62,6 +72,14 @@ public class WinningNumberCollectService {
                                 ApplicationEventPublisher eventPublisher,
                                 Clock clock) {
         this(lottoApiClient, repository, new WinningNumberPersister(repository, clock), eventPublisher);
+    }
+
+    WinningNumberCollectService(LottoApiClient lottoApiClient,
+                                WinningNumberRepository repository,
+                                ApplicationEventPublisher eventPublisher,
+                                Clock clock,
+                                int maxRoundsPerCall) {
+        this(lottoApiClient, repository, new WinningNumberPersister(repository, clock), eventPublisher, maxRoundsPerCall);
     }
 
     public CollectResponse collect(Integer targetRound) {
@@ -94,7 +112,7 @@ public class WinningNumberCollectService {
         int round = startRound;
         boolean truncated = false;
         Integer nextRound = null;
-        while (processed < ABSOLUTE_MAX_ROUNDS_PER_CALL) {
+        while (processed < maxRoundsPerCall) {
             if (targetRound != null && round > targetRound) {
                 break;
             }
@@ -113,8 +131,7 @@ public class WinningNumberCollectService {
                 if (targetRound != null) {
                     // 명시적 targetRound가 미추첨이면 notDrawn=true로 CollectResponse 반환
                     log.info("미추첨 회차 도달(stop): round={}, targetRound={}", round, targetRound);
-                    int latestRound = repository.findMaxRound().orElse(0);
-                    return new CollectResponse(0, 0, 0, latestRound, List.of(), false, null, true);
+                    return finishCollect(collected, skipped, failedRounds, false, null, true);
                 }
                 break;
             }
@@ -137,10 +154,19 @@ public class WinningNumberCollectService {
             processed++;
         }
         // ABSOLUTE_MAX_ROUNDS_PER_CALL 제한에 도달한 경우
-        if (processed >= ABSOLUTE_MAX_ROUNDS_PER_CALL) {
+        if (processed >= maxRoundsPerCall) {
             truncated = true;
             nextRound = round;
         }
+        return finishCollect(collected, skipped, failedRounds, truncated, nextRound, false);
+    }
+
+    private CollectResponse finishCollect(int collected,
+                                          int skipped,
+                                          List<Integer> failedRounds,
+                                          boolean truncated,
+                                          Integer nextRound,
+                                          boolean notDrawn) {
         int latestRound = repository.findMaxRound().orElse(0);
         int failed = failedRounds.size();
         if (collected > 0) {
@@ -148,6 +174,6 @@ public class WinningNumberCollectService {
         }
         log.info("collect summary: collected={}, skipped={}, failed={}, latestRound={}, failedRounds={}, truncated={}, nextRound={}",
                 collected, skipped, failed, latestRound, failedRounds, truncated, nextRound);
-        return new CollectResponse(collected, skipped, failed, latestRound, failedRounds, truncated, nextRound, false);
+        return new CollectResponse(collected, skipped, failed, latestRound, List.copyOf(failedRounds), truncated, nextRound, notDrawn);
     }
 }

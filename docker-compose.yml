@@ -18,8 +18,8 @@ services:
       MARIADB_PASSWORD: ${KRAFT_DB_PASSWORD:?KRAFT_DB_PASSWORD is required}
       MARIADB_ROOT_PASSWORD: ${KRAFT_DB_ROOT_PASSWORD:?KRAFT_DB_ROOT_PASSWORD is required}
       TZ: Asia/Seoul
-    ports:
-      - "${KRAFT_DB_PORT:-3306}:3306"
+    expose:
+      - "3306"
     networks:
       - kraft-net
     volumes:

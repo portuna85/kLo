@@ -8,8 +8,18 @@ import com.kraft.lotto.feature.winningnumber.domain.LottoCombination;
  */
 public class SingleDecadeRule implements ExclusionRule {
 
-    public static final int DECADE_THRESHOLD = 5;
+    public static final int DEFAULT_DECADE_THRESHOLD = 5;
     private static final int BUCKET_COUNT = 5;
+
+    private final int decadeThreshold;
+
+    public SingleDecadeRule() {
+        this(DEFAULT_DECADE_THRESHOLD);
+    }
+
+    public SingleDecadeRule(int decadeThreshold) {
+        this.decadeThreshold = decadeThreshold;
+    }
 
     @Override
     public boolean shouldExclude(LottoCombination combination) {
@@ -18,7 +28,7 @@ public class SingleDecadeRule implements ExclusionRule {
             buckets[bucketIndex(n)]++;
         }
         for (int count : buckets) {
-            if (count >= DECADE_THRESHOLD) {
+            if (count >= decadeThreshold) {
                 return true;
             }
         }

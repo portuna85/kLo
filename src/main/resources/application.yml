@@ -84,6 +84,10 @@ kraft:
     token-header: ${KRAFT_ADMIN_TOKEN_HEADER:X-Kraft-Admin-Token}
   recommend:
     max-attempts: ${KRAFT_RECOMMEND_MAX_ATTEMPTS:100000}
+    rules:
+      birthday-threshold: ${KRAFT_RECOMMEND_RULE_BIRTHDAY_THRESHOLD:31}
+      long-run-threshold: ${KRAFT_RECOMMEND_RULE_LONG_RUN_THRESHOLD:5}
+      decade-threshold: ${KRAFT_RECOMMEND_RULE_DECADE_THRESHOLD:5}
     rate-limit:
       # 하위 endpoint 설정이 없을 때 사용하는 기본값입니다.
       max-requests: ${KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS:30}

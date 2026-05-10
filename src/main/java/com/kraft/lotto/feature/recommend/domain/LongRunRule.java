@@ -9,7 +9,17 @@ import java.util.List;
  */
 public class LongRunRule implements ExclusionRule {
 
-    public static final int LONG_RUN_THRESHOLD = 5;
+    public static final int DEFAULT_LONG_RUN_THRESHOLD = 5;
+
+    private final int longRunThreshold;
+
+    public LongRunRule() {
+        this(DEFAULT_LONG_RUN_THRESHOLD);
+    }
+
+    public LongRunRule(int longRunThreshold) {
+        this.longRunThreshold = longRunThreshold;
+    }
 
     @Override
     public boolean shouldExclude(LottoCombination combination) {
@@ -18,7 +28,7 @@ public class LongRunRule implements ExclusionRule {
         for (int i = 1; i < nums.size(); i++) {
             if (nums.get(i) - nums.get(i - 1) == 1) {
                 run++;
-                if (run >= LONG_RUN_THRESHOLD) {
+                if (run >= longRunThreshold) {
                     return true;
                 }
             } else {

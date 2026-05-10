@@ -72,8 +72,8 @@ public class DatasourceUrlAutoFixer
         // application.yml 의 ${KRAFT_DB_URL} placeholder 로 흘러가도록 SystemEnvironment 와 동일 키로 덮는다.
         env.getPropertySources().addFirst(new MapPropertySource(SOURCE_NAME, overrides));
         log.info("호스트 OS 실행 감지 — JDBC URL 호스트를 자동 치환했습니다.");
-        log.info("  before: " + url);
-        log.info("  after : " + rewritten);
+        log.info("  before: " + maskJdbcUrl(url));
+        log.info("  after : " + maskJdbcUrl(rewritten));
         log.info("  비활성화하려면 KRAFT_DB_HOST_REWRITE=false 또는 KRAFT_DB_LOCAL_HOST=<host> 로 지정하세요.");
     }
 
@@ -102,6 +102,17 @@ public class DatasourceUrlAutoFixer
             return jdbcUrl.substring(0, hostStart) + newHost + jdbcUrl.substring(hostEnd);
         }
         return null;
+    }
+
+    static String maskJdbcUrl(String jdbcUrl) {
+        if (jdbcUrl == null) {
+            return null;
+        }
+        int queryStart = jdbcUrl.indexOf('?');
+        if (queryStart < 0) {
+            return jdbcUrl;
+        }
+        return jdbcUrl.substring(0, queryStart) + "?***";
     }
 
     private static boolean isInsideContainer(ConfigurableEnvironment env) {

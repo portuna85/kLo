@@ -8,12 +8,22 @@ import com.kraft.lotto.feature.winningnumber.domain.LottoCombination;
  */
 public class BirthdayBiasRule implements ExclusionRule {
 
-    public static final int BIRTHDAY_THRESHOLD = 31;
+    public static final int DEFAULT_BIRTHDAY_THRESHOLD = 31;
+
+    private final int birthdayThreshold;
+
+    public BirthdayBiasRule() {
+        this(DEFAULT_BIRTHDAY_THRESHOLD);
+    }
+
+    public BirthdayBiasRule(int birthdayThreshold) {
+        this.birthdayThreshold = birthdayThreshold;
+    }
 
     @Override
     public boolean shouldExclude(LottoCombination combination) {
         for (Integer n : combination.numbers()) {
-            if (n > BIRTHDAY_THRESHOLD) {
+            if (n > birthdayThreshold) {
                 return false;
             }
         }

@@ -51,6 +51,21 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
+    @DisplayName("context path 아래에서도 관리자 API를 보호한다")
+    void blocksProtectedEndpointWithContextPath() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/klo/api/winning-numbers/refresh");
+        request.setContextPath("/klo");
+        request.setServletPath("/api/winning-numbers/refresh");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+
+        filter.doFilter(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(401);
+        verifyNoInteractions(chain);
+    }
+
+    @Test
     @DisplayName("관리자 토큰이 틀리면 401을 반환한다")
     void blocksInvalidToken() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/winning-numbers/refresh");
