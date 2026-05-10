@@ -110,27 +110,26 @@ jobs:
             fi
 
             if [ $((i % 6)) -eq 0 ]; then
-              echo "::group::Readiness debug ($i/$MAX_ATTEMPTS)"
+              echo "---- Readiness debug ($i/$MAX_ATTEMPTS) ----"
+              docker inspect --format='state={{.State.Status}} running={{.State.Running}} restartCount={{.RestartCount}} exitCode={{.State.ExitCode}} error={{.State.Error}} startedAt={{.State.StartedAt}} finishedAt={{.State.FinishedAt}}' "$CONTAINER_NAME" || true
               docker compose ps || true
-              docker compose logs --tail=80 app || true
-              docker compose logs --tail=80 mariadb || true
-              echo "::endgroup::"
+              docker logs --tail=120 "$CONTAINER_NAME" || true
+              docker logs --tail=80 kraft-lotto-mariadb || true
+              echo "---- End readiness debug ----"
             fi
 
             sleep "$SLEEP_SECONDS"
           done
 
           echo "Readiness check timed out"
-          echo "::group::Container health detail"
+          echo "Container health detail:"
           docker inspect --format='{{json .State.Health}}' "$CONTAINER_NAME" || true
-          echo
-          echo "::endgroup::"
-          echo "::group::Docker compose status"
+          echo "Docker compose status:"
           docker compose ps || true
-          echo "::endgroup::"
-          echo "::group::Application logs"
-          docker compose logs --tail=200 app
-          echo "::endgroup::"
+          echo "App logs:"
+          docker logs --tail=300 "$CONTAINER_NAME" || true
+          echo "MariaDB logs:"
+          docker logs --tail=120 kraft-lotto-mariadb || true
           exit 1
 
       - name: Smoke test
