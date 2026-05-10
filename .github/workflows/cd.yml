@@ -85,9 +85,8 @@ jobs:
 
           CONTAINER_NAME="kraft-lotto-app"
           HEALTH_URL="http://localhost:8080/actuator/health/readiness"
-          TMP_DIR="${RUNNER_TEMP:-$GITHUB_WORKSPACE/.tmp}"
-          mkdir -p "$TMP_DIR"
-          BODY_FILE="$TMP_DIR/kraft-readiness.json"
+          BODY_FILE="$GITHUB_WORKSPACE/kraft-readiness.json"
+          rm -f "$BODY_FILE" || true
           MAX_ATTEMPTS=60
           SLEEP_SECONDS=5
 
@@ -105,6 +104,13 @@ jobs:
               fi
               echo "App is ready"
               exit 0
+            fi
+
+            if [ $((i % 6)) -eq 0 ]; then
+              echo "::group::Readiness debug ($i/$MAX_ATTEMPTS)"
+              docker compose ps || true
+              docker compose logs --tail=80 app || true
+              echo "::endgroup::"
             fi
 
             sleep "$SLEEP_SECONDS"
@@ -125,9 +131,8 @@ jobs:
 
       - name: Smoke test
         run: |
-          TMP_DIR="${RUNNER_TEMP:-$GITHUB_WORKSPACE/.tmp}"
-          mkdir -p "$TMP_DIR"
-          BODY_FILE="$TMP_DIR/kraft-readiness.json"
+          BODY_FILE="$GITHUB_WORKSPACE/kraft-readiness.json"
+          rm -f "$BODY_FILE" || true
           curl -fsS http://localhost:8080/actuator/health/readiness | tee "$BODY_FILE"
           grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"' "$BODY_FILE"
           echo "Smoke test passed"
