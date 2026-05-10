@@ -85,7 +85,9 @@ jobs:
 
           CONTAINER_NAME="kraft-lotto-app"
           HEALTH_URL="http://localhost:8080/actuator/health/readiness"
-          BODY_FILE="/tmp/kraft-readiness.json"
+          TMP_DIR="${RUNNER_TEMP:-$GITHUB_WORKSPACE/.tmp}"
+          mkdir -p "$TMP_DIR"
+          BODY_FILE="$TMP_DIR/kraft-readiness.json"
           MAX_ATTEMPTS=60
           SLEEP_SECONDS=5
 
@@ -123,8 +125,11 @@ jobs:
 
       - name: Smoke test
         run: |
-          curl -fsS http://localhost:8080/actuator/health/readiness | tee /tmp/kraft-readiness.json
-          grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"' /tmp/kraft-readiness.json
+          TMP_DIR="${RUNNER_TEMP:-$GITHUB_WORKSPACE/.tmp}"
+          mkdir -p "$TMP_DIR"
+          BODY_FILE="$TMP_DIR/kraft-readiness.json"
+          curl -fsS http://localhost:8080/actuator/health/readiness | tee "$BODY_FILE"
+          grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"' "$BODY_FILE"
           echo "Smoke test passed"
 
       - name: Cleanup .env
