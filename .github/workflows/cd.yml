@@ -27,6 +27,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Verify prod profile file exists in source
+        run: |
+          test -f src/main/resources/application.yml
+          test -f src/main/resources/application-local.yml
+          test -f src/main/resources/application-prod.yml
+
       - name: Create .env from secrets
         run: |
           cat > .env <<EOF
@@ -39,7 +45,7 @@ jobs:
           KRAFT_DB_ROOT_PASSWORD=${{ secrets.KRAFT_DB_ROOT_PASSWORD }}
           KRAFT_DB_LOCAL_HOST=localhost
           KRAFT_IN_CONTAINER=true
-          KRAFT_API_CLIENT=dhlottery
+          KRAFT_API_CLIENT=real
           KRAFT_API_URL=https://www.dhlottery.co.kr/common.do
           KRAFT_API_CONNECT_TIMEOUT_MS=2000
           KRAFT_API_READ_TIMEOUT_MS=3000
@@ -80,6 +86,10 @@ jobs:
           docker compose up -d --build --remove-orphans
           docker compose ps
           docker image prune -f
+
+      - name: Verify prod profile is active at runtime
+        run: |
+          docker logs kraft-lotto-app --since 5m | grep -E 'The following .* profile.*prod|profiles? are active.*prod'
 
       - name: Wait for app readiness
         run: |

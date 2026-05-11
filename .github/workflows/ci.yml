@@ -37,6 +37,12 @@ jobs:
       - name: Build and test
         run: ./gradlew --no-daemon clean build
 
+      - name: Verify prod profile is packaged in jar
+        run: |
+          ./gradlew --no-daemon bootJar -x test
+          jar tf build/libs/app.jar | grep -E 'BOOT-INF/classes/application(-prod|-local)?\.yml|BOOT-INF/classes/application\.yml'
+          jar tf build/libs/app.jar | grep -q 'BOOT-INF/classes/application-prod.yml'
+
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4

@@ -107,6 +107,28 @@ Windows PowerShell:
 ./gradlew test
 ```
 
+## CI/CD 배포 검증 (prod 프로파일 누락 방지)
+
+배포 아티팩트에 `application-prod.yml` 포함 여부를 반드시 확인하세요.
+
+PowerShell:
+
+```powershell
+.\gradlew.bat clean bootJar -x test
+.\scripts\verify-prod-profile-in-jar.ps1
+```
+
+직접 확인:
+
+```bash
+jar tf build/libs/app.jar | grep application
+```
+
+기대 결과:
+- `BOOT-INF/classes/application.yml`
+- `BOOT-INF/classes/application-local.yml`
+- `BOOT-INF/classes/application-prod.yml`
+
 ## 주요 API
 
 - `GET /api/winning-numbers/latest`: 최신 당첨번호 조회

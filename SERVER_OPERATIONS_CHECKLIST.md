@@ -42,7 +42,7 @@ curl -s http://localhost:8080/api/winning-numbers/latest
 아래 항목이 반드시 의도대로 설정되어 있는지 확인:
 
 ```env
-SPRING_PROFILES_ACTIVE=local
+SPRING_PROFILES_ACTIVE=prod
 KRAFT_API_CLIENT=real
 KRAFT_API_FALLBACK_TO_MOCK_ON_FAILURE=true
 KRAFT_API_MOCK_LATEST_ROUND=1223
