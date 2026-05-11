@@ -45,7 +45,7 @@ public class LottoApiClientConfig {
         ObjectMapper objectMapper = objectMapperProvider.getIfAvailable(ObjectMapper::new);
         String client = properties.client() == null ? "" : properties.client().trim().toLowerCase();
         if (DHLOTTERY_TOKENS.contains(client)) {
-            return new DhLotteryApiClient(
+            LottoApiClient primary = new DhLotteryApiClient(
                     lottoRestClient,
                     objectMapper,
                     properties.url(),
@@ -53,6 +53,13 @@ public class LottoApiClientConfig {
                     properties.retryBackoffMs(),
                     meterRegistryProvider.getIfAvailable()
             );
+            if (properties.fallbackToMockOnFailure()) {
+                int mockLatestRound = properties.mockLatestRound() > 0
+                        ? properties.mockLatestRound()
+                        : MOCK_DEFAULT_LATEST_ROUND;
+                return new FailoverLottoApiClient(primary, new MockLottoApiClient(mockLatestRound));
+            }
+            return primary;
         }
         return new MockLottoApiClient(MOCK_DEFAULT_LATEST_ROUND);
     }

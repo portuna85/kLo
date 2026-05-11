@@ -43,6 +43,9 @@ import org.springframework.web.context.WebApplicationContext;
 @ExtendWith(RestDocumentationExtension.class)
 @DisplayName("WinningNumberController WebMvc")
 class WinningNumberControllerTest {
+    private static final int ROUND_EXISTING = 1102;
+    private static final int ROUND_NOT_FOUND = 1200;
+
 
     @Autowired
     WebApplicationContext context;
@@ -67,7 +70,7 @@ class WinningNumberControllerTest {
     @Test
     @DisplayName("GET /latest 는 정상 응답을 반환한다")
     void getLatestReturnsOk() throws Exception {
-        Mockito.when(queryService.getLatest()).thenReturn(sample(1102));
+        Mockito.when(queryService.getLatest()).thenReturn(sample(ROUND_EXISTING));
 
         mockMvc.perform(get("/api/winning-numbers/latest"))
                 .andDo(document("winning-numbers-latest",
@@ -88,7 +91,7 @@ class WinningNumberControllerTest {
                 ))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.round").value(1102))
+                .andExpect(jsonPath("$.data.round").value(ROUND_EXISTING))
                 .andExpect(jsonPath("$.data.bonusNumber").value(38))
                 .andExpect(jsonPath("$.data.numbers.length()").value(6));
     }
@@ -96,9 +99,9 @@ class WinningNumberControllerTest {
     @Test
     @DisplayName("GET /{round} 는 정상 응답을 반환한다")
     void getByRoundReturnsOk() throws Exception {
-        Mockito.when(queryService.getByRound(1102)).thenReturn(sample(1102));
+        Mockito.when(queryService.getByRound(ROUND_EXISTING)).thenReturn(sample(ROUND_EXISTING));
 
-        mockMvc.perform(get("/api/winning-numbers/1102"))
+        mockMvc.perform(get("/api/winning-numbers/{round}", ROUND_EXISTING))
                 .andDo(document("winning-numbers-by-round",
                         preprocessRequest(prettyPrint()),
                         preprocessResponse(prettyPrint()),
@@ -117,16 +120,16 @@ class WinningNumberControllerTest {
                 ))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.round").value(1102));
+                .andExpect(jsonPath("$.data.round").value(ROUND_EXISTING));
     }
 
     @Test
     @DisplayName("GET /{round} 는 회차가 없으면 404 NOT_FOUND 를 반환한다")
     void getByRoundReturns404WhenNotFound() throws Exception {
-        Mockito.when(queryService.getByRound(2999))
+        Mockito.when(queryService.getByRound(ROUND_NOT_FOUND))
                 .thenThrow(new BusinessException(ErrorCode.WINNING_NUMBER_NOT_FOUND));
 
-        mockMvc.perform(get("/api/winning-numbers/2999"))
+        mockMvc.perform(get("/api/winning-numbers/{round}", ROUND_NOT_FOUND))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.error.code").value("WINNING_NUMBER_NOT_FOUND"));
@@ -136,7 +139,7 @@ class WinningNumberControllerTest {
     @DisplayName("GET / 는 페이지 응답을 반환한다")
     void getListReturnsPage() throws Exception {
         Mockito.when(queryService.list(0, 20))
-                .thenReturn(new WinningNumberPageDto(List.of(sample(1102), sample(1101)), 0, 20, 2L, 1));
+                .thenReturn(new WinningNumberPageDto(List.of(sample(ROUND_EXISTING), sample(1101)), 0, 20, 2L, 1));
 
         mockMvc.perform(get("/api/winning-numbers?page=0&size=20"))
                 .andDo(document("winning-numbers-list",

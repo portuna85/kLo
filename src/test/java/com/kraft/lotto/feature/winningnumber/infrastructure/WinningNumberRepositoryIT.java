@@ -32,6 +32,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @DisplayName("WinningNumberRepository (Testcontainers + Flyway)")
 class WinningNumberRepositoryIT {
 
+    private static final int ROUND_1200 = 1200;
+    private static final int ROUND_1201 = 1201;
+    private static final int ROUND_1202 = 1202;
+    private static final LocalDate DRAW_DATE_1200 = LocalDate.of(2026, 5, 1);
+    private static final LocalDate DRAW_DATE_1201 = LocalDate.of(2026, 5, 8);
+    private static final LocalDate DRAW_DATE_1202 = LocalDate.of(2026, 5, 15);
+
     @Container
     static final MariaDBContainer<?> MARIADB = new MariaDBContainer<>("mariadb:11.8")
             .withDatabaseName("kraft_lotto")
@@ -100,14 +107,14 @@ class WinningNumberRepositoryIT {
     @Transactional
     @DisplayName("findTopByOrderByRoundDesc 가 최신 회차를 반환한다")
     void findTopByOrderByRoundDescReturnsLatest() {
-        repository.save(entityOf(1200, LocalDate.of(2026, 5, 1), 1, 7, 13, 22, 34, 45, 8));
-        repository.save(entityOf(1202, LocalDate.of(2026, 5, 15), 2, 8, 14, 23, 35, 44, 9));
-        repository.save(entityOf(1201, LocalDate.of(2026, 5, 8), 3, 9, 15, 21, 27, 33, 40));
+        repository.save(savedRound1200());
+        repository.save(savedRound1202());
+        repository.save(savedRound1201());
         em.flush();
         em.clear();
 
         WinningNumberEntity latest = repository.findTopByOrderByRoundDesc().orElseThrow();
-        assertThat(latest.getRound()).isEqualTo(1202);
+        assertThat(latest.getRound()).isEqualTo(ROUND_1202);
     }
 
     @Test
@@ -189,6 +196,18 @@ class WinningNumberRepositoryIT {
                 LocalDateTime.now());
         assertThatThrownBy(() -> repository.saveAndFlush(bad))
                 .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    private static WinningNumberEntity savedRound1200() {
+        return entityOf(ROUND_1200, DRAW_DATE_1200, 1, 7, 13, 22, 34, 45, 8);
+    }
+
+    private static WinningNumberEntity savedRound1201() {
+        return entityOf(ROUND_1201, DRAW_DATE_1201, 3, 9, 15, 21, 27, 33, 40);
+    }
+
+    private static WinningNumberEntity savedRound1202() {
+        return entityOf(ROUND_1202, DRAW_DATE_1202, 2, 8, 14, 23, 35, 44, 9);
     }
 }
 

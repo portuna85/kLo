@@ -9,6 +9,8 @@ public record KraftApiProperties(
         int connectTimeoutMs,
         int readTimeoutMs,
         int maxRetries,
-        int retryBackoffMs
+        int retryBackoffMs,
+        boolean fallbackToMockOnFailure,
+        int mockLatestRound
 ) {
 }

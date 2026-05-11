@@ -72,6 +72,13 @@ management:
 # API 문서는 Spring REST Docs 산출물(static/docs)로 제공됩니다.
 
 kraft:
+  collect:
+    auto:
+      enabled: ${KRAFT_COLLECT_AUTO_ENABLED:true}
+      zone: ${KRAFT_COLLECT_AUTO_ZONE:Asia/Seoul}
+      cron:
+        saturday-22: ${KRAFT_COLLECT_AUTO_CRON_SATURDAY_22:0 0 22 * * SAT}
+        sunday-21: ${KRAFT_COLLECT_AUTO_CRON_SUNDAY_21:0 0 21 * * SUN}
   api:
     client: ${KRAFT_API_CLIENT:mock}
     url: ${KRAFT_API_URL:https://www.dhlottery.co.kr/common.do}
@@ -79,6 +86,8 @@ kraft:
     read-timeout-ms: ${KRAFT_API_READ_TIMEOUT_MS:3000}
     max-retries: ${KRAFT_API_MAX_RETRIES:2}
     retry-backoff-ms: ${KRAFT_API_RETRY_BACKOFF_MS:200}
+    fallback-to-mock-on-failure: ${KRAFT_API_FALLBACK_TO_MOCK_ON_FAILURE:false}
+    mock-latest-round: ${KRAFT_API_MOCK_LATEST_ROUND:1200}
   admin:
     api-token: ${KRAFT_ADMIN_API_TOKEN:}
     token-header: ${KRAFT_ADMIN_TOKEN_HEADER:X-Kraft-Admin-Token}

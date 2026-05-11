@@ -41,6 +41,8 @@ class KraftPropertiesBindingTest {
         assertThat(api.readTimeoutMs()).isEqualTo(3000);
         assertThat(api.maxRetries()).isEqualTo(2);
         assertThat(api.retryBackoffMs()).isEqualTo(50);
+        assertThat(api.fallbackToMockOnFailure()).isFalse();
+        assertThat(api.mockLatestRound()).isEqualTo(1200);
     }
 
     @Test

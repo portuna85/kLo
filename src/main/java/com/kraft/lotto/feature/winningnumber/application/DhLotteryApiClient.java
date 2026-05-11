@@ -98,6 +98,12 @@ public class DhLotteryApiClient implements LottoApiClient {
     }
 
     Optional<WinningNumber> parse(int round, String body) {
+        String trimmed = body == null ? "" : body.trim();
+        if (trimmed.startsWith("<")) {
+            count("kraft.api.dhlottery.call.failure", "reason", "json_parse");
+            throw new LottoApiClientException(
+                    "외부 API 응답이 JSON이 아닙니다 (round=" + round + ", preview=" + preview(trimmed) + ")");
+        }
         JsonNode node;
         try {
             node = objectMapper.readTree(body);
@@ -231,5 +237,10 @@ public class DhLotteryApiClient implements LottoApiClient {
             }
         }
         meterRegistry.counter(metricName, tags).increment();
+    }
+
+    private static String preview(String body) {
+        int limit = Math.min(80, body.length());
+        return body.substring(0, limit).replaceAll("\\s+", " ");
     }
 }
