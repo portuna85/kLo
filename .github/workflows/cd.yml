@@ -87,9 +87,11 @@ jobs:
           docker compose ps
           docker image prune -f
 
-      - name: Verify prod profile is active at runtime
+      - name: Verify prod profile env in container
         run: |
-          docker logs kraft-lotto-app --since 5m | grep -E 'The following .* profile.*prod|profiles? are active.*prod'
+          PROFILE=$(docker compose exec -T app sh -lc 'printenv SPRING_PROFILES_ACTIVE')
+          echo "SPRING_PROFILES_ACTIVE=$PROFILE"
+          test "$PROFILE" = "prod"
 
       - name: Wait for app readiness
         run: |
