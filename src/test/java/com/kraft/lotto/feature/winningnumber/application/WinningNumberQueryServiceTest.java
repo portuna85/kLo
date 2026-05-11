@@ -27,7 +27,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("WinningNumberQueryService")
+    @DisplayName("테스트")
 class WinningNumberQueryServiceTest {
 
     @Mock
@@ -50,7 +50,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("getLatest 는 최신 회차를 반환한다")
+    @DisplayName("테스트")
     void getLatestReturnsLatest() {
         when(repository.findTopByOrderByRoundDesc()).thenReturn(Optional.of(entity(1100)));
 
@@ -61,7 +61,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("getLatest 결과가 없으면 BusinessException(WINNING_NUMBER_NOT_FOUND) 을 던진다")
+    @DisplayName("테스트")
     void getLatestThrowsNotFoundWhenAbsent() {
         when(repository.findTopByOrderByRoundDesc()).thenReturn(Optional.empty());
 
@@ -72,7 +72,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("getByRound 결과가 없으면 NOT_FOUND 를 던진다")
+    @DisplayName("테스트")
     void getByRoundThrowsNotFoundWhenAbsent() {
         when(repository.findById(2999)).thenReturn(Optional.empty());
 
@@ -83,7 +83,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("getByRound 에 0 이하 회차를 주면 LOTTO_INVALID_TARGET_ROUND 를 던진다")
+    @DisplayName("테스트")
     void getByRoundThrowsNotFoundWhenRoundIsNonPositive() {
         assertThatExceptionOfType(BusinessException.class)
                 .isThrownBy(() -> service.getByRound(0))
@@ -92,7 +92,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("list 는 size 상한 및 기본값을 적용한다")
+    @DisplayName("테스트")
     void listAppliesSizeBoundsAndDefaults() {
         Page<WinningNumberEntity> page = new PageImpl<>(List.of(entity(2), entity(1)), PageRequest.of(0, 100), 2);
         when(repository.findAllByOrderByRoundDesc(any())).thenReturn(page);
@@ -106,9 +106,9 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("frequency 는 본번호만 집계하고 1~45 모두 반환한다")
+    @DisplayName("테스트")
     void frequencyAggregatesOnlyMainNumbersAndReturnsAll45() {
-        // 두 회차 모두 본번호 [1,7,13,22,34,45] / 보너스 8 → 보너스는 집계 제외
+        // ?????컧 筌뤴뫀紐?癰귣챶苡??[1,7,13,22,34,45] / 癰귣?瑗??8 ??癰귣?瑗??삳뮉 筌욌쵌????뽰뇚
         Object[] row = {1, 7, 13, 22, 34, 45};
         when(repository.findAllNumbersForFrequency()).thenReturn(List.of(row, row));
 
@@ -117,13 +117,13 @@ class WinningNumberQueryServiceTest {
         assertThat(result).hasSize(45);
         assertThat(result.get(0).number()).isEqualTo(1);
         assertThat(result.get(44).number()).isEqualTo(45);
-        // 본번호로 등장한 1번/7번/13번/22번/34번/45번은 2회씩
+        // 癰귣챶苡?紐껋쨮 ?源놁삢??1甕?7甕?13甕?22甕?34甕?45甕곕뜆? 2???뎃
         assertThat(result.get(0).count()).isEqualTo(2);
         assertThat(result.get(6).count()).isEqualTo(2);
         assertThat(result.get(44).count()).isEqualTo(2);
-        // 8번은 보너스(집계 제외)가 아닌 projection에 없으므로 0회
+        // 8甕곕뜆? 癰귣?瑗??筌욌쵌????뽰뇚)揶쎛 ?袁⑤빒 projection????곸몵沃샕嚥?0??
         assertThat(result.get(7).count()).isZero();
-        // 사용되지 않은 2번은 0회
+        // ?????? ??? 2甕곕뜆? 0??
         assertThat(result.get(1).count()).isZero();
     }
 }

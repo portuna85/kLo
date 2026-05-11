@@ -1,6 +1,7 @@
 package com.kraft.lotto.infra.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kraft.lotto.infra.config.KraftRateLimitRedisProperties;
 import com.kraft.lotto.infra.config.KraftRecommendRateLimitProperties;
 import com.kraft.lotto.support.ApiError;
 import com.kraft.lotto.support.ApiResponse;
@@ -19,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,24 +30,34 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(RecommendRateLimitFilter.class);
 
-    // 추적 가능한 최대 endpoint/IP 버킷 수 — 초과 시 신규 버킷은 즉시 차단
     static final int MAX_TRACKED_IPS = 50_000;
-    // stale 엔트리 정리 주기 (ms) — CAS 방식으로 단일 스레드만 수행
     private static final long CLEANUP_INTERVAL_MS = 60_000L;
     private static final String UNKNOWN_CLIENT_IP = "unknown";
 
     private final KraftRecommendRateLimitProperties properties;
+    private final KraftRateLimitRedisProperties redisProperties;
     private final ObjectMapper objectMapper;
     private final MeterRegistry meterRegistry;
+    private final StringRedisTemplate redisTemplate;
     private final Map<String, Deque<Long>> requestHistory = new ConcurrentHashMap<>();
     private final AtomicLong lastCleanupTime = new AtomicLong(0);
 
     public RecommendRateLimitFilter(KraftRecommendRateLimitProperties properties,
                                     ObjectMapper objectMapper,
                                     MeterRegistry meterRegistry) {
+        this(properties, objectMapper, meterRegistry, null, new KraftRateLimitRedisProperties());
+    }
+
+    public RecommendRateLimitFilter(KraftRecommendRateLimitProperties properties,
+                                    ObjectMapper objectMapper,
+                                    MeterRegistry meterRegistry,
+                                    StringRedisTemplate redisTemplate,
+                                    KraftRateLimitRedisProperties redisProperties) {
         this.properties = properties;
         this.objectMapper = objectMapper;
         this.meterRegistry = meterRegistry;
+        this.redisTemplate = redisTemplate;
+        this.redisProperties = redisProperties;
     }
 
     @Override
@@ -71,41 +83,15 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
 
         var limit = properties.endpoint(endpoint.id);
         long now = Instant.now().toEpochMilli();
-        long windowMs = limit.windowSeconds() * 1_000L;
-        long windowStart = now - windowMs;
-        String key = endpoint.id + ':' + clientIp;
 
-        evictStaleIfNeeded(now, windowStart);
+        Decision decision = isRedisMode()
+                ? decideByRedis(endpoint, clientIp, now, limit)
+                : decideByInMemory(endpoint, clientIp, now, limit);
 
-        // 신규 endpoint/IP 버킷이고 추적 용량 초과 시 차단 (메모리 보호)
-        if (!requestHistory.containsKey(key) && requestHistory.size() >= MAX_TRACKED_IPS) {
-            meterRegistry.counter("kraft.api.rate_limit.requests", "endpoint", endpoint.id,
-                    "result", "blocked", "reason", "capacity_exceeded").increment();
-            log.warn("rate limit bucket capacity exceeded: endpoint={}, trackedBuckets={}",
-                    endpoint.id, requestHistory.size());
-            writeRateLimitResponse(response, limit.windowSeconds());
-            return;
-        }
-
-        Deque<Long> timestamps = requestHistory.computeIfAbsent(key, __ -> new ArrayDeque<>());
-        boolean allowed;
-        int retryAfterSeconds = limit.windowSeconds();
-        synchronized (timestamps) {
-            while (!timestamps.isEmpty() && timestamps.peekFirst() < windowStart) {
-                timestamps.pollFirst();
-            }
-            allowed = timestamps.size() < limit.maxRequests();
-            if (allowed) {
-                timestamps.addLast(now);
-            } else {
-                retryAfterSeconds = retryAfterSeconds(timestamps.peekFirst(), windowMs, now);
-            }
-        }
-
-        if (!allowed) {
+        if (!decision.allowed()) {
             meterRegistry.counter("kraft.api.rate_limit.requests", "endpoint", endpoint.id,
                     "result", "blocked", "reason", "limit_exceeded").increment();
-            writeRateLimitResponse(response, retryAfterSeconds);
+            writeRateLimitResponse(response, decision.retryAfterSeconds());
             return;
         }
 
@@ -114,10 +100,65 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * 윈도우 밖 타임스탬프를 정리하고 빈 데크를 맵에서 제거한다.
-     * CAS로 단일 스레드만 정리를 수행하여 경합을 최소화한다.
-     */
+    private Decision decideByInMemory(Endpoint endpoint,
+                                      String clientIp,
+                                      long now,
+                                      KraftRecommendRateLimitProperties.Endpoint limit) {
+        long windowMs = limit.windowSeconds() * 1_000L;
+        long windowStart = now - windowMs;
+        String key = endpoint.id + ':' + clientIp;
+
+        evictStaleIfNeeded(now, windowStart);
+
+        if (!requestHistory.containsKey(key) && requestHistory.size() >= MAX_TRACKED_IPS) {
+            meterRegistry.counter("kraft.api.rate_limit.requests", "endpoint", endpoint.id,
+                    "result", "blocked", "reason", "capacity_exceeded").increment();
+            log.warn("rate limit bucket capacity exceeded: endpoint={}, trackedBuckets={}",
+                    endpoint.id, requestHistory.size());
+            return new Decision(false, limit.windowSeconds());
+        }
+
+        Deque<Long> timestamps = requestHistory.computeIfAbsent(key, __ -> new ArrayDeque<>());
+        synchronized (timestamps) {
+            while (!timestamps.isEmpty() && timestamps.peekFirst() < windowStart) {
+                timestamps.pollFirst();
+            }
+            if (timestamps.size() < limit.maxRequests()) {
+                timestamps.addLast(now);
+                return new Decision(true, 1);
+            }
+            int retryAfter = retryAfterSeconds(timestamps.peekFirst(), windowMs, now);
+            return new Decision(false, retryAfter);
+        }
+    }
+
+    private Decision decideByRedis(Endpoint endpoint,
+                                   String clientIp,
+                                   long now,
+                                   KraftRecommendRateLimitProperties.Endpoint limit) {
+        long windowSeconds = Math.max(1, limit.windowSeconds());
+        long bucket = now / (windowSeconds * 1000L);
+        String key = redisProperties.resolvedKeyPrefix() + ":" + endpoint.id + ":" + clientIp + ":" + bucket;
+        try {
+            Long count = redisTemplate.opsForValue().increment(key);
+            if (count != null && count == 1L) {
+                redisTemplate.expire(key, java.time.Duration.ofSeconds(windowSeconds + 1));
+            }
+            if (count != null && count <= limit.maxRequests()) {
+                return new Decision(true, 1);
+            }
+            int retryAfter = (int) Math.max(1L, windowSeconds - ((now / 1000L) % windowSeconds));
+            return new Decision(false, retryAfter);
+        } catch (RuntimeException ex) {
+            log.warn("redis rate-limit failed, fallback to in-memory", ex);
+            return decideByInMemory(endpoint, clientIp, now, limit);
+        }
+    }
+
+    private boolean isRedisMode() {
+        return redisProperties.enabled() && redisTemplate != null;
+    }
+
     private void evictStaleIfNeeded(long now, long windowStart) {
         long last = lastCleanupTime.get();
         if (now - last > CLEANUP_INTERVAL_MS && lastCleanupTime.compareAndSet(last, now)) {
@@ -156,10 +197,10 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
         if (path == null || path.isEmpty()) {
             path = request.getRequestURI();
         }
-        if ("/api/recommend".equals(path)) {
+        if ("/api/recommend".equals(path) || "/api/v1/recommend".equals(path)) {
             return Endpoint.RECOMMEND;
         }
-        if ("/api/winning-numbers/refresh".equals(path)) {
+        if ("/api/winning-numbers/refresh".equals(path) || "/api/v1/winning-numbers/refresh".equals(path)) {
             return Endpoint.COLLECT;
         }
         return null;
@@ -209,5 +250,8 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
         Endpoint(String id) {
             this.id = id;
         }
+    }
+
+    private record Decision(boolean allowed, int retryAfterSeconds) {
     }
 }

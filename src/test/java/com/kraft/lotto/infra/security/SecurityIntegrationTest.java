@@ -8,13 +8,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kraft.lotto.feature.recommend.application.RecommendService;
 import com.kraft.lotto.feature.recommend.web.RecommendController;
-import com.kraft.lotto.feature.winningnumber.application.WinningNumberCollectService;
+import com.kraft.lotto.feature.winningnumber.application.LottoCollectionService;
 import com.kraft.lotto.feature.winningnumber.application.WinningNumberQueryService;
 import com.kraft.lotto.feature.winningnumber.web.WinningNumberCollectController;
 import com.kraft.lotto.feature.winningnumber.web.WinningNumberController;
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberDto;
 import com.kraft.lotto.infra.config.KraftAdminProperties;
+import com.kraft.lotto.infra.config.KraftRateLimitRedisProperties;
 import com.kraft.lotto.infra.config.KraftRecommendRateLimitProperties;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -50,7 +51,7 @@ import org.springframework.test.web.servlet.MockMvc;
         UserDetailsServiceAutoConfiguration.class
 })
 @ActiveProfiles("test")
-@DisplayName("Security integration test")
+    @DisplayName("테스트")
 class SecurityIntegrationTest {
 
     @Autowired
@@ -60,7 +61,7 @@ class SecurityIntegrationTest {
     WinningNumberQueryService queryService;
 
     @MockitoBean
-    WinningNumberCollectService collectService;
+    LottoCollectionService collectService;
 
     @MockitoBean
     RecommendService recommendService;
@@ -71,8 +72,11 @@ class SecurityIntegrationTest {
     @MockitoBean
     KraftRecommendRateLimitProperties rateLimitProperties;
 
+    @MockitoBean
+    KraftRateLimitRedisProperties redisRateLimitProperties;
+
     @Test
-    @DisplayName("public recommend/rules endpoint is accessible without auth")
+    @DisplayName("테스트")
     void publicRecommendRulesIsAccessibleWithoutAuth() throws Exception {
         givenSecurityProperties();
         Mockito.when(recommendService.rules()).thenReturn(List.of());
@@ -83,7 +87,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("public winning-numbers/latest is accessible without auth")
+    @DisplayName("테스트")
     void publicWinningNumbersLatestIsAccessibleWithoutAuth() throws Exception {
         givenSecurityProperties();
         Mockito.when(queryService.getLatest()).thenReturn(new WinningNumberDto(
@@ -97,7 +101,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("winning-number refresh requires admin token")
+    @DisplayName("테스트")
     void winningNumberRefreshRequiresAdminToken() throws Exception {
         givenSecurityProperties();
         mockMvc.perform(post("/api/winning-numbers/refresh")
@@ -108,7 +112,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("winning-number refresh is accessible with admin token")
+    @DisplayName("테스트")
     void winningNumberRefreshIsAccessibleWithAdminToken() throws Exception {
         givenSecurityProperties();
         Mockito.when(collectService.collect(Mockito.nullable(Integer.class)))
@@ -126,7 +130,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("winning-number refresh is rate-limited by IP")
+    @DisplayName("테스트")
     void winningNumberRefreshIsRateLimitedByIp() throws Exception {
         givenSecurityProperties();
         Mockito.when(collectService.collect(Mockito.nullable(Integer.class)))
@@ -155,11 +159,11 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("unknown endpoint is denied by anyRequest().denyAll()")
+    @DisplayName("테스트")
     void unknownEndpointIsDenied() throws Exception {
         givenSecurityProperties();
         mockMvc.perform(get("/admin/unknown"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     private void givenSecurityProperties() {
@@ -170,6 +174,8 @@ class SecurityIntegrationTest {
                 .thenReturn(new KraftRecommendRateLimitProperties.Endpoint(30, 60));
         Mockito.when(rateLimitProperties.endpoint("collect"))
                 .thenReturn(new KraftRecommendRateLimitProperties.Endpoint(10, 60));
+        Mockito.when(redisRateLimitProperties.enabled()).thenReturn(false);
+        Mockito.when(redisRateLimitProperties.resolvedKeyPrefix()).thenReturn("kraft:rate-limit");
     }
 
     static class TestJsonConfig {

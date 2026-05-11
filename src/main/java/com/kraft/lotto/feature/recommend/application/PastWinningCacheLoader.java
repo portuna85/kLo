@@ -3,7 +3,6 @@ package com.kraft.lotto.feature.recommend.application;
 import com.kraft.lotto.feature.recommend.domain.PastWinningCache;
 import com.kraft.lotto.feature.winningnumber.domain.LottoCombination;
 import com.kraft.lotto.feature.winningnumber.event.WinningNumbersCollectedEvent;
-import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberMapper;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberRepository;
 import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -44,8 +43,11 @@ public class PastWinningCacheLoader {
 
     public void reload() {
         List<LottoCombination> combinations = new ArrayList<>();
-        repository.findAllOrderByRoundAsc().forEach(entity ->
-                combinations.add(WinningNumberMapper.toDomain(entity).combination())
+        repository.findAllCombinationsOrderByRoundAsc().forEach(row ->
+                combinations.add(new LottoCombination(List.of(
+                        (Integer) row[0], (Integer) row[1], (Integer) row[2],
+                        (Integer) row[3], (Integer) row[4], (Integer) row[5]
+                )))
         );
         cache.replace(combinations);
         log.debug("PastWinningCache loaded size={}", cache.size());

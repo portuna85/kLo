@@ -1,6 +1,7 @@
 package com.kraft.lotto.feature.winningnumber.application;
 
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -23,6 +24,9 @@ public class WinningNumberAutoCollectScheduler {
             cron = "${kraft.collect.auto.cron.saturday-21-10:0 10 21 ? * SAT}",
             zone = "${kraft.collect.auto.zone:Asia/Seoul}"
     )
+    @SchedulerLock(name = "lotto_collect_next_sat_21_10",
+            lockAtMostFor = "${kraft.lotto.scheduler.lock-at-most-for:PT10M}",
+            lockAtLeastFor = "${kraft.lotto.scheduler.lock-at-least-for:PT10S}")
     public void collectNextDrawOnSaturday2110() {
         runCollectNext("sat-21-10");
     }
@@ -31,6 +35,9 @@ public class WinningNumberAutoCollectScheduler {
             cron = "${kraft.collect.auto.cron.saturday-21-retry:0 20,40 21 ? * SAT}",
             zone = "${kraft.collect.auto.zone:Asia/Seoul}"
     )
+    @SchedulerLock(name = "lotto_collect_next_sat_21_retry",
+            lockAtMostFor = "${kraft.lotto.scheduler.lock-at-most-for:PT10M}",
+            lockAtLeastFor = "${kraft.lotto.scheduler.lock-at-least-for:PT10S}")
     public void retryCollectNextDrawOnSaturday2120And2140() {
         runCollectNext("sat-21-retry");
     }
@@ -39,6 +46,9 @@ public class WinningNumberAutoCollectScheduler {
             cron = "${kraft.collect.auto.cron.saturday-22-10:0 10 22 ? * SAT}",
             zone = "${kraft.collect.auto.zone:Asia/Seoul}"
     )
+    @SchedulerLock(name = "lotto_collect_next_sat_22_10",
+            lockAtMostFor = "${kraft.lotto.scheduler.lock-at-most-for:PT10M}",
+            lockAtLeastFor = "${kraft.lotto.scheduler.lock-at-least-for:PT10S}")
     public void retryCollectNextDrawOnSaturday2210() {
         runCollectNext("sat-22-10");
     }
@@ -47,6 +57,9 @@ public class WinningNumberAutoCollectScheduler {
             cron = "${kraft.collect.auto.cron.sunday-06-10:0 10 6 ? * SUN}",
             zone = "${kraft.collect.auto.zone:Asia/Seoul}"
     )
+    @SchedulerLock(name = "lotto_collect_missing_sun_06_10",
+            lockAtMostFor = "${kraft.lotto.scheduler.lock-at-most-for:PT10M}",
+            lockAtLeastFor = "${kraft.lotto.scheduler.lock-at-least-for:PT10S}")
     public void collectMissingDrawsOnSunday0610() {
         runCollectMissing("sun-06-10");
     }
@@ -55,6 +68,9 @@ public class WinningNumberAutoCollectScheduler {
             cron = "${kraft.collect.auto.cron.daily-09-00:0 0 9 * * *}",
             zone = "${kraft.collect.auto.zone:Asia/Seoul}"
     )
+    @SchedulerLock(name = "lotto_collect_missing_daily_09_00",
+            lockAtMostFor = "${kraft.lotto.scheduler.lock-at-most-for:PT10M}",
+            lockAtLeastFor = "${kraft.lotto.scheduler.lock-at-least-for:PT10S}")
     public void collectMissingDrawsDaily0900() {
         runCollectMissing("daily-09-00");
     }

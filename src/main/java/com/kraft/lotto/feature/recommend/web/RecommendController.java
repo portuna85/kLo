@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 본 API는 인기/중복 패턴 회피형 추천만을 제공하며, 당첨 확률 향상을 보장하지 않는다.
  */
 @RestController
-@RequestMapping("/api/recommend")
+@RequestMapping({"/api/recommend", "/api/v1/recommend"})
 public class RecommendController {
 
     private final RecommendService recommendService;

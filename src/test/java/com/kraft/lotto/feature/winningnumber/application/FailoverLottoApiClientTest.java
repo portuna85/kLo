@@ -9,6 +9,9 @@ import static org.mockito.Mockito.when;
 
 import com.kraft.lotto.feature.winningnumber.domain.LottoCombination;
 import com.kraft.lotto.feature.winningnumber.domain.WinningNumber;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -20,7 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("FailoverLottoApiClient")
+    @DisplayName("테스트")
 class FailoverLottoApiClientTest {
 
     @Mock
@@ -33,11 +36,18 @@ class FailoverLottoApiClientTest {
 
     @BeforeEach
     void setUp() {
-        client = new FailoverLottoApiClient(primary, fallback);
+        CircuitBreakerConfig config = CircuitBreakerConfig.custom()
+                .minimumNumberOfCalls(1)
+                .slidingWindowSize(1)
+                .failureRateThreshold(1.0f)
+                .waitDurationInOpenState(Duration.ofMinutes(5))
+                .recordException(ex -> ex instanceof LottoApiClientException)
+                .build();
+        client = new FailoverLottoApiClient(primary, fallback, CircuitBreaker.of("test", config));
     }
 
     @Test
-    @DisplayName("delegates to primary when primary is healthy")
+    @DisplayName("테스트")
     void delegatesToPrimaryWhenHealthy() {
         when(primary.fetch(1)).thenReturn(Optional.of(sample(1)));
 
@@ -47,7 +57,7 @@ class FailoverLottoApiClientTest {
     }
 
     @Test
-    @DisplayName("switches to fallback when primary fails")
+    @DisplayName("테스트")
     void switchesToFallbackOnPrimaryFailure() {
         when(primary.fetch(1)).thenThrow(new LottoApiClientException("down"));
         when(fallback.fetch(1)).thenReturn(Optional.of(sample(1)));
@@ -57,8 +67,8 @@ class FailoverLottoApiClientTest {
     }
 
     @Test
-    @DisplayName("stays on fallback while cooldown is active")
-    void staysInFallbackAfterActivation() {
+    @DisplayName("테스트")
+    void usesFallbackWhileCircuitOpen() {
         when(primary.fetch(1)).thenThrow(new LottoApiClientException("down"));
         when(fallback.fetch(anyInt())).thenReturn(Optional.empty());
 

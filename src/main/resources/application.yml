@@ -40,6 +40,10 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=100,expireAfterWrite=45m
 
 server:
   shutdown: graceful
@@ -51,6 +55,13 @@ server:
   forward-headers-strategy: NATIVE
 
 management:
+  tracing:
+    enabled: ${KRAFT_TRACING_ENABLED:false}
+    sampling:
+      probability: ${KRAFT_TRACING_SAMPLING_PROBABILITY:1.0}
+  otlp:
+    tracing:
+      endpoint: ${KRAFT_OTLP_TRACING_ENDPOINT:http://localhost:4318/v1/traces}
   endpoints:
     web:
       exposure:
@@ -70,6 +81,8 @@ kraft:
   lotto:
     scheduler:
       enabled: ${KRAFT_LOTTO_SCHEDULER_ENABLED:true}
+      lock-at-most-for: ${KRAFT_LOTTO_SCHEDULER_LOCK_AT_MOST_FOR:PT10M}
+      lock-at-least-for: ${KRAFT_LOTTO_SCHEDULER_LOCK_AT_LEAST_FOR:PT10S}
   collect:
     auto:
       enabled: ${KRAFT_COLLECT_AUTO_ENABLED:true}
@@ -80,6 +93,10 @@ kraft:
         saturday-22-10: ${KRAFT_COLLECT_AUTO_CRON_SATURDAY_22_10:0 10 22 ? * SAT}
         sunday-06-10: ${KRAFT_COLLECT_AUTO_CRON_SUNDAY_06_10:0 10 6 ? * SUN}
         daily-09-00: ${KRAFT_COLLECT_AUTO_CRON_DAILY_09_00:0 0 9 * * *}
+    log-retention:
+      enabled: ${KRAFT_COLLECT_LOG_RETENTION_ENABLED:true}
+      days: ${KRAFT_COLLECT_LOG_RETENTION_DAYS:90}
+      cron: ${KRAFT_COLLECT_LOG_RETENTION_CRON:0 30 3 * * *}
   api:
     client: ${KRAFT_API_CLIENT:mock}
     url: ${KRAFT_API_URL:https://www.dhlottery.co.kr/common.do}
@@ -101,6 +118,9 @@ kraft:
     rate-limit:
       max-requests: ${KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS:30}
       window-seconds: ${KRAFT_RECOMMEND_RATE_LIMIT_WINDOW_SECONDS:60}
+      redis:
+        enabled: ${KRAFT_RECOMMEND_RATE_LIMIT_REDIS_ENABLED:false}
+        key-prefix: ${KRAFT_RECOMMEND_RATE_LIMIT_REDIS_KEY_PREFIX:kraft:rate-limit}
       recommend:
         max-requests: ${KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS:30}
         window-seconds: ${KRAFT_RECOMMEND_RATE_LIMIT_WINDOW_SECONDS:60}

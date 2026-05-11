@@ -34,6 +34,7 @@ import org.springframework.stereotype.Service;
  * 저장은 WinningNumberPersister가 회차별로 담당한다.
  */
 @Service
+@Deprecated(forRemoval = false)
 public class WinningNumberCollectService {
 
     private static final Logger log = LoggerFactory.getLogger(WinningNumberCollectService.class);

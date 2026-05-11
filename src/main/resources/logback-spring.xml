@@ -110,6 +110,39 @@
         </rollingPolicy>
     </appender>
 
+    <!-- JSON 구조화 로그 -->
+    <appender name="FILE_JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/kraft-json.log</file>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp>
+                    <fieldName>@timestamp</fieldName>
+                </timestamp>
+                <logLevel>
+                    <fieldName>level</fieldName>
+                </logLevel>
+                <threadName>
+                    <fieldName>thread</fieldName>
+                </threadName>
+                <loggerName>
+                    <fieldName>logger</fieldName>
+                </loggerName>
+                <message/>
+                <mdc/>
+                <stackTrace>
+                    <fieldName>stack_trace</fieldName>
+                </stackTrace>
+            </providers>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/archived/kraft-json.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+    </appender>
+
     <!-- 비동기 래퍼 -->
     <appender name="ASYNC_FILE_ALL" class="ch.qos.logback.classic.AsyncAppender">
         <queueSize>1024</queueSize>
@@ -135,6 +168,12 @@
         <discardingThreshold>0</discardingThreshold>
         <neverBlock>true</neverBlock>
         <appender-ref ref="FILE_DEBUG"/>
+    </appender>
+    <appender name="ASYNC_FILE_JSON" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>1024</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="FILE_JSON"/>
     </appender>
 
     <!-- 시끄러운 패키지 정리 -->
@@ -168,6 +207,7 @@
             <appender-ref ref="ASYNC_FILE_ERROR"/>
             <appender-ref ref="ASYNC_FILE_WARN"/>
             <appender-ref ref="ASYNC_FILE_DEBUG"/>
+            <appender-ref ref="ASYNC_FILE_JSON"/>
         </root>
     </springProfile>
 

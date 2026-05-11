@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-@DisplayName("AdminApiTokenFilter")
+    @DisplayName("테스트")
 class AdminApiTokenFilterTest {
 
     private final AdminApiTokenFilter filter = new AdminApiTokenFilter(
@@ -24,7 +24,7 @@ class AdminApiTokenFilterTest {
     );
 
     @Test
-    @DisplayName("보호 대상이 아니면 필터링하지 않는다")
+    @DisplayName("테스트")
     void ignoresNonProtectedEndpoint() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/winning-numbers/latest");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -37,7 +37,7 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
-    @DisplayName("관리자 토큰이 없으면 401을 반환한다")
+    @DisplayName("테스트")
     void blocksMissingToken() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/winning-numbers/refresh");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -51,7 +51,7 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
-    @DisplayName("context path 아래에서도 관리자 API를 보호한다")
+    @DisplayName("테스트")
     void blocksProtectedEndpointWithContextPath() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/klo/api/winning-numbers/refresh");
         request.setContextPath("/klo");
@@ -66,7 +66,7 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
-    @DisplayName("관리자 토큰이 틀리면 401을 반환한다")
+    @DisplayName("테스트")
     void blocksInvalidToken() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/winning-numbers/refresh");
         request.addHeader("X-Kraft-Admin-Token", "wrong-token");
@@ -81,7 +81,7 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
-    @DisplayName("관리자 토큰이 맞으면 요청을 통과시킨다")
+    @DisplayName("테스트")
     void allowsValidToken() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/winning-numbers/refresh");
         request.addHeader("X-Kraft-Admin-Token", "secret-token");
@@ -95,7 +95,7 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
-    @DisplayName("신규 관리자 수집 API도 토큰이 없으면 401을 반환한다")
+    @DisplayName("테스트")
     void blocksAdminLottoDrawEndpointWithoutToken() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/admin/lotto/draws/collect-next");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -108,7 +108,7 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
-    @DisplayName("신규 관리자 수집 API는 올바른 토큰이면 통과한다")
+    @DisplayName("테스트")
     void allowsAdminLottoDrawEndpointWithValidToken() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/admin/lotto/draws/collect-next");
         request.addHeader("X-Kraft-Admin-Token", "secret-token");
@@ -122,7 +122,7 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
-    @DisplayName("서버에 관리자 토큰이 설정되지 않으면 보호 대상 요청을 차단한다")
+    @DisplayName("테스트")
     void blocksWhenServerTokenIsNotConfigured() throws Exception {
         AdminApiTokenFilter missingConfigFilter = new AdminApiTokenFilter(
                 new KraftAdminProperties("", "X-Kraft-Admin-Token"),

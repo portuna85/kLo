@@ -3,8 +3,9 @@ package com.kraft.lotto.infra.health;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-import com.kraft.lotto.feature.winningnumber.application.LottoApiClient;
-import com.kraft.lotto.feature.winningnumber.application.LottoApiClientException;
+import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberEntity;
+import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberRepository;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,31 +17,37 @@ import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.Status;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("LottoApiHealthIndicator")
+    @DisplayName("테스트")
 class LottoApiHealthIndicatorTest {
 
     @Mock
-    LottoApiClient lottoApiClient;
+    WinningNumberRepository winningNumberRepository;
 
     LottoApiHealthIndicator indicator;
 
     @BeforeEach
     void setUp() {
-        indicator = new LottoApiHealthIndicator(lottoApiClient);
+        indicator = new LottoApiHealthIndicator(winningNumberRepository);
     }
 
     @Test
-    @DisplayName("returns UP when API is reachable")
-    void returnsUpWhenApiIsReachable() {
-        when(lottoApiClient.fetch(1)).thenReturn(Optional.empty());
+    @DisplayName("테스트")
+    void returnsUpWhenRepositoryQuerySucceeds() {
+        WinningNumberEntity latest = org.mockito.Mockito.mock(WinningNumberEntity.class);
+        when(winningNumberRepository.findMaxRound()).thenReturn(Optional.of(1100));
+        when(winningNumberRepository.findTopByOrderByRoundDesc()).thenReturn(Optional.of(latest));
+        when(latest.getFetchedAt()).thenReturn(LocalDateTime.of(2026, 5, 11, 12, 0));
 
-        assertThat(indicator.health().getStatus()).isEqualTo(Status.UP);
+        Health result = indicator.health();
+        assertThat(result.getStatus()).isEqualTo(Status.UP);
+        assertThat(result.getDetails()).containsEntry("latestStoredRound", 1100);
+        assertThat(result.getDetails()).containsKey("lastCollectedAt");
     }
 
     @Test
-    @DisplayName("returns DOWN when API is unreachable")
-    void returnsDownWhenApiIsUnreachable() {
-        when(lottoApiClient.fetch(1)).thenThrow(new LottoApiClientException("timeout"));
+    @DisplayName("테스트")
+    void returnsDownWhenRepositoryQueryFails() {
+        when(winningNumberRepository.findMaxRound()).thenThrow(new RuntimeException("db down"));
 
         Health result = indicator.health();
 

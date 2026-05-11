@@ -6,9 +6,13 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -49,6 +53,31 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.failure(code, ex.getMessage()));
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotReadable(HttpMessageNotReadableException ex) {
+        return ResponseEntity.status(ErrorCode.REQUEST_VALIDATION_ERROR.getHttpStatus())
+                .body(ApiResponse.failure(ErrorCode.REQUEST_VALIDATION_ERROR));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        ErrorCode code = resolveConstraintCode(ex.getName());
+        return ResponseEntity.status(code.getHttpStatus())
+                .body(ApiResponse.failure(code));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex) {
+        return ResponseEntity.status(ErrorCode.METHOD_NOT_ALLOWED.getHttpStatus())
+                .body(ApiResponse.failure(ErrorCode.METHOD_NOT_ALLOWED));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResource(NoResourceFoundException ex) {
+        return ResponseEntity.status(ErrorCode.RESOURCE_NOT_FOUND.getHttpStatus())
+                .body(ApiResponse.failure(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.status(ErrorCode.LOTTO_INVALID_NUMBER.getHttpStatus())
@@ -80,7 +109,11 @@ public class GlobalExceptionHandler {
         if (propertyPath.endsWith("count")) {
             return ErrorCode.LOTTO_INVALID_COUNT;
         }
-        if (propertyPath.endsWith("targetRound") || propertyPath.endsWith("round")) {
+        if (propertyPath.endsWith("targetRound")
+                || propertyPath.endsWith("round")
+                || propertyPath.endsWith("drwNo")
+                || propertyPath.endsWith("from")
+                || propertyPath.endsWith("to")) {
             return ErrorCode.LOTTO_INVALID_TARGET_ROUND;
         }
         if (propertyPath.endsWith("page") || propertyPath.endsWith("size")) {

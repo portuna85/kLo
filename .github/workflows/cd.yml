@@ -53,9 +53,17 @@ jobs:
           KRAFT_API_RETRY_BACKOFF_MS=200
           KRAFT_ADMIN_API_TOKEN=${{ secrets.KRAFT_ADMIN_API_TOKEN }}
           KRAFT_ADMIN_TOKEN_HEADER=X-Kraft-Admin-Token
-          KRAFT_RECOMMEND_MAX_ATTEMPTS=100000
+          KRAFT_RECOMMEND_MAX_ATTEMPTS=5000
           KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS=30
           KRAFT_RECOMMEND_RATE_LIMIT_WINDOW_SECONDS=60
+          KRAFT_RECOMMEND_RATE_LIMIT_REDIS_ENABLED=false
+          KRAFT_RECOMMEND_RATE_LIMIT_REDIS_KEY_PREFIX=kraft:rate-limit
+          KRAFT_TRACING_ENABLED=false
+          KRAFT_TRACING_SAMPLING_PROBABILITY=1.0
+          KRAFT_OTLP_TRACING_ENDPOINT=http://localhost:4318/v1/traces
+          KRAFT_COLLECT_LOG_RETENTION_ENABLED=true
+          KRAFT_COLLECT_LOG_RETENTION_DAYS=90
+          KRAFT_COLLECT_LOG_RETENTION_CRON=0 30 3 * * *`n          KRAFT_LOTTO_SCHEDULER_LOCK_AT_MOST_FOR=PT10M`n          KRAFT_LOTTO_SCHEDULER_LOCK_AT_LEAST_FOR=PT10S
           KRAFT_LOG_PATH=/app/logs
           KRAFT_HEALTHCHECK_URL=http://localhost:8080/actuator/health/readiness
           KRAFT_HEALTHCHECK_TIMEOUT_SECONDS=3
@@ -72,11 +80,11 @@ jobs:
 
       - name: Stop existing services
         run: |
-          # 1. systemd 서비스 비활성화 (Docker 전환 후 재기동 방지)
+          # 1. systemd ?쒕퉬??鍮꾪솢?깊솕 (Docker ?꾪솚 ???ш린??諛⑹?)
           sudo systemctl stop klo 2>/dev/null || true
           sudo systemctl disable klo 2>/dev/null || true
 
-          # 2. Docker Compose 컨테이너 정리
+          # 2. Docker Compose 而⑦뀒?대꼫 ?뺣━
           docker compose down --remove-orphans || true
 
           docker compose ps || true

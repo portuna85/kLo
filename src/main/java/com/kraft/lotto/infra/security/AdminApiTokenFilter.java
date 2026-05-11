@@ -30,6 +30,7 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
 
     private static final String PROTECTED_METHOD = "POST";
     private static final String LEGACY_PROTECTED_PATH = "/api/winning-numbers/refresh";
+    private static final String V1_PROTECTED_PATH = "/api/v1/winning-numbers/refresh";
     private static final String ADMIN_PATH_PREFIX = "/admin/";
 
     private final KraftAdminProperties properties;
@@ -46,11 +47,14 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = pathWithinApplication(request);
+        if (path.startsWith(ADMIN_PATH_PREFIX)) {
+            return false;
+        }
         if (!PROTECTED_METHOD.equalsIgnoreCase(request.getMethod())) {
             return true;
         }
-        String path = pathWithinApplication(request);
-        return !(LEGACY_PROTECTED_PATH.equals(path) || path.startsWith(ADMIN_PATH_PREFIX));
+        return !(LEGACY_PROTECTED_PATH.equals(path) || V1_PROTECTED_PATH.equals(path));
     }
 
     @Override

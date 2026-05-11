@@ -3,12 +3,14 @@ package com.kraft.lotto.feature.winningnumber.application;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kraft.lotto.infra.config.KraftApiProperties;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.Set;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 /**
@@ -30,9 +32,11 @@ public class LottoApiClientConfig {
 
     @Bean
     public RestClient lottoRestClient(KraftApiProperties properties) {
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(properties.connectTimeoutMs());
-        requestFactory.setReadTimeout(properties.readTimeoutMs());
+        HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(properties.connectTimeoutMs()))
+                .build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(Duration.ofMillis(properties.readTimeoutMs()));
         return RestClient.builder()
                 .requestFactory(requestFactory)
                 .defaultHeader(HttpHeaders.USER_AGENT, "kraft-lotto/0.0.1 dhlottery-collector")

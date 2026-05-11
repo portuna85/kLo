@@ -13,7 +13,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.kraft.lotto.feature.winningnumber.application.WinningNumberCollectService;
+import com.kraft.lotto.feature.winningnumber.application.LottoCollectionService;
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
 import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
@@ -41,7 +41,7 @@ import org.springframework.web.context.WebApplicationContext;
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
 @ExtendWith(RestDocumentationExtension.class)
-@DisplayName("WinningNumberCollectController WebMvc")
+    @DisplayName("테스트")
 class WinningNumberCollectControllerTest {
 
     @Autowired
@@ -50,7 +50,7 @@ class WinningNumberCollectControllerTest {
     MockMvc mockMvc;
 
     @MockitoBean
-    WinningNumberCollectService collectService;
+    LottoCollectionService collectService;
 
     @BeforeEach
     void setUp(RestDocumentationContextProvider restDocumentation) {
@@ -60,7 +60,7 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("POST /refresh 본문이 없으면 targetRound 를 null 로 위임한다")
+    @DisplayName("테스트")
     void postCollectDelegatesNullTargetRoundWhenBodyAbsent() throws Exception {
         Mockito.when(collectService.collect(isNull()))
                 .thenReturn(new CollectResponse(3, 0, 0, 1103, List.of(), true, 2000, false));
@@ -75,7 +75,7 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("POST /refresh 는 지정된 targetRound 로 위임한다")
+    @DisplayName("테스트")
     void postCollectDelegatesSpecifiedTargetRound() throws Exception {
         Mockito.when(collectService.collect(1103))
                 .thenReturn(new CollectResponse(2, 1, 0, 1103, List.of(), false, null, false));
@@ -89,20 +89,20 @@ class WinningNumberCollectControllerTest {
                         requestFields(
                                 fieldWithPath("targetRound").type(JsonFieldType.STRING)
                                         .optional()
-                                        .description("수집 종료 대상 회차(생략 시 미추첨 회차 전까지 자동 수집)")
+                                        .description("설명")
                         ),
                         responseFields(
-                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("요청 성공 여부"),
-                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("수집 결과 요약"),
-                                fieldWithPath("data.collected").type(JsonFieldType.NUMBER).description("새로 저장된 회차 수"),
-                                fieldWithPath("data.skipped").type(JsonFieldType.NUMBER).description("이미 존재하여 건너뛴 회차 수"),
-                                fieldWithPath("data.failed").type(JsonFieldType.NUMBER).description("검증/저장 실패 회차 수"),
-                                fieldWithPath("data.latestRound").type(JsonFieldType.NUMBER).description("수집 후 최신 회차"),
-                                fieldWithPath("data.failedRounds").type(JsonFieldType.ARRAY).description("저장 실패가 발생한 회차 목록"),
-                                fieldWithPath("data.truncated").type(JsonFieldType.BOOLEAN).description("ABSOLUTE_MAX_ROUNDS_PER_CALL 제한에 걸려 중단되었는지 여부 (true면 추가 수집 필요)"),
-                                fieldWithPath("data.nextRound").type(JsonFieldType.NUMBER).optional().description("제한에 걸린 경우 다음 수집 시작 가능 회차(없으면 null)"),
-                                fieldWithPath("data.notDrawn").type(JsonFieldType.BOOLEAN).description("targetRound가 미추첨이면 true, 아니면 false"),
-                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("오류 정보(성공 시 null)")
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("설명"),
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("설명"),
+                                fieldWithPath("data.collected").type(JsonFieldType.NUMBER).description("설명"),
+                                fieldWithPath("data.skipped").type(JsonFieldType.NUMBER).description("설명"),
+                                fieldWithPath("data.failed").type(JsonFieldType.NUMBER).description("설명"),
+                                fieldWithPath("data.latestRound").type(JsonFieldType.NUMBER).description("설명"),
+                                fieldWithPath("data.failedRounds").type(JsonFieldType.ARRAY).description("설명"),
+                                fieldWithPath("data.truncated").type(JsonFieldType.BOOLEAN).description("설명"),
+                                fieldWithPath("data.nextRound").type(JsonFieldType.NUMBER).optional().description("설명"),
+                                fieldWithPath("data.notDrawn").type(JsonFieldType.BOOLEAN).description("설명"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("설명")
                         )
                 ))
                 .andExpect(status().isOk())
@@ -113,7 +113,7 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("POST /refresh 외부 API 실패 시 502 BAD_GATEWAY 를 반환한다")
+    @DisplayName("테스트")
     void postCollectReturns502OnExternalApiFailure() throws Exception {
         Mockito.when(collectService.collect(isNull()))
                 .thenThrow(new BusinessException(ErrorCode.EXTERNAL_API_FAILURE));
@@ -124,7 +124,7 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("POST /refresh 는 targetRound가 1 미만이면 400 LOTTO_INVALID_TARGET_ROUND 를 반환한다")
+    @DisplayName("테스트")
     void postCollectReturns400OnInvalidTargetRound() throws Exception {
         mockMvc.perform(post("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)

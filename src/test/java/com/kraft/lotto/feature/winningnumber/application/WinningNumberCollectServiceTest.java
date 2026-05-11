@@ -42,7 +42,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("WinningNumberCollectService")
+    @DisplayName("테스트")
 class WinningNumberCollectServiceTest {
 
     @Mock
@@ -88,7 +88,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("targetRound ?? ?????API ?? empty ???????????? ??????")
+    @DisplayName("테스트")
     void collectsUntilApiReturnsEmptyWhenNoTargetRound() {
         when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1102));
         givenDbHasRounds(1100);
@@ -108,7 +108,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("targetRound ?? ?????????????????????")
+    @DisplayName("테스트")
     void collectsUpToTargetRoundOnly() {
         when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1101));
         when(repository.existsByRound(anyInt())).thenReturn(false);
@@ -121,7 +121,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("counts already collected round as skipped")
+    @DisplayName("테스트")
     void countsExistingRoundAsSkipped() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0), Optional.of(2));
         // round 1: ??? ???, round 2: ???, round 3: empty
@@ -141,7 +141,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("?????????failed ???????? ??? ???????????")
+    @DisplayName("테스트")
     void countsSaveFailureAsFailedAndContinues() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0), Optional.of(2));
         when(repository.existsByRound(anyInt())).thenReturn(false);
@@ -161,7 +161,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("wraps API exception as EXTERNAL_API_FAILURE")
+    @DisplayName("테스트")
     void wrapsExternalApiExceptionAsBusinessException() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0));
         when(lottoApiClient.fetch(1)).thenThrow(new LottoApiClientException("boom"));
@@ -174,7 +174,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("throws LOTTO_INVALID_TARGET_ROUND when targetRound <= 0")
+    @DisplayName("테스트")
     void throwsInvalidTargetRoundWhenTargetRoundIsNonPositive() {
         assertThatExceptionOfType(BusinessException.class)
                 .isThrownBy(() -> service.collect(0))
@@ -183,7 +183,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("returns skipped when targetRound is already collected")
+    @DisplayName("테스트")
     void returnsSkippedWhenTargetRoundIsAlreadyCollected() {
         when(repository.findMaxRound()).thenReturn(Optional.of(1100));
 
@@ -199,7 +199,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("???????? ??? ???????? ??? ???????????")
+    @DisplayName("테스트")
     void rejectsConcurrentCollectExecution() throws Exception {
         CountDownLatch fetchEntered = new CountDownLatch(1);
         CountDownLatch releaseFetch = new CountDownLatch(1);
@@ -232,7 +232,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("does not publish event when collected is zero")
+    @DisplayName("테스트")
     void doesNotPublishEventWhenCollectedIsZero() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0));
         when(lottoApiClient.fetch(1)).thenReturn(Optional.empty());
@@ -244,7 +244,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("returns truncated and nextRound when max rounds per call is exceeded")
+    @DisplayName("테스트")
     void returnsTruncatedAndNextRoundWhenMaxRoundsPerCallExceeded() {
         service = new WinningNumberCollectService(lottoApiClient, repository, eventPublisher, clock, 2);
         when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1102));
@@ -260,7 +260,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("returns notDrawn=true when targetRound is not drawn")
+    @DisplayName("테스트")
     void returnsNotDrawnTrueWhenTargetRoundIsNotDrawn() {
         when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1101));
         givenDbHasRounds(1100);

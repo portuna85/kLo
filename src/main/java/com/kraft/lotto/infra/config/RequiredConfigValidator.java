@@ -67,6 +67,7 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
                       + "      • 자동 치환 비활성화 상태인지(KRAFT_DB_HOST_REWRITE=false) 확인.");
             }
         }
+        addProdAdminTokenProblem(env, problems);
         if (!problems.isEmpty()) {
             String msg = """
                     
@@ -95,6 +96,18 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
 
     private static String safeGet(ConfigurableEnvironment env, String key) {
         try { return env.getProperty(key); } catch (RuntimeException ex) { return null; }
+    }
+
+    static void addProdAdminTokenProblem(ConfigurableEnvironment env, List<String> problems) {
+        if (!env.matchesProfiles("prod")) {
+            return;
+        }
+        String token = safeGet(env, "kraft.admin.api-token");
+        if (token == null || token.isBlank()) {
+            problems.add(format("kraft.admin.api-token",
+                    "Admin API token (env: KRAFT_ADMIN_API_TOKEN)",
+                    "blank in prod profile"));
+        }
     }
 
     /** {@code jdbc:<vendor>://<host>[:port]/...} 의 host 부분을 추출. 매칭 실패 시 null. */

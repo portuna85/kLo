@@ -2,9 +2,9 @@ package com.kraft.lotto.feature.recommend.application;
 
 import com.kraft.lotto.feature.recommend.domain.ExclusionRule;
 import com.kraft.lotto.infra.config.KraftRecommendProperties;
-import java.security.SecureRandom;
 import java.util.List;
 import java.util.Random;
+import java.util.SplittableRandom;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,7 +13,7 @@ public class RecommendConfiguration {
 
     @Bean
     Random lottoRandom() {
-        return new SecureRandom();
+        return Random.from(new SplittableRandom());
     }
 
     @Bean

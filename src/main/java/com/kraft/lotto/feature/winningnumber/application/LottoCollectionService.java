@@ -4,6 +4,7 @@ import com.kraft.lotto.feature.winningnumber.domain.WinningNumber;
 import com.kraft.lotto.feature.winningnumber.infrastructure.LottoFetchLogEntity;
 import com.kraft.lotto.feature.winningnumber.infrastructure.LottoFetchLogRepository;
 import com.kraft.lotto.feature.winningnumber.infrastructure.LottoFetchStatus;
+import com.kraft.lotto.feature.winningnumber.event.WinningNumbersCollectedEvent;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberRepository;
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
 import com.kraft.lotto.support.BusinessException;
@@ -19,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -30,6 +32,7 @@ public class LottoCollectionService {
     private final WinningNumberRepository winningNumberRepository;
     private final WinningNumberPersister persister;
     private final LottoFetchLogRepository fetchLogRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
     private final long backfillDelayMs;
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -39,8 +42,9 @@ public class LottoCollectionService {
                                   WinningNumberRepository winningNumberRepository,
                                   WinningNumberPersister persister,
                                   LottoFetchLogRepository fetchLogRepository,
+                                  ApplicationEventPublisher eventPublisher,
                                   @Value("${kraft.lotto.api.backfill-delay-ms:${kraft.api.retry-backoff-ms:700}}") long backfillDelayMs) {
-        this(lottoApiClient, winningNumberRepository, persister, fetchLogRepository,
+        this(lottoApiClient, winningNumberRepository, persister, fetchLogRepository, eventPublisher,
                 Clock.systemDefaultZone(), backfillDelayMs);
     }
 
@@ -48,12 +52,14 @@ public class LottoCollectionService {
                            WinningNumberRepository winningNumberRepository,
                            WinningNumberPersister persister,
                            LottoFetchLogRepository fetchLogRepository,
+                           ApplicationEventPublisher eventPublisher,
                            Clock clock,
                            long backfillDelayMs) {
         this.lottoApiClient = lottoApiClient;
         this.winningNumberRepository = winningNumberRepository;
         this.persister = persister;
         this.fetchLogRepository = fetchLogRepository;
+        this.eventPublisher = eventPublisher;
         this.clock = clock;
         this.backfillDelayMs = Math.max(0, backfillDelayMs);
     }
@@ -61,6 +67,24 @@ public class LottoCollectionService {
     public CollectResponse collectDraw(int drwNo) {
         validateRound(drwNo);
         return guarded(() -> collectOne(drwNo, false));
+    }
+
+    public CollectResponse collect(Integer targetRound) {
+        if (targetRound == null) {
+            return collectNextDraw();
+        }
+        validateRound(targetRound);
+        return guarded(() -> {
+            int latestRound = winningNumberRepository.findMaxRound().orElse(0);
+            if (targetRound <= latestRound) {
+                return new CollectResponse(0, 1, 0, latestRound, List.of(), false, null, false);
+            }
+            List<Integer> rounds = new ArrayList<>();
+            for (int round = latestRound + 1; round <= targetRound; round++) {
+                rounds.add(round);
+            }
+            return collectRange(rounds, false, true);
+        });
     }
 
     public CollectResponse collectNextDraw() {
@@ -151,7 +175,13 @@ public class LottoCollectionService {
             throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS, "로또 회차 수집이 이미 실행 중입니다.");
         }
         try {
-            return task.run();
+            CollectResponse response = task.run();
+            if (response.collected() > 0) {
+                eventPublisher.publishEvent(
+                        WinningNumbersCollectedEvent.of(response.collected(), response.skipped(), response.failed())
+                );
+            }
+            return response;
         } finally {
             running.set(false);
         }
@@ -195,12 +225,13 @@ public class LottoCollectionService {
     }
 
     private void saveLog(int drwNo, LottoFetchStatus status, String message, Integer responseCode, String rawResponse) {
+        String rawResponseToSave = status == LottoFetchStatus.SUCCESS ? null : rawResponse;
         fetchLogRepository.save(new LottoFetchLogEntity(
                 drwNo,
                 status,
                 message,
                 responseCode,
-                rawResponse,
+                rawResponseToSave,
                 LocalDateTime.now(clock)
         ));
     }

@@ -26,6 +26,16 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("com.github.ben-manes.caffeine:caffeine")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13")
+    implementation("io.github.resilience4j:resilience4j-circuitbreaker:2.3.0")
+    implementation("net.javacrumbs.shedlock:shedlock-spring:6.10.0")
+    implementation("net.javacrumbs.shedlock:shedlock-provider-jdbc-template:6.10.0")
+    implementation("net.logstash.logback:logstash-logback-encoder:8.1")
+    implementation("io.micrometer:micrometer-tracing-bridge-otel")
+    implementation("io.opentelemetry:opentelemetry-exporter-otlp")
     // implementation("org.springframework.boot:spring-boot-actuator-health") // 존재하지 않는 모듈이므로 주석 처리
 
     // View — Thymeleaf + Bootstrap 5 (webjars)

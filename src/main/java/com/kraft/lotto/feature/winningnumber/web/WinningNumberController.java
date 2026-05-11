@@ -4,7 +4,6 @@ import com.kraft.lotto.feature.winningnumber.application.WinningNumberQueryServi
 import com.kraft.lotto.feature.winningnumber.web.dto.NumberFrequencyDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberPageDto;
-import com.kraft.lotto.feature.winningnumber.web.validation.ValidRound;
 import com.kraft.lotto.support.ApiResponse;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -21,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @Validated
-@RequestMapping("/api/winning-numbers")
+@RequestMapping({"/api/winning-numbers", "/api/v1/winning-numbers"})
 public class WinningNumberController {
 
     private final WinningNumberQueryService queryService;
@@ -36,8 +35,8 @@ public class WinningNumberController {
     }
 
     @GetMapping("/{round}")
-    public ApiResponse<WinningNumberDto> byRound(@PathVariable("round") @ValidRound String round) {
-        return ApiResponse.success(queryService.getByRound(Integer.parseInt(round)));
+    public ApiResponse<WinningNumberDto> byRound(@PathVariable("round") @Min(1) @Max(3000) int round) {
+        return ApiResponse.success(queryService.getByRound(round));
     }
 
     @GetMapping

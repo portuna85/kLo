@@ -2,6 +2,7 @@ package com.kraft.lotto.feature.winningnumber.application;
 
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberMapper;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberRepository;
+import com.kraft.lotto.feature.winningnumber.event.WinningNumbersCollectedEvent;
 import com.kraft.lotto.feature.winningnumber.web.dto.NumberFrequencyDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberPageDto;
@@ -9,6 +10,9 @@ import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
 import java.util.List;
 import java.util.stream.IntStream;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,6 +66,7 @@ public class WinningNumberQueryService {
      * 1~45 본번호의 출현 빈도를 회차 전체에 걸쳐 집계해 1번부터 45번까지 오름차순으로 반환한다.
      * 보너스 번호는 집계에서 제외한다. 데이터가 없는 번호도 count=0으로 항상 포함된다.
      */
+    @Cacheable(cacheNames = "winningNumberFrequency")
     public List<NumberFrequencyDto> frequency() {
         long[] counts = new long[46]; // index 1..45
         for (Object[] row : repository.findAllNumbersForFrequency()) {
@@ -70,6 +75,12 @@ public class WinningNumberQueryService {
         return IntStream.rangeClosed(1, 45)
                 .mapToObj(n -> new NumberFrequencyDto(n, counts[n]))
                 .toList();
+    }
+
+    @EventListener
+    @CacheEvict(cacheNames = "winningNumberFrequency", allEntries = true)
+    public void evictFrequencyCacheOnCollected(WinningNumbersCollectedEvent event) {
+        // cache eviction handled by annotation
     }
 
     private static void countMainNumbers(long[] counts, Object[] row) {

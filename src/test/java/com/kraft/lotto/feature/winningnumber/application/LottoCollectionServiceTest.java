@@ -22,19 +22,22 @@ import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 
-@DisplayName("LottoCollectionService")
+    @DisplayName("테스트")
 class LottoCollectionServiceTest {
 
     private final LottoApiClient lottoApiClient = mock(LottoApiClient.class);
     private final WinningNumberRepository winningNumberRepository = mock(WinningNumberRepository.class);
     private final WinningNumberPersister persister = mock(WinningNumberPersister.class);
     private final LottoFetchLogRepository fetchLogRepository = mock(LottoFetchLogRepository.class);
+    private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
     private final LottoCollectionService service = new LottoCollectionService(
-            lottoApiClient, winningNumberRepository, persister, fetchLogRepository, Clock.systemUTC(), 0);
+            lottoApiClient, winningNumberRepository, persister, fetchLogRepository, eventPublisher, Clock.systemUTC(), 0);
 
     @Test
-    @DisplayName("collectDraw 는 이미 저장된 회차를 기본적으로 스킵한다")
+    @DisplayName("테스트")
     void collectDrawSkipsExistingRound() {
         when(winningNumberRepository.existsByRound(1102)).thenReturn(true);
         when(winningNumberRepository.findMaxRound()).thenReturn(Optional.of(1102));
@@ -47,7 +50,7 @@ class LottoCollectionServiceTest {
     }
 
     @Test
-    @DisplayName("refreshDraw 는 기존 회차도 API에서 다시 받아 upsert 한다")
+    @DisplayName("테스트")
     void refreshDrawUpsertsExistingRound() {
         WinningNumber winningNumber = sample(1102);
         when(lottoApiClient.fetch(1102)).thenReturn(Optional.of(winningNumber));
@@ -62,7 +65,7 @@ class LottoCollectionServiceTest {
     }
 
     @Test
-    @DisplayName("collectNextDraw 는 DB 최대 회차 + 1 만 수집한다")
+    @DisplayName("테스트")
     void collectNextDrawCollectsOnlyNextRound() {
         WinningNumber winningNumber = sample(1103);
         when(winningNumberRepository.findMaxRound()).thenReturn(Optional.of(1102), Optional.of(1103));
@@ -77,7 +80,23 @@ class LottoCollectionServiceTest {
     }
 
     @Test
-    @DisplayName("collectMissingDraws 는 누락된 회차만 수집한다")
+    @DisplayName("테스트")
+    void successLogDoesNotPersistRawResponse() {
+        WinningNumber winningNumber = sample(1103);
+        when(winningNumberRepository.findMaxRound()).thenReturn(Optional.of(1102), Optional.of(1103));
+        when(winningNumberRepository.existsByRound(1103)).thenReturn(false);
+        when(lottoApiClient.fetch(1103)).thenReturn(Optional.of(winningNumber));
+        when(persister.upsert(winningNumber)).thenReturn(true);
+
+        service.collectNextDraw();
+
+        ArgumentCaptor<LottoFetchLogEntity> captor = ArgumentCaptor.forClass(LottoFetchLogEntity.class);
+        verify(fetchLogRepository).save(captor.capture());
+        assertThat(captor.getValue().getRawResponse()).isNull();
+    }
+
+    @Test
+    @DisplayName("테스트")
     void collectMissingDrawsCollectsOnlyMissingRounds() {
         WinningNumber winningNumber = sample(2);
         when(winningNumberRepository.findMaxRound()).thenReturn(Optional.of(3), Optional.of(3));
@@ -93,7 +112,7 @@ class LottoCollectionServiceTest {
     }
 
     @Test
-    @DisplayName("backfill 은 from 이 to 보다 크면 예외를 던진다")
+    @DisplayName("테스트")
     void backfillRejectsInvalidRange() {
         assertThatExceptionOfType(BusinessException.class)
                 .isThrownBy(() -> service.backfill(10, 1));

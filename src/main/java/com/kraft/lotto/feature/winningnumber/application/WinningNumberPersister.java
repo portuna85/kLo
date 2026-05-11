@@ -3,8 +3,11 @@ package com.kraft.lotto.feature.winningnumber.application;
 import com.kraft.lotto.feature.winningnumber.domain.WinningNumber;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberMapper;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,30 +23,40 @@ public class WinningNumberPersister {
 
     private final WinningNumberRepository repository;
     private final Clock clock;
+    private final MeterRegistry meterRegistry;
 
     @Autowired
-    public WinningNumberPersister(WinningNumberRepository repository) {
-        this(repository, Clock.systemDefaultZone());
+    public WinningNumberPersister(WinningNumberRepository repository,
+                                  ObjectProvider<MeterRegistry> meterRegistryProvider) {
+        this(repository, Clock.systemDefaultZone(), meterRegistryProvider.getIfAvailable());
     }
 
     WinningNumberPersister(WinningNumberRepository repository, Clock clock) {
+        this(repository, clock, null);
+    }
+
+    WinningNumberPersister(WinningNumberRepository repository, Clock clock, MeterRegistry meterRegistry) {
         this.repository = repository;
         this.clock = clock;
+        this.meterRegistry = meterRegistry;
     }
 
     @Transactional
     public boolean saveIfAbsent(int round, WinningNumber winningNumber) {
+        long started = System.nanoTime();
         if (repository.existsByRound(round)) {
             return false;
         }
         repository.save(WinningNumberMapper.toEntity(winningNumber, LocalDateTime.now(clock)));
+        recordDbSaveLatency(started, "save_if_absent");
         return true;
     }
 
     @Transactional
     public boolean upsert(WinningNumber winningNumber) {
+        long started = System.nanoTime();
         LocalDateTime now = LocalDateTime.now(clock);
-        return repository.findById(winningNumber.round())
+        boolean inserted = repository.findById(winningNumber.round())
                 .map(existing -> {
                     existing.updateFrom(WinningNumberMapper.toEntity(winningNumber, now), now);
                     return false;
@@ -52,5 +65,15 @@ public class WinningNumberPersister {
                     repository.save(WinningNumberMapper.toEntity(winningNumber, now));
                     return true;
                 });
+        recordDbSaveLatency(started, inserted ? "insert" : "update");
+        return inserted;
+    }
+
+    private void recordDbSaveLatency(long started, String mode) {
+        if (meterRegistry == null) {
+            return;
+        }
+        meterRegistry.timer("kraft.winningnumber.db.save.latency", "mode", mode)
+                .record(System.nanoTime() - started, TimeUnit.NANOSECONDS);
     }
 }
