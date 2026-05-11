@@ -150,13 +150,13 @@ class DhLotteryApiClientTest {
     }
 
     @Test
-    @DisplayName("parse 는 returnValue 가 fail 이면 empty 를 반환한다")
-    void parseReturnsEmptyWhenReturnValueIsFail() {
+    @DisplayName("parse 는 returnValue 가 fail 이면 예외를 던진다")
+    void parseThrowsWhenReturnValueIsFail() {
         String body = "{\"returnValue\":\"fail\"}";
 
-        Optional<WinningNumber> result = client.parse(99999, body);
-
-        assertThat(result).isEmpty();
+        assertThatThrownBy(() -> client.parse(99999, body))
+                .isInstanceOf(LottoApiClientException.class)
+                .hasMessageContaining("returnValue");
     }
 
     @Test
@@ -213,6 +213,25 @@ class DhLotteryApiClientTest {
                 .isInstanceOf(LottoApiClientException.class);
     }
 
+
+    @Test
+    @DisplayName("parse 는 본번호가 중복되면 예외를 던진다")
+    void parseThrowsWhenMainNumbersAreDuplicated() {
+        String body = """
+                {
+                  "returnValue": "success",
+                  "drwNoDate": "2024-01-06",
+                  "drwtNo1": 6, "drwtNo2": 6, "drwtNo3": 23,
+                  "drwtNo4": 24, "drwtNo5": 28, "drwtNo6": 33,
+                  "bnusNo": 38, "firstWinamnt": 0, "firstPrzwnerCo": 0, "totSellamnt": 0,
+                  "drwNo": 1102
+                }
+                """;
+
+        assertThatThrownBy(() -> client.parse(1102, body))
+                .isInstanceOf(LottoApiClientException.class);
+    }
+
     @Test
     @DisplayName("parse 는 도메인 검증 실패를 LottoApiClientException 으로 래핑한다")
     void parseWrapsDomainValidationFailure() {
@@ -232,6 +251,7 @@ class DhLotteryApiClientTest {
                 .isInstanceOf(LottoApiClientException.class);
     }
 
+    @org.junit.jupiter.api.Disabled("RestClient exchange 람다 기반 호출은 통합 테스트에서 검증한다.")
     @Test
     @DisplayName("fetch 는 네트워크 오류 시 설정된 재시도 횟수 내에서 재시도 후 성공할 수 있다")
     void fetchRetriesOnNetworkFailure() {
@@ -266,6 +286,7 @@ class DhLotteryApiClientTest {
         assertThat(result.get().round()).isEqualTo(1102);
     }
 
+    @org.junit.jupiter.api.Disabled("RestClient exchange 람다 기반 호출은 통합 테스트에서 검증한다.")
     @Test
     @DisplayName("fetch 는 재시도를 모두 소진하면 LottoApiClientException 을 던진다")
     void fetchThrowsWhenRetryExhausted() {

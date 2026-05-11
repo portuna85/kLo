@@ -39,4 +39,18 @@ public class WinningNumberPersister {
         repository.save(WinningNumberMapper.toEntity(winningNumber, LocalDateTime.now(clock)));
         return true;
     }
+
+    @Transactional
+    public boolean upsert(WinningNumber winningNumber) {
+        LocalDateTime now = LocalDateTime.now(clock);
+        return repository.findById(winningNumber.round())
+                .map(existing -> {
+                    existing.updateFrom(WinningNumberMapper.toEntity(winningNumber, now), now);
+                    return false;
+                })
+                .orElseGet(() -> {
+                    repository.save(WinningNumberMapper.toEntity(winningNumber, now));
+                    return true;
+                });
+    }
 }

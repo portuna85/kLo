@@ -8,6 +8,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.client.RestClient;
 
 /**
@@ -34,6 +35,7 @@ public class LottoApiClientConfig {
         requestFactory.setReadTimeout(properties.readTimeoutMs());
         return RestClient.builder()
                 .requestFactory(requestFactory)
+                .defaultHeader(HttpHeaders.USER_AGENT, "kraft-lotto/0.0.1 dhlottery-collector")
                 .build();
     }
 

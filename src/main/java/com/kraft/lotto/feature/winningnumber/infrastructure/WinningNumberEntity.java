@@ -3,6 +3,7 @@ package com.kraft.lotto.feature.winningnumber.infrastructure;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -48,8 +49,21 @@ public class WinningNumberEntity {
     @Column(name = "total_sales", nullable = false)
     private Long totalSales;
 
+    @Column(name = "first_accum_amount", nullable = false)
+    private Long firstAccumAmount;
+
+    @Lob
+    @Column(name = "raw_json")
+    private String rawJson;
+
+    @Column(name = "fetched_at", nullable = false)
+    private LocalDateTime fetchedAt;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 
     protected WinningNumberEntity() {
     }
@@ -63,6 +77,23 @@ public class WinningNumberEntity {
                                Integer firstWinners,
                                Long totalSales,
                                LocalDateTime createdAt) {
+        this(round, drawDate, n1, n2, n3, n4, n5, n6, bonusNumber,
+                firstPrize, firstWinners, totalSales, 0L, null, createdAt, createdAt, createdAt);
+    }
+
+    public WinningNumberEntity(Integer round,
+                               LocalDate drawDate,
+                               Integer n1, Integer n2, Integer n3,
+                               Integer n4, Integer n5, Integer n6,
+                               Integer bonusNumber,
+                               Long firstPrize,
+                               Integer firstWinners,
+                               Long totalSales,
+                               Long firstAccumAmount,
+                               String rawJson,
+                               LocalDateTime fetchedAt,
+                               LocalDateTime createdAt,
+                               LocalDateTime updatedAt) {
         this.round = round;
         this.drawDate = drawDate;
         this.n1 = n1;
@@ -75,7 +106,29 @@ public class WinningNumberEntity {
         this.firstPrize = firstPrize;
         this.firstWinners = firstWinners;
         this.totalSales = totalSales;
+        this.firstAccumAmount = firstAccumAmount;
+        this.rawJson = rawJson;
+        this.fetchedAt = fetchedAt;
         this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
+    public void updateFrom(WinningNumberEntity source, LocalDateTime updatedAt) {
+        this.drawDate = source.drawDate;
+        this.n1 = source.n1;
+        this.n2 = source.n2;
+        this.n3 = source.n3;
+        this.n4 = source.n4;
+        this.n5 = source.n5;
+        this.n6 = source.n6;
+        this.bonusNumber = source.bonusNumber;
+        this.firstPrize = source.firstPrize;
+        this.firstWinners = source.firstWinners;
+        this.totalSales = source.totalSales;
+        this.firstAccumAmount = source.firstAccumAmount;
+        this.rawJson = source.rawJson;
+        this.fetchedAt = source.fetchedAt;
+        this.updatedAt = updatedAt;
     }
 
     public Integer getRound() { return round; }
@@ -90,5 +143,9 @@ public class WinningNumberEntity {
     public Long getFirstPrize() { return firstPrize; }
     public Integer getFirstWinners() { return firstWinners; }
     public Long getTotalSales() { return totalSales; }
+    public Long getFirstAccumAmount() { return firstAccumAmount; }
+    public String getRawJson() { return rawJson; }
+    public LocalDateTime getFetchedAt() { return fetchedAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

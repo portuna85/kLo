@@ -21,12 +21,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * 운영성 작업을 일으키는 관리자 API를 공유 토큰으로 보호한다.
  *
  * <p>현재 보호 대상은 DB 쓰기와 외부 API 호출을 유발하는
- * {@code POST /api/winning-numbers/refresh} 이다.</p>
+ * {@code POST /api/winning-numbers/refresh} 와 {@code POST /admin/**} 이다.</p>
  */
 public class AdminApiTokenFilter extends OncePerRequestFilter {
 
     private static final String PROTECTED_METHOD = "POST";
-    private static final String PROTECTED_PATH = "/api/winning-numbers/refresh";
+    private static final String LEGACY_PROTECTED_PATH = "/api/winning-numbers/refresh";
+    private static final String ADMIN_PATH_PREFIX = "/admin/";
 
     private final KraftAdminProperties properties;
     private final ObjectMapper objectMapper;
@@ -42,8 +43,11 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !(PROTECTED_METHOD.equalsIgnoreCase(request.getMethod())
-                && PROTECTED_PATH.equals(pathWithinApplication(request)));
+        if (!PROTECTED_METHOD.equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+        String path = pathWithinApplication(request);
+        return !(LEGACY_PROTECTED_PATH.equals(path) || path.startsWith(ADMIN_PATH_PREFIX));
     }
 
     @Override

@@ -22,11 +22,22 @@ public final class WinningNumberMapper {
                 entity.getBonusNumber(),
                 entity.getFirstPrize(),
                 entity.getFirstWinners(),
-                entity.getTotalSales()
+                entity.getTotalSales(),
+                entity.getFirstAccumAmount(),
+                entity.getRawJson(),
+                entity.getFetchedAt()
         );
     }
 
     public static WinningNumberEntity toEntity(WinningNumber domain, LocalDateTime createdAt) {
+        LocalDateTime fetchedAt = domain.fetchedAt() == null ? createdAt : domain.fetchedAt();
+        return toEntity(domain, fetchedAt, createdAt, createdAt);
+    }
+
+    public static WinningNumberEntity toEntity(WinningNumber domain,
+                                               LocalDateTime fetchedAt,
+                                               LocalDateTime createdAt,
+                                               LocalDateTime updatedAt) {
         List<Integer> nums = domain.combination().numbers();
         return new WinningNumberEntity(
                 domain.round(),
@@ -37,7 +48,11 @@ public final class WinningNumberMapper {
                 domain.firstPrize(),
                 domain.firstWinners(),
                 domain.totalSales(),
-                createdAt
+                domain.firstAccumAmount(),
+                domain.rawJson(),
+                fetchedAt,
+                createdAt,
+                updatedAt
         );
     }
 }
