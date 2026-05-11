@@ -38,3 +38,7 @@ logs/
 ### Local secrets (.env 는 git 에 절대 커밋하지 않습니다. .env.example 만 추적) ###
 .env
 !.env.example
+
+Improvements.md
+
+Improvements.md
