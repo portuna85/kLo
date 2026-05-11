@@ -6,11 +6,32 @@ package com.kraft.lotto.feature.winningnumber.application;
  */
 public class LottoApiClientException extends RuntimeException {
 
+    private final Integer responseCode;
+    private final String rawResponse;
+
     public LottoApiClientException(String message) {
-        super(message);
+        this(message, null, null, null);
     }
 
     public LottoApiClientException(String message, Throwable cause) {
+        this(message, cause, null, null);
+    }
+
+    public LottoApiClientException(String message, Integer responseCode, String rawResponse) {
+        this(message, null, responseCode, rawResponse);
+    }
+
+    public LottoApiClientException(String message, Throwable cause, Integer responseCode, String rawResponse) {
         super(message, cause);
+        this.responseCode = responseCode;
+        this.rawResponse = rawResponse;
+    }
+
+    public Integer getResponseCode() {
+        return responseCode;
+    }
+
+    public String getRawResponse() {
+        return rawResponse;
     }
 }

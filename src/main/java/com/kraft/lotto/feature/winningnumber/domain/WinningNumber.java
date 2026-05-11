@@ -1,6 +1,7 @@
 package com.kraft.lotto.feature.winningnumber.domain;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 public record WinningNumber(
@@ -10,8 +11,21 @@ public record WinningNumber(
         int bonusNumber,
         long firstPrize,
         int firstWinners,
-        long totalSales
+        long totalSales,
+        long firstAccumAmount,
+        String rawJson,
+        LocalDateTime fetchedAt
 ) {
+
+    public WinningNumber(int round,
+                         LocalDate drawDate,
+                         LottoCombination combination,
+                         int bonusNumber,
+                         long firstPrize,
+                         int firstWinners,
+                         long totalSales) {
+        this(round, drawDate, combination, bonusNumber, firstPrize, firstWinners, totalSales, 0L, null, null);
+    }
 
     public WinningNumber {
         if (round <= 0) {
@@ -34,6 +48,12 @@ public record WinningNumber(
         }
         if (totalSales < 0) {
             throw new IllegalArgumentException("총 판매액(totalSales)은 음수일 수 없습니다: " + totalSales);
+        }
+        if (firstAccumAmount < 0) {
+            throw new IllegalArgumentException("1등 총 당첨금(firstAccumAmount)은 음수일 수 없습니다: " + firstAccumAmount);
+        }
+        if (rawJson != null && rawJson.isBlank()) {
+            rawJson = null;
         }
     }
 }

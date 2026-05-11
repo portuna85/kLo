@@ -4,53 +4,65 @@ import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConditionalOnProperty(prefix = "kraft.collect.auto", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "kraft.lotto.scheduler", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class WinningNumberAutoCollectScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(WinningNumberAutoCollectScheduler.class);
 
-    private final WinningNumberCollectService collectService;
+    private final LottoCollectionService collectionService;
 
-    public WinningNumberAutoCollectScheduler(WinningNumberCollectService collectService) {
-        this.collectService = collectService;
+    public WinningNumberAutoCollectScheduler(LottoCollectionService collectionService) {
+        this.collectionService = collectionService;
     }
 
-    @EventListener(ApplicationReadyEvent.class)
-    public void collectOnStartup() {
-        runCollect("startup");
+    @Scheduled(cron = "0 10 21 ? * SAT", zone = "Asia/Seoul")
+    public void collectNextDrawOnSaturday2110() {
+        runCollectNext("sat-21-10");
     }
 
-    @Scheduled(cron = "${kraft.collect.auto.cron.saturday-22:0 0 22 * * SAT}", zone = "${kraft.collect.auto.zone:Asia/Seoul}")
-    public void collectOnSaturday2200() {
-        runCollect("sat-22");
+    @Scheduled(cron = "0 20,40 21 ? * SAT", zone = "Asia/Seoul")
+    public void retryCollectNextDrawOnSaturday2120And2140() {
+        runCollectNext("sat-21-retry");
     }
 
-    @Scheduled(cron = "${kraft.collect.auto.cron.sunday-21:0 0 21 * * SUN}", zone = "${kraft.collect.auto.zone:Asia/Seoul}")
-    public void collectOnSunday2100() {
-        runCollect("sun-21");
+    @Scheduled(cron = "0 10 22 ? * SAT", zone = "Asia/Seoul")
+    public void retryCollectNextDrawOnSaturday2210() {
+        runCollectNext("sat-22-10");
     }
 
-    private void runCollect(String trigger) {
+    @Scheduled(cron = "0 10 6 ? * SUN", zone = "Asia/Seoul")
+    public void collectMissingDrawsOnSunday0610() {
+        runCollectMissing("sun-06-10");
+    }
+
+    @Scheduled(cron = "0 0 9 * * *", zone = "Asia/Seoul")
+    public void collectMissingDrawsDaily0900() {
+        runCollectMissing("daily-09-00");
+    }
+
+    private void runCollectNext(String trigger) {
         try {
-            log.info("auto-collect start trigger={}", trigger);
-            CollectResponse response = collectService.collect(null);
-            log.info("auto-collect done trigger={} collected={} skipped={} failed={} latestRound={} truncated={} nextRound={} notDrawn={}",
-                    trigger,
-                    response.collected(),
-                    response.skipped(),
-                    response.failed(),
-                    response.latestRound(),
-                    response.truncated(),
-                    response.nextRound(),
-                    response.notDrawn());
+            log.info("lotto collect-next start trigger={}", trigger);
+            CollectResponse response = collectionService.collectNextDraw();
+            log.info("lotto collect-next done trigger={} collected={} skipped={} failed={} latestRound={} notDrawn={}",
+                    trigger, response.collected(), response.skipped(), response.failed(), response.latestRound(), response.notDrawn());
         } catch (Exception ex) {
-            log.warn("auto-collect fail trigger={}", trigger, ex);
+            log.warn("lotto collect-next fail trigger={}", trigger, ex);
+        }
+    }
+
+    private void runCollectMissing(String trigger) {
+        try {
+            log.info("lotto collect-missing start trigger={}", trigger);
+            CollectResponse response = collectionService.collectMissingDraws();
+            log.info("lotto collect-missing done trigger={} collected={} skipped={} failed={} latestRound={} failedRounds={}",
+                    trigger, response.collected(), response.skipped(), response.failed(), response.latestRound(), response.failedRounds());
+        } catch (Exception ex) {
+            log.warn("lotto collect-missing fail trigger={}", trigger, ex);
         }
     }
 }

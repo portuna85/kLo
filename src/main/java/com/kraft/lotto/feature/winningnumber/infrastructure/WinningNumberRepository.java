@@ -1,6 +1,7 @@
 package com.kraft.lotto.feature.winningnumber.infrastructure;
 
 import java.util.List;
+import java.util.Set;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,6 +14,9 @@ public interface WinningNumberRepository extends JpaRepository<WinningNumberEnti
 
     @Query("select max(w.round) from WinningNumberEntity w")
     Optional<Integer> findMaxRound();
+
+    @Query("select w.round from WinningNumberEntity w where w.round between :from and :to")
+    Set<Integer> findRoundsBetween(int from, int to);
 
     boolean existsByRound(int round);
 

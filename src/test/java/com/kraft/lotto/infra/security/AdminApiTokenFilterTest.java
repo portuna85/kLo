@@ -95,6 +95,33 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
+    @DisplayName("신규 관리자 수집 API도 토큰이 없으면 401을 반환한다")
+    void blocksAdminLottoDrawEndpointWithoutToken() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/admin/lotto/draws/collect-next");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+
+        filter.doFilter(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(401);
+        verifyNoInteractions(chain);
+    }
+
+    @Test
+    @DisplayName("신규 관리자 수집 API는 올바른 토큰이면 통과한다")
+    void allowsAdminLottoDrawEndpointWithValidToken() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/admin/lotto/draws/collect-next");
+        request.addHeader("X-Kraft-Admin-Token", "secret-token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+
+        filter.doFilter(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
     @DisplayName("서버에 관리자 토큰이 설정되지 않으면 보호 대상 요청을 차단한다")
     void blocksWhenServerTokenIsNotConfigured() throws Exception {
         AdminApiTokenFilter missingConfigFilter = new AdminApiTokenFilter(

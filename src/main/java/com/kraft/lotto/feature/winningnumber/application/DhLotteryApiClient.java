@@ -6,12 +6,16 @@ import com.kraft.lotto.feature.winningnumber.domain.LottoCombination;
 import com.kraft.lotto.feature.winningnumber.domain.WinningNumber;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -20,8 +24,8 @@ import org.springframework.web.util.UriComponentsBuilder;
  * 동행복권(dhlottery.co.kr) JSON API 어댑터.
  * 호출 형태: {@code GET ${url}?method=getLottoNumber&drwNo={round}}.
  *
- * 응답에서 {@code returnValue == "fail"}이면 미추첨 회차로 간주하여 {@link Optional#empty()}를 반환한다.
- * 그 외 네트워크/파싱 오류는 {@link LottoApiClientException}로 변환한다.
+ * 응답에서 {@code returnValue == "success"}인 경우만 정상 데이터로 인정한다.
+ * 그 외 네트워크/파싱/검증 오류는 {@link LottoApiClientException}로 변환한다.
  */
 public class DhLotteryApiClient implements LottoApiClient {
 
@@ -69,10 +73,21 @@ public class DhLotteryApiClient implements LottoApiClient {
                         .queryParam("drwNo", round)
                         .build()
                         .toUri();
-                String body = restClient.get()
+                ApiRawResponse response = restClient.get()
                         .uri(uri)
-                        .retrieve()
-                        .body(String.class);
+                        .exchange((request, rawResponse) -> {
+                            int statusCode = rawResponse.getStatusCode().value();
+                            String body = StreamUtils.copyToString(rawResponse.getBody(), StandardCharsets.UTF_8);
+                            MediaType contentType = rawResponse.getHeaders().getContentType();
+                            return new ApiRawResponse(statusCode, contentType == null ? null : contentType.toString(), body);
+                        });
+                if (response.statusCode() >= 400) {
+                    count("kraft.api.dhlottery.call.failure", "reason", "network");
+                    throw new LottoApiClientException("외부 API HTTP 오류 (round=" + round + ", status=" + response.statusCode()
+                            + ", preview=" + preview(response.body()) + ")", response.statusCode(), response.body());
+                }
+                validateJsonResponse(round, response);
+                String body = response.body();
                 if (body == null || body.isBlank()) {
                     count("kraft.api.dhlottery.call.failure", "reason", "blank_body");
                     throw new LottoApiClientException("외부 API 응답이 비어 있습니다 (round=" + round + ")");
@@ -84,7 +99,7 @@ public class DhLotteryApiClient implements LottoApiClient {
                     count("kraft.api.dhlottery.call.success");
                 }
                 return parsed;
-            } catch (RestClientException ex) {
+            } catch (RestClientException | LottoApiClientException ex) {
                 count("kraft.api.dhlottery.call.failure", "reason", "network");
                 if (attempt >= attempts) {
                     throw new LottoApiClientException(
@@ -112,10 +127,6 @@ public class DhLotteryApiClient implements LottoApiClient {
             throw new LottoApiClientException("외부 API 응답 파싱 실패 (round=" + round + ")", ex);
         }
         String returnValue = requiredText(node, "returnValue", round);
-        if ("fail".equalsIgnoreCase(returnValue)) {
-            log.debug("dhlottery returned fail for round={}", round);
-            return Optional.empty();
-        }
         if (!"success".equalsIgnoreCase(returnValue)) {
             count("kraft.api.dhlottery.call.failure", "reason", "unexpected_return_value");
             throw new LottoApiClientException(
@@ -143,6 +154,7 @@ public class DhLotteryApiClient implements LottoApiClient {
             long firstPrize = requiredLong(node, "firstWinamnt", round);
             int firstWinners = requiredInt(node, "firstPrzwnerCo", round);
             long totalSales = requiredLong(node, "totSellamnt", round);
+            long firstAccumAmount = optionalLong(node, "firstAccumamnt", round, 0L);
             return Optional.of(new WinningNumber(
                     drwNo,
                     drawDate,
@@ -150,7 +162,10 @@ public class DhLotteryApiClient implements LottoApiClient {
                     bonus,
                     firstPrize,
                     firstWinners,
-                    totalSales
+                    totalSales,
+                    firstAccumAmount,
+                    body,
+                    LocalDateTime.now()
             ));
         } catch (LottoApiClientException ex) {
             count("kraft.api.dhlottery.call.failure", "reason", "validation");
@@ -159,6 +174,18 @@ public class DhLotteryApiClient implements LottoApiClient {
             count("kraft.api.dhlottery.call.failure", "reason", "transform");
             throw new LottoApiClientException(
                     "외부 API 응답 변환 실패 (round=" + round + "): " + ex.getMessage(), ex);
+        }
+    }
+
+
+    private static void validateJsonResponse(int round, ApiRawResponse response) {
+        String body = response.body() == null ? "" : response.body().trim();
+        String contentType = response.contentType() == null ? "" : response.contentType().toLowerCase();
+        boolean jsonContentType = contentType.isBlank() || contentType.contains("json") || contentType.contains("javascript");
+        boolean jsonBody = body.startsWith("{") || body.startsWith("[");
+        if (!jsonContentType || !jsonBody) {
+            throw new LottoApiClientException("외부 API 응답이 JSON이 아닙니다 (round=" + round
+                    + ", contentType=" + response.contentType() + ", preview=" + preview(body) + ")", response.statusCode(), response.body());
         }
     }
 
@@ -182,6 +209,13 @@ public class DhLotteryApiClient implements LottoApiClient {
     /**
      * 필수 long 필드: 존재, null 아님, 숫자 타입, long 범위 검증.
      */
+    private static long optionalLong(JsonNode node, String fieldName, int round, long defaultValue) {
+        if (node.path(fieldName).isMissingNode() || node.path(fieldName).isNull()) {
+            return defaultValue;
+        }
+        return requiredLong(node, fieldName, round);
+    }
+
     private static long requiredLong(JsonNode node, String fieldName, int round) {
         JsonNode value = node.get(fieldName);
         if (value == null || value.isNull()) {
@@ -242,5 +276,8 @@ public class DhLotteryApiClient implements LottoApiClient {
     private static String preview(String body) {
         int limit = Math.min(80, body.length());
         return body.substring(0, limit).replaceAll("\\s+", " ");
+    }
+
+    private record ApiRawResponse(int statusCode, String contentType, String body) {
     }
 }

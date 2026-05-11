@@ -27,6 +27,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
                         "/api/**",
+                        "/admin/**",
                         "/actuator/**"
                 ))
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -58,6 +59,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/recommend/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/winning-numbers/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/winning-numbers/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/admin/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/docs", "/docs/", "/docs/**").permitAll()
                         .anyRequest().denyAll()
