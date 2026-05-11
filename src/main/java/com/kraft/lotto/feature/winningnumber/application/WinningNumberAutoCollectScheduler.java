@@ -19,27 +19,42 @@ public class WinningNumberAutoCollectScheduler {
         this.collectionService = collectionService;
     }
 
-    @Scheduled(cron = "0 10 21 ? * SAT", zone = "Asia/Seoul")
+    @Scheduled(
+            cron = "${kraft.collect.auto.cron.saturday-21-10:0 10 21 ? * SAT}",
+            zone = "${kraft.collect.auto.zone:Asia/Seoul}"
+    )
     public void collectNextDrawOnSaturday2110() {
         runCollectNext("sat-21-10");
     }
 
-    @Scheduled(cron = "0 20,40 21 ? * SAT", zone = "Asia/Seoul")
+    @Scheduled(
+            cron = "${kraft.collect.auto.cron.saturday-21-retry:0 20,40 21 ? * SAT}",
+            zone = "${kraft.collect.auto.zone:Asia/Seoul}"
+    )
     public void retryCollectNextDrawOnSaturday2120And2140() {
         runCollectNext("sat-21-retry");
     }
 
-    @Scheduled(cron = "0 10 22 ? * SAT", zone = "Asia/Seoul")
+    @Scheduled(
+            cron = "${kraft.collect.auto.cron.saturday-22-10:0 10 22 ? * SAT}",
+            zone = "${kraft.collect.auto.zone:Asia/Seoul}"
+    )
     public void retryCollectNextDrawOnSaturday2210() {
         runCollectNext("sat-22-10");
     }
 
-    @Scheduled(cron = "0 10 6 ? * SUN", zone = "Asia/Seoul")
+    @Scheduled(
+            cron = "${kraft.collect.auto.cron.sunday-06-10:0 10 6 ? * SUN}",
+            zone = "${kraft.collect.auto.zone:Asia/Seoul}"
+    )
     public void collectMissingDrawsOnSunday0610() {
         runCollectMissing("sun-06-10");
     }
 
-    @Scheduled(cron = "0 0 9 * * *", zone = "Asia/Seoul")
+    @Scheduled(
+            cron = "${kraft.collect.auto.cron.daily-09-00:0 0 9 * * *}",
+            zone = "${kraft.collect.auto.zone:Asia/Seoul}"
+    )
     public void collectMissingDrawsDaily0900() {
         runCollectMissing("daily-09-00");
     }

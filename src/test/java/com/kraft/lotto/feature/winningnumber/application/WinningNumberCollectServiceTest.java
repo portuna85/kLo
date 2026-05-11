@@ -74,15 +74,24 @@ class WinningNumberCollectServiceTest {
         );
     }
 
+    private void givenDbHasRounds(int... rounds) {
+        existing.clear();
+        for (int round : rounds) {
+            existing.add(round);
+        }
+        when(repository.existsByRound(anyInt())).thenAnswer(inv -> existing.contains(inv.getArgument(0)));
+        when(repository.save(any())).thenAnswer(inv -> {
+            WinningNumberEntity entity = inv.getArgument(0);
+            existing.add(entity.getRound());
+            return entity;
+        });
+    }
+
     @Test
     @DisplayName("targetRound ?? ?????API ?? empty ???????????? ??????")
     void collectsUntilApiReturnsEmptyWhenNoTargetRound() {
         when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1102));
-        when(repository.existsByRound(anyInt())).thenAnswer(inv -> existing.contains(inv.getArgument(0)));
-        when(repository.save(any())).thenAnswer(inv -> {
-            existing.add(((WinningNumberEntity) inv.getArgument(0)).getRound());
-            return inv.getArgument(0);
-        });
+        givenDbHasRounds(1100);
         when(lottoApiClient.fetch(1101)).thenReturn(Optional.of(sample(1101)));
         when(lottoApiClient.fetch(1102)).thenReturn(Optional.of(sample(1102)));
         when(lottoApiClient.fetch(1103)).thenReturn(Optional.empty());
@@ -112,7 +121,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("test")
+    @DisplayName("counts already collected round as skipped")
     void countsExistingRoundAsSkipped() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0), Optional.of(2));
         // round 1: ??? ???, round 2: ???, round 3: empty
@@ -152,7 +161,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("test")
+    @DisplayName("wraps API exception as EXTERNAL_API_FAILURE")
     void wrapsExternalApiExceptionAsBusinessException() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0));
         when(lottoApiClient.fetch(1)).thenThrow(new LottoApiClientException("boom"));
@@ -165,7 +174,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("test")
+    @DisplayName("throws LOTTO_INVALID_TARGET_ROUND when targetRound <= 0")
     void throwsInvalidTargetRoundWhenTargetRoundIsNonPositive() {
         assertThatExceptionOfType(BusinessException.class)
                 .isThrownBy(() -> service.collect(0))
@@ -174,7 +183,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("targetRound ?? ??? ??????? ?????? API ??? ??? skipped ????????")
+    @DisplayName("returns skipped when targetRound is already collected")
     void returnsSkippedWhenTargetRoundIsAlreadyCollected() {
         when(repository.findMaxRound()).thenReturn(Optional.of(1100));
 
@@ -223,7 +232,7 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("test")
+    @DisplayName("does not publish event when collected is zero")
     void doesNotPublishEventWhenCollectedIsZero() {
         when(repository.findMaxRound()).thenReturn(Optional.of(0));
         when(lottoApiClient.fetch(1)).thenReturn(Optional.empty());
@@ -235,17 +244,13 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("test")
+    @DisplayName("returns truncated and nextRound when max rounds per call is exceeded")
     void returnsTruncatedAndNextRoundWhenMaxRoundsPerCallExceeded() {
         service = new WinningNumberCollectService(lottoApiClient, repository, eventPublisher, clock, 2);
         when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1102));
-        when(repository.existsByRound(anyInt())).thenReturn(false);
+        givenDbHasRounds();
         when(lottoApiClient.fetch(1101)).thenReturn(Optional.of(sample(1101)));
         when(lottoApiClient.fetch(1102)).thenReturn(Optional.of(sample(1102)));
-        when(repository.save(any())).thenAnswer(inv -> {
-            existing.add(((WinningNumberEntity) inv.getArgument(0)).getRound());
-            return inv.getArgument(0);
-        });
 
         CollectResponse result = service.collect(null);
 
@@ -255,16 +260,12 @@ class WinningNumberCollectServiceTest {
     }
 
     @Test
-    @DisplayName("targetRound?? ????????notDrawn=true????????")
+    @DisplayName("returns notDrawn=true when targetRound is not drawn")
     void returnsNotDrawnTrueWhenTargetRoundIsNotDrawn() {
         when(repository.findMaxRound()).thenReturn(Optional.of(1100), Optional.of(1101));
+        givenDbHasRounds(1100);
         when(lottoApiClient.fetch(1101)).thenReturn(Optional.of(sample(1101)));
         when(lottoApiClient.fetch(1102)).thenReturn(Optional.empty());
-        when(repository.existsByRound(anyInt())).thenReturn(false);
-        when(repository.save(any())).thenAnswer(inv -> {
-            existing.add(((WinningNumberEntity) inv.getArgument(0)).getRound());
-            return inv.getArgument(0);
-        });
 
         CollectResponse result = service.collect(1102);
 
@@ -279,3 +280,4 @@ class WinningNumberCollectServiceTest {
         verify(eventPublisher).publishEvent(any(WinningNumbersCollectedEvent.class));
     }
 }
+

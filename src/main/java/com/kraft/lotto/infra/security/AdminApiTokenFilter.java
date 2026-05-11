@@ -13,8 +13,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Collections;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -68,7 +71,17 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
         }
 
         meterRegistry.counter("kraft.api.admin_token.allowed").increment();
-        filterChain.doFilter(request, response);
+        var authentication = new UsernamePasswordAuthenticationToken(
+                "admin-api-token",
+                null,
+                Collections.emptyList()
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     private void writeUnauthorizedResponse(HttpServletResponse response) throws IOException {

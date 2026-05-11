@@ -68,19 +68,7 @@ public class DhLotteryApiClient implements LottoApiClient {
         while (true) {
             attempt++;
             try {
-                URI uri = UriComponentsBuilder.fromUriString(baseUrl)
-                        .queryParam("method", "getLottoNumber")
-                        .queryParam("drwNo", round)
-                        .build()
-                        .toUri();
-                ApiRawResponse response = restClient.get()
-                        .uri(uri)
-                        .exchange((request, rawResponse) -> {
-                            int statusCode = rawResponse.getStatusCode().value();
-                            String body = StreamUtils.copyToString(rawResponse.getBody(), StandardCharsets.UTF_8);
-                            MediaType contentType = rawResponse.getHeaders().getContentType();
-                            return new ApiRawResponse(statusCode, contentType == null ? null : contentType.toString(), body);
-                        });
+                ApiRawResponse response = doFetch(round);
                 if (response.statusCode() >= 400) {
                     count("kraft.api.dhlottery.call.failure", "reason", "network");
                     throw new LottoApiClientException("외부 API HTTP 오류 (round=" + round + ", status=" + response.statusCode()
@@ -110,6 +98,22 @@ public class DhLotteryApiClient implements LottoApiClient {
                 sleepBackoff();
             }
         }
+    }
+
+    ApiRawResponse doFetch(int round) {
+        URI uri = UriComponentsBuilder.fromUriString(baseUrl)
+                .queryParam("method", "getLottoNumber")
+                .queryParam("drwNo", round)
+                .build()
+                .toUri();
+        return restClient.get()
+                .uri(uri)
+                .exchange((request, rawResponse) -> {
+                    int statusCode = rawResponse.getStatusCode().value();
+                    String body = StreamUtils.copyToString(rawResponse.getBody(), StandardCharsets.UTF_8);
+                    MediaType contentType = rawResponse.getHeaders().getContentType();
+                    return new ApiRawResponse(statusCode, contentType == null ? null : contentType.toString(), body);
+                });
     }
 
     Optional<WinningNumber> parse(int round, String body) {
@@ -278,6 +282,6 @@ public class DhLotteryApiClient implements LottoApiClient {
         return body.substring(0, limit).replaceAll("\\s+", " ");
     }
 
-    private record ApiRawResponse(int statusCode, String contentType, String body) {
+    record ApiRawResponse(int statusCode, String contentType, String body) {
     }
 }

@@ -429,15 +429,30 @@
   // ───────────────────────── 빈도 ─────────────────────────
   const loadFrequency = async () => {
     const out = document.getElementById('freq-result');
+    const lowOut = document.getElementById('freq-low6-result');
     out.innerHTML =
       '<div class="placeholder-glow w-100"><span class="placeholder col-12"></span></div>';
+    if (lowOut) {
+      lowOut.innerHTML =
+        '<div class="placeholder-glow w-100"><span class="placeholder col-8"></span></div>';
+    }
     try {
       const data = await api('/api/winning-numbers/stats/frequency');
       const max = data.reduce((m, d) => Math.max(m, d.count), 1);
+      const lowSixList = [...data]
+        .sort((a, b) => a.count - b.count || a.number - b.number)
+        .slice(0, 6);
+      const lowSix = new Set(
+        lowSixList.map((d) => d.number)
+      );
       out.replaceChildren();
       data.forEach(({ number, count }) => {
         const cell = document.createElement('div');
         cell.className = 'kraft-freq-cell';
+        if (lowSix.has(number)) {
+          cell.classList.add('low-freq');
+          cell.classList.add(count > 0 ? 'has-win' : 'no-win');
+        }
         const pct = Math.round((count / max) * 100);
         const n = document.createElement('span');
         n.className = 'n';
@@ -454,8 +469,24 @@
         cell.appendChild(small);
         out.appendChild(cell);
       });
+      if (lowOut) {
+        lowOut.replaceChildren();
+        lowSixList.forEach(({ number, count }) => {
+          const item = document.createElement('span');
+          item.className = `kraft-freq-low6-item ${count > 0 ? 'has-win' : 'no-win'}`;
+          item.textContent = `${number}번`;
+          const status = document.createElement('strong');
+          status.className = 'status';
+          status.textContent = count > 0 ? '1등 이력 있음' : '1등 이력 없음';
+          item.appendChild(status);
+          lowOut.appendChild(item);
+        });
+      }
     } catch (err) {
       setTextMessage(out, err.message, 'text-danger small mb-0');
+      if (lowOut) {
+        setTextMessage(lowOut, err.message, 'text-danger small mb-0');
+      }
     }
   };
 

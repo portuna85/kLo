@@ -58,8 +58,8 @@ public class SecurityConfig {
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                         .requestMatchers("/api/recommend/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/winning-numbers/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/winning-numbers/refresh").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/admin/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/winning-numbers/refresh").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/admin/**").authenticated()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/docs", "/docs/", "/docs/**").permitAll()
                         .anyRequest().denyAll()
@@ -81,3 +81,4 @@ public class SecurityConfig {
         return new RecommendRateLimitFilter(properties, objectMapper, meterRegistry);
     }
 }
+

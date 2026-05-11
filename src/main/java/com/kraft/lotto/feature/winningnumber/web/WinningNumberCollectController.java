@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 당첨번호 수집 트리거 API. 인증 없이 누구나 최신 회차 데이터를 갱신할 수 있다.
+ * Winning-number collection trigger API. This endpoint requires admin token authentication.
  */
 @RestController
 @RequestMapping("/api/winning-numbers")
