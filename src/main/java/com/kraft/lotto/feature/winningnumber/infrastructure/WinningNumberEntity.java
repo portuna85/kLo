@@ -3,10 +3,11 @@ package com.kraft.lotto.feature.winningnumber.infrastructure;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "winning_numbers")
@@ -52,7 +53,7 @@ public class WinningNumberEntity {
     @Column(name = "first_accum_amount", nullable = false)
     private Long firstAccumAmount;
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONGVARCHAR)
     @Column(name = "raw_json")
     private String rawJson;
 

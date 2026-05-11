@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +34,7 @@ public class LottoCollectionService {
     private final long backfillDelayMs;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
+    @Autowired
     public LottoCollectionService(LottoApiClient lottoApiClient,
                                   WinningNumberRepository winningNumberRepository,
                                   WinningNumberPersister persister,
