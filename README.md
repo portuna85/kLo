@@ -58,7 +58,7 @@ Kraft Lotto는 Spring Boot 기반의 로또 추천/당첨번호 조회 서비스
 - Build: Gradle
 - DB: MariaDB, H2(test)
 - Migration: Flyway
-- Cache/Rate Limit: Redis, Caffeine
+- Cache/Rate Limit: Redis(선택적 rate-limit 인프라), Caffeine
 - Docs: Spring REST Docs, Asciidoctor
 - Test: JUnit 5, Spring Test, Testcontainers, ArchUnit
 
@@ -66,13 +66,15 @@ Kraft Lotto는 Spring Boot 기반의 로또 추천/당첨번호 조회 서비스
 
 ### 필수
 - JDK 25
-- Docker(선택: MariaDB/Redis 컨테이너 사용 시)
+- Docker(선택: MariaDB 컨테이너 사용 시; 현재 기본 `docker-compose.yml`에는 Redis 서비스가 없습니다)
 
 ### 로컬 .env 작성 주의사항
 - 로컬 실행 전 `cp .env.example .env`로 예시 파일을 복사한 뒤 placeholder 값을 실제 로컬 값으로 바꾸세요.
 - `.env`에는 DB 비밀번호와 관리자 토큰이 들어가므로 커밋하지 마세요.
 - `docker compose up -d`로 실행할 때 DB 호스트는 `mariadb`를 사용하고, 호스트 OS에서 `./gradlew bootRun`으로 직접 실행할 때는 로컬 DB 접속 값으로 조정하세요.
+- Redis rate-limit은 기본 비활성입니다. `KRAFT_RECOMMEND_RATE_LIMIT_REDIS_ENABLED=false`가 기본값이며, 기본 로컬 실행은 Redis 없이 동작합니다.
 - 현재 `docker-compose.yml`에는 Redis 서비스가 없으므로 로컬에서는 `KRAFT_RECOMMEND_RATE_LIMIT_REDIS_ENABLED=false`를 유지하세요.
+- Redis rate-limit을 활성화하려면 운영자가 애플리케이션 외부에 별도 Redis 인프라(예: 관리형 Redis 또는 별도 Redis 컨테이너/클러스터)를 준비하고 애플리케이션이 접속할 수 있도록 설정해야 합니다.
 
 ### 실행
 ```bash
