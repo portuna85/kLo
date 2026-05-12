@@ -27,7 +27,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 @ExtendWith(MockitoExtension.class)
-    @DisplayName("테스트")
+    @DisplayName("tests for WinningNumberQueryServiceTest")
 class WinningNumberQueryServiceTest {
 
     @Mock
@@ -50,7 +50,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("get latest returns latest")
     void getLatestReturnsLatest() {
         when(repository.findTopByOrderByRoundDesc()).thenReturn(Optional.of(entity(1100)));
 
@@ -61,7 +61,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("get latest throws not found when absent")
     void getLatestThrowsNotFoundWhenAbsent() {
         when(repository.findTopByOrderByRoundDesc()).thenReturn(Optional.empty());
 
@@ -72,7 +72,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("get by round throws not found when absent")
     void getByRoundThrowsNotFoundWhenAbsent() {
         when(repository.findById(2999)).thenReturn(Optional.empty());
 
@@ -83,7 +83,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("get by round throws not found when round is non positive")
     void getByRoundThrowsNotFoundWhenRoundIsNonPositive() {
         assertThatExceptionOfType(BusinessException.class)
                 .isThrownBy(() -> service.getByRound(0))
@@ -92,7 +92,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("list applies size bounds and defaults")
     void listAppliesSizeBoundsAndDefaults() {
         Page<WinningNumberEntity> page = new PageImpl<>(List.of(entity(2), entity(1)), PageRequest.of(0, 100), 2);
         when(repository.findAllByOrderByRoundDesc(any())).thenReturn(page);
@@ -106,9 +106,9 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("frequency aggregates only main numbers and returns all45")
     void frequencyAggregatesOnlyMainNumbersAndReturnsAll45() {
-        // ?????컧 筌뤴뫀紐?癰귣챶苡??[1,7,13,22,34,45] / 癰귣?瑗??8 ??癰귣?瑗??삳뮉 筌욌쵌????뽰뇚
+        // ?????而?嶺뚮ㅄ維筌??곌랜梨띈떋??[1,7,13,22,34,45] / ?곌랜????8 ???곌랜?????노츎 嶺뚯쉶理????戮곕뇶
         Object[] row = {1, 7, 13, 22, 34, 45};
         when(repository.findAllNumbersForFrequency()).thenReturn(List.of(row, row));
 
@@ -117,13 +117,13 @@ class WinningNumberQueryServiceTest {
         assertThat(result).hasSize(45);
         assertThat(result.get(0).number()).isEqualTo(1);
         assertThat(result.get(44).number()).isEqualTo(45);
-        // 癰귣챶苡?紐껋쨮 ?源놁삢??1甕?7甕?13甕?22甕?34甕?45甕곕뜆? 2???뎃
+        // ?곌랜梨띈떋?筌뤾퍔夷??繹먮냱???1??7??13??22??34??45?뺢퀡?? 2?????
         assertThat(result.get(0).count()).isEqualTo(2);
         assertThat(result.get(6).count()).isEqualTo(2);
         assertThat(result.get(44).count()).isEqualTo(2);
-        // 8甕곕뜆? 癰귣?瑗??筌욌쵌????뽰뇚)揶쎛 ?袁⑤빒 projection????곸몵沃샕嚥?0??
+        // 8?뺢퀡?? ?곌랜????嶺뚯쉶理????戮곕뇶)?띠럾? ?熬곣뫀鍮?projection????怨몃さ亦껋깢???0??
         assertThat(result.get(7).count()).isZero();
-        // ?????? ??? 2甕곕뜆? 0??
+        // ?????? ??? 2?뺢퀡?? 0??
         assertThat(result.get(1).count()).isZero();
     }
 }

@@ -7,11 +7,11 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
-    @DisplayName("테스트")
+    @DisplayName("tests for KraftLottoApplicationTests")
 class KraftLottoApplicationTests {
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("context loads")
     void contextLoads() {
     }
 }

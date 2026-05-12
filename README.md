@@ -1,110 +1,121 @@
-# Kraft Lotto
+﻿# Kraft Lotto
 
-Kraft Lotto는 Spring Boot 기반의 로또 추천/당첨번호 조회 서비스입니다.
-백엔드 API, 서버 렌더링 프론트엔드(Thymeleaf), 배치성 수집 기능, 보안/운영 구성을 한 저장소에서 관리합니다.
+Spring Boot 기반 로또(6/45) 추천 및 당첨번호 조회 서비스입니다.
 
-## 1. 프로젝트 분석 요약
+## Tech Stack
+- Java 25
+- Spring Boot 4.0.5
+- Gradle 9.x
+- MariaDB, Flyway
+- Redis(선택), Caffeine
+- Spring REST Docs, Asciidoctor
+- JUnit 5, Mockito, Testcontainers, ArchUnit
 
-### 백엔드
-- 런타임: Java 25, Spring Boot 4.0.5
-- 핵심 모듈: `feature.recommend`, `feature.winningnumber`, `infra`, `support`
-- 주요 API 컨트롤러(6개)
-  - `RecommendController`
-  - `WinningNumberController`
-  - `WinningNumberCollectController`
-  - `AdminLottoDrawController`
-  - `AdminLottoJobController`
-  - `IndexController` (웹 진입점)
-- 주요 서비스 레이어(5개)
-  - `RecommendService`
-  - `WinningNumberQueryService`
-  - `WinningNumberCollectService`
-  - `LottoCollectionService`
-  - `BackfillJobService`
-- 데이터/인프라
-  - Spring Data JPA + Flyway + MariaDB
-  - Redis(레이트리밋/캐시), Caffeine 캐시
-  - 외부 API 연동: 동행복권 계열 클라이언트 + Failover/CircuitBreaker
-  - 스케줄링: ShedLock 기반 분산 락
-- 운영/관측
-  - Spring Actuator, Micrometer + OpenTelemetry OTLP
-  - Logstash Logback Encoder
+## Modules
+- `feature.recommend`: 번호 추천 도메인/서비스/API
+- `feature.winningnumber`: 당첨번호 수집/조회/관리 API
+- `infra`: 보안, 설정, 헬스체크, 공통 인프라
+- `support`: 공통 응답/예외 처리
 
-### 프론트엔드
-- 렌더링: Thymeleaf 템플릿
-- UI: Bootstrap 5 + Bootstrap Icons
-- 스크립트: Vanilla JavaScript (`static/js/app.js`)
-- 스타일: 커스텀 CSS (`static/css/app.css`)
-- 제공 화면 기능
-  - 추천 번호 생성
-  - 최신 당첨번호 조회
-  - 회차별 조회
-  - 번호별 출현 빈도
-  - 당첨번호 목록 페이징
-  - 관리자 수집 트리거 모달
-
-### 테스트
-- 테스트 소스: `src/test/java` 하위 26개 파일
-- 테스트 메서드: 총 160개
-- 테스트 구성
-  - 단위 테스트: 도메인/서비스/보안 필터
-  - 슬라이스 테스트: WebMvcTest 기반 컨트롤러
-  - 통합 테스트: 저장소/보안/설정 바인딩
-  - 아키텍처 테스트: ArchUnit
-
-## 2. 기술 스택
-- Language: Java 25
-- Framework: Spring Boot 4.0.5
-- Build: Gradle
-- DB: MariaDB, H2(test)
-- Migration: Flyway
-- Cache/Rate Limit: Redis(선택적 rate-limit 인프라), Caffeine
-- Docs: Spring REST Docs, Asciidoctor
-- Test: JUnit 5, Spring Test, Testcontainers, ArchUnit
-
-## 3. 로컬 실행
-
-### 필수
+## Prerequisites
 - JDK 25
-- Docker(선택: MariaDB 컨테이너 사용 시; 현재 기본 `docker-compose.yml`에는 Redis 서비스가 없습니다)
+- Docker / Docker Compose (로컬 DB 컨테이너 사용 시)
 
-### 로컬 .env 작성 주의사항
-- 로컬 실행 전 `cp .env.example .env`로 예시 파일을 복사한 뒤 placeholder 값을 실제 로컬 값으로 바꾸세요.
-- `.env`에는 DB 비밀번호와 관리자 토큰이 들어가므로 커밋하지 마세요.
-- `docker compose up -d`로 실행할 때 DB 호스트는 `mariadb`를 사용하고, 호스트 OS에서 `./gradlew bootRun`으로 직접 실행할 때는 로컬 DB 접속 값으로 조정하세요.
-- Redis rate-limit은 기본 비활성입니다. `KRAFT_RECOMMEND_RATE_LIMIT_REDIS_ENABLED=false`가 기본값이며, 기본 로컬 실행은 Redis 없이 동작합니다.
-- 현재 `docker-compose.yml`에는 Redis 서비스가 없으므로 로컬에서는 `KRAFT_RECOMMEND_RATE_LIMIT_REDIS_ENABLED=false`를 유지하세요.
-- Redis rate-limit을 활성화하려면 운영자가 애플리케이션 외부에 별도 Redis 인프라(예: 관리형 Redis 또는 별도 Redis 컨테이너/클러스터)를 준비하고 애플리케이션이 접속할 수 있도록 설정해야 합니다.
+## Run
+### 1) 환경 변수 준비
+프로젝트 루트에 `.env`를 준비합니다.
 
-### 실행
+```bash
+cp .env.example .env
+```
+
+Windows:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+### 2) 애플리케이션 실행
+
 ```bash
 ./gradlew bootRun
 ```
+
 Windows:
+
 ```powershell
 .\gradlew.bat bootRun
 ```
 
-## 4. 테스트 실행
+기본 프로파일은 `local`이며, 운영은 `prod` 프로파일을 사용합니다.
+
+## Test
+
 ```bash
 ./gradlew test
 ```
+
 Windows:
+
 ```powershell
 .\gradlew.bat test
 ```
 
-## 5. 저장소 구조
+## Build
+
+```bash
+./gradlew clean build
+```
+
+Windows:
+
+```powershell
+.\gradlew.bat clean build
+```
+
+기본 실행 아티팩트:
+- `build/libs/app.jar`
+
+문서 포함 아티팩트:
+- `./gradlew bootJarWithDocs`
+- `build/libs/app-with-docs.jar`
+
+## Configuration Profiles
+- `src/main/resources/application.yml`: 공통 기본 설정
+- `src/main/resources/application-local.yml`: 로컬 개발 설정
+- `src/main/resources/application-prod.yml`: 운영 오버라이드
+
+## CI/CD
+- CI: `.github/workflows/ci.yml`
+  - Java 25로 빌드/테스트 수행
+  - `app.jar` 내 프로파일 리소스 포함 검증
+- CD: `.github/workflows/cd.yml`
+  - self-hosted runner에서 Docker Compose 배포
+  - 운영 시크릿 검증 및 readiness/smoke test 수행
+
+## API Docs
+테스트/문서 생성 후 정적 문서가 포함됩니다.
+- Asciidoctor 출력: `build/docs/asciidoc`
+- `bootJarWithDocs` 빌드 시 `/static/docs`로 패키징
+
+## Project Structure
+
 ```text
 src/main/java/com/kraft/lotto
-  feature/recommend
-  feature/winningnumber
-  infra
-  support
-  web
+  feature/
+  infra/
+  support/
+  web/
 
 src/main/resources
-  templates
-  static
-  db/migration
+  application.yml
+  application-local.yml
+  application-prod.yml
+  db/migration/
+  static/
+  templates/
 ```
+
+## Notes
+- 관리자 API 토큰(`KRAFT_ADMIN_API_TOKEN`)은 운영에서 필수입니다.
+- 민감 정보는 저장소에 커밋하지 않고 환경 변수/시크릿으로 주입합니다.

@@ -18,6 +18,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +33,7 @@ public class BackfillJobService {
     private final Clock clock;
     private final AtomicReference<Instant> nextCleanupAt;
 
+    @Autowired
     public BackfillJobService(
             LottoCollectionService collectionService,
             @Value("${kraft.collect.backfill.max-concurrent-jobs:2}") int maxConcurrentJobs,

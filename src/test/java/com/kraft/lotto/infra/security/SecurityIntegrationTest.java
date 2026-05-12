@@ -51,7 +51,7 @@ import org.springframework.test.web.servlet.MockMvc;
         UserDetailsServiceAutoConfiguration.class
 })
 @ActiveProfiles("test")
-    @DisplayName("테스트")
+    @DisplayName("tests for SecurityIntegrationTest")
 class SecurityIntegrationTest {
 
     @Autowired
@@ -76,7 +76,7 @@ class SecurityIntegrationTest {
     KraftRateLimitRedisProperties redisRateLimitProperties;
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("public recommend rules is accessible without auth")
     void publicRecommendRulesIsAccessibleWithoutAuth() throws Exception {
         givenSecurityProperties();
         Mockito.when(recommendService.rules()).thenReturn(List.of());
@@ -87,7 +87,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("public winning numbers latest is accessible without auth")
     void publicWinningNumbersLatestIsAccessibleWithoutAuth() throws Exception {
         givenSecurityProperties();
         Mockito.when(queryService.getLatest()).thenReturn(new WinningNumberDto(
@@ -101,7 +101,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("winning number refresh requires admin token")
     void winningNumberRefreshRequiresAdminToken() throws Exception {
         givenSecurityProperties();
         mockMvc.perform(post("/api/winning-numbers/refresh")
@@ -112,7 +112,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("winning number refresh is accessible with admin token")
     void winningNumberRefreshIsAccessibleWithAdminToken() throws Exception {
         givenSecurityProperties();
         Mockito.when(collectService.collect(Mockito.nullable(Integer.class)))
@@ -130,7 +130,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("winning number refresh is rate limited by ip")
     void winningNumberRefreshIsRateLimitedByIp() throws Exception {
         givenSecurityProperties();
         Mockito.when(collectService.collect(Mockito.nullable(Integer.class)))
@@ -159,7 +159,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("unknown endpoint is denied")
     void unknownEndpointIsDenied() throws Exception {
         givenSecurityProperties();
         mockMvc.perform(get("/admin/unknown"))

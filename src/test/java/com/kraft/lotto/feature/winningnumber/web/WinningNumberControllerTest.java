@@ -41,7 +41,7 @@ import org.springframework.web.context.WebApplicationContext;
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
 @ExtendWith(RestDocumentationExtension.class)
-    @DisplayName("테스트")
+    @DisplayName("tests for WinningNumberControllerTest")
 class WinningNumberControllerTest {
     private static final int ROUND_EXISTING = 1102;
     private static final int ROUND_NOT_FOUND = 1200;
@@ -68,7 +68,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("get latest returns ok")
     void getLatestReturnsOk() throws Exception {
         Mockito.when(queryService.getLatest()).thenReturn(sample(ROUND_EXISTING));
 
@@ -77,16 +77,16 @@ class WinningNumberControllerTest {
                         preprocessRequest(prettyPrint()),
                         preprocessResponse(prettyPrint()),
                         responseFields(
-                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("설명"),
-                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("설명"),
-                                fieldWithPath("data.round").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.drawDate").type(JsonFieldType.STRING).description("설명"),
-                                fieldWithPath("data.numbers").type(JsonFieldType.ARRAY).description("설명"),
-                                fieldWithPath("data.bonusNumber").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.firstPrize").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.firstWinners").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.totalSales").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("설명")
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("?ㅻ챸"),
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("?ㅻ챸"),
+                                fieldWithPath("data.round").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.drawDate").type(JsonFieldType.STRING).description("?ㅻ챸"),
+                                fieldWithPath("data.numbers").type(JsonFieldType.ARRAY).description("?ㅻ챸"),
+                                fieldWithPath("data.bonusNumber").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.firstPrize").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.firstWinners").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.totalSales").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("?ㅻ챸")
                         )
                 ))
                 .andExpect(status().isOk())
@@ -97,7 +97,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("get by round returns ok")
     void getByRoundReturnsOk() throws Exception {
         Mockito.when(queryService.getByRound(ROUND_EXISTING)).thenReturn(sample(ROUND_EXISTING));
 
@@ -106,16 +106,16 @@ class WinningNumberControllerTest {
                         preprocessRequest(prettyPrint()),
                         preprocessResponse(prettyPrint()),
                         responseFields(
-                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("설명"),
-                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("설명"),
-                                fieldWithPath("data.round").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.drawDate").type(JsonFieldType.STRING).description("설명"),
-                                fieldWithPath("data.numbers").type(JsonFieldType.ARRAY).description("설명"),
-                                fieldWithPath("data.bonusNumber").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.firstPrize").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.firstWinners").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.totalSales").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("설명")
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("?ㅻ챸"),
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("?ㅻ챸"),
+                                fieldWithPath("data.round").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.drawDate").type(JsonFieldType.STRING).description("?ㅻ챸"),
+                                fieldWithPath("data.numbers").type(JsonFieldType.ARRAY).description("?ㅻ챸"),
+                                fieldWithPath("data.bonusNumber").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.firstPrize").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.firstWinners").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.totalSales").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("?ㅻ챸")
                         )
                 ))
                 .andExpect(status().isOk())
@@ -124,7 +124,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("get by round returns404 when not found")
     void getByRoundReturns404WhenNotFound() throws Exception {
         Mockito.when(queryService.getByRound(ROUND_NOT_FOUND))
                 .thenThrow(new BusinessException(ErrorCode.WINNING_NUMBER_NOT_FOUND));
@@ -136,7 +136,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("get list returns page")
     void getListReturnsPage() throws Exception {
         Mockito.when(queryService.list(0, 20))
                 .thenReturn(new WinningNumberPageDto(List.of(sample(ROUND_EXISTING), sample(1101)), 0, 20, 2L, 1));
@@ -146,21 +146,21 @@ class WinningNumberControllerTest {
                         preprocessRequest(prettyPrint()),
                         preprocessResponse(prettyPrint()),
                         responseFields(
-                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("설명"),
-                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("설명"),
-                                fieldWithPath("data.content").type(JsonFieldType.ARRAY).description("설명"),
-                                fieldWithPath("data.content[].round").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.content[].drawDate").type(JsonFieldType.STRING).description("설명"),
-                                fieldWithPath("data.content[].numbers").type(JsonFieldType.ARRAY).description("설명"),
-                                fieldWithPath("data.content[].bonusNumber").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.content[].firstPrize").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.content[].firstWinners").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.content[].totalSales").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.page").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.size").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.totalElements").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.totalPages").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("설명")
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("?ㅻ챸"),
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("?ㅻ챸"),
+                                fieldWithPath("data.content").type(JsonFieldType.ARRAY).description("?ㅻ챸"),
+                                fieldWithPath("data.content[].round").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.content[].drawDate").type(JsonFieldType.STRING).description("?ㅻ챸"),
+                                fieldWithPath("data.content[].numbers").type(JsonFieldType.ARRAY).description("?ㅻ챸"),
+                                fieldWithPath("data.content[].bonusNumber").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.content[].firstPrize").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.content[].firstWinners").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.content[].totalSales").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.page").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.size").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.totalElements").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.totalPages").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("?ㅻ챸")
                         )
                 ))
                 .andExpect(status().isOk())
@@ -170,7 +170,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("get stats frequency returns ok")
     void getStatsFrequencyReturnsOk() throws Exception {
         List<NumberFrequencyDto> data = List.of(
                 new NumberFrequencyDto(1, 123),
@@ -183,11 +183,11 @@ class WinningNumberControllerTest {
                         preprocessRequest(prettyPrint()),
                         preprocessResponse(prettyPrint()),
                         responseFields(
-                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("설명"),
-                                fieldWithPath("data").type(JsonFieldType.ARRAY).description("설명"),
-                                fieldWithPath("data[].number").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data[].count").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("설명")
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("?ㅻ챸"),
+                                fieldWithPath("data").type(JsonFieldType.ARRAY).description("?ㅻ챸"),
+                                fieldWithPath("data[].number").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data[].count").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("?ㅻ챸")
                         )
                 ))
                 .andExpect(status().isOk())
@@ -200,7 +200,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("get list returns400 when page request invalid")
     void getListReturns400WhenPageRequestInvalid() throws Exception {
         mockMvc.perform(get("/api/winning-numbers?page=-1&size=0"))
                 .andExpect(status().isBadRequest())
@@ -209,7 +209,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("get by round returns400 when round is less than one")
     void getByRoundReturns400WhenRoundIsLessThanOne() throws Exception {
         mockMvc.perform(get("/api/winning-numbers/0"))
                 .andExpect(status().isBadRequest())
@@ -218,7 +218,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("get by round returns400 when round is not numeric")
     void getByRoundReturns400WhenRoundIsNotNumeric() throws Exception {
         mockMvc.perform(get("/api/winning-numbers/10a"))
                 .andExpect(status().isBadRequest())
@@ -227,7 +227,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("get by round returns400 when round exceeds max")
     void getByRoundReturns400WhenRoundExceedsMax() throws Exception {
         mockMvc.perform(get("/api/winning-numbers/3001"))
                 .andExpect(status().isBadRequest())

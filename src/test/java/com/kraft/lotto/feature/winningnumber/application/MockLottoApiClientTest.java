@@ -10,11 +10,11 @@ import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-    @DisplayName("테스트")
+    @DisplayName("tests for MockLottoApiClientTest")
 class MockLottoApiClientTest {
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("fetch returns empty for undrawn round")
     void fetchReturnsEmptyForUndrawnRound() {
         MockLottoApiClient client = new MockLottoApiClient(1100);
 
@@ -24,7 +24,7 @@ class MockLottoApiClientTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("fetch returns same combination for same round")
     void fetchReturnsSameCombinationForSameRound() {
         MockLottoApiClient client = new MockLottoApiClient(1100);
 
@@ -38,7 +38,7 @@ class MockLottoApiClientTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("fetch bonus does not overlap with main numbers")
     void fetchBonusDoesNotOverlapWithMainNumbers() {
         MockLottoApiClient client = new MockLottoApiClient(2000);
 

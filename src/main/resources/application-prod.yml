@@ -1,9 +1,5 @@
-# ============================================================
-#  운영 환경 전용 오버라이드
-#  - 비밀값/환경 의존 값은 모두 환경 변수 또는 배포 매니페스트에서 주입합니다.
-#  - 본 파일에는 절대 비밀값을 적지 않습니다.
-#  - 운영에서는 템플릿/정적 리소스 캐시와 실제 동행복권 API 클라이언트를 기본값으로 사용합니다.
-# ============================================================
+# Production profile overrides.
+# Secrets must be injected from environment variables and never hard-coded.
 
 spring:
   jpa:
@@ -30,13 +26,9 @@ management:
       show-details: when-authorized
 
 logging:
-  # 로깅 레벨/Appender 는 logback-spring.xml 에서 프로파일별로 일원 관리합니다.
-  # 파일 출력 경로만 환경 변수로 재정의하고 싶을 때 KRAFT_LOG_PATH 를 사용하세요.
   file:
-    # 호환성을 위해 Spring Boot 의 logging.file.path 도 동일 위치를 가리키도록 둡니다.
     path: ${KRAFT_LOG_PATH:./logs}
 
 kraft:
   api:
-    # 운영에서는 KRAFT_API_CLIENT 미주입 시 mock 이 아닌 실제 동행복권 클라이언트를 사용합니다.
     client: ${KRAFT_API_CLIENT:real}

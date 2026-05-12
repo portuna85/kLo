@@ -7,14 +7,14 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-    @DisplayName("테스트")
+    @DisplayName("tests for WinningNumberTest")
 class WinningNumberTest {
 
     private static final LottoCombination COMBO = LottoCombination.of(1, 7, 13, 22, 34, 45);
     private static final LocalDate DRAW = LocalDate.of(2026, 5, 1);
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("creates valid winning number")
     void createsValidWinningNumber() {
         WinningNumber wn = new WinningNumber(1100, DRAW, COMBO, 8, 1_500_000_000L, 5, 100_000_000_000L);
         assertThat(wn.round()).isEqualTo(1100);
@@ -24,7 +24,7 @@ class WinningNumberTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("rejects non positive round")
     void rejectsNonPositiveRound() {
         assertThatThrownBy(() -> new WinningNumber(0, DRAW, COMBO, 8, 0L, 0, 0L))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -33,21 +33,21 @@ class WinningNumberTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("rejects null draw date")
     void rejectsNullDrawDate() {
         assertThatThrownBy(() -> new WinningNumber(1, null, COMBO, 8, 0L, 0, 0L))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("rejects null combination")
     void rejectsNullCombination() {
         assertThatThrownBy(() -> new WinningNumber(1, DRAW, null, 8, 0L, 0, 0L))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("rejects bonus out of range")
     void rejectsBonusOutOfRange() {
         assertThatThrownBy(() -> new WinningNumber(1, DRAW, COMBO, 0, 0L, 0, 0L))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -56,35 +56,35 @@ class WinningNumberTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("rejects bonus duplicated with main numbers")
     void rejectsBonusDuplicatedWithMainNumbers() {
         assertThatThrownBy(() -> new WinningNumber(1, DRAW, COMBO, 13, 0L, 0, 0L))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("rejects negative first prize")
     void rejectsNegativeFirstPrize() {
         assertThatThrownBy(() -> new WinningNumber(1, DRAW, COMBO, 8, -1L, 0, 0L))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("rejects negative first winners")
     void rejectsNegativeFirstWinners() {
         assertThatThrownBy(() -> new WinningNumber(1, DRAW, COMBO, 8, 0L, -1, 0L))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("rejects negative total sales")
     void rejectsNegativeTotalSales() {
         assertThatThrownBy(() -> new WinningNumber(1, DRAW, COMBO, 8, 0L, 0, -1L))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("allows zero financial values")
     void allowsZeroFinancialValues() {
         WinningNumber wn = new WinningNumber(1, DRAW, COMBO, 8, 0L, 0, 0L);
         assertThat(wn.firstPrize()).isZero();

@@ -29,7 +29,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @ActiveProfiles("it")
 @Testcontainers(disabledWithoutDocker = true)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-    @DisplayName("테스트")
+    @DisplayName("tests for WinningNumberRepositoryIT")
 class WinningNumberRepositoryIT {
 
     private static final int ROUND_1200 = 1200;
@@ -75,7 +75,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
-    @DisplayName("테스트")
+    @DisplayName("saves and finds by round")
     void savesAndFindsByRound() {
         repository.save(entityOf(1100, LocalDate.of(2026, 5, 1), 1, 7, 13, 22, 34, 45, 8));
         em.flush();
@@ -91,7 +91,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
-    @DisplayName("테스트")
+    @DisplayName("mapper roundtrip preserves domain")
     void mapperRoundtripPreservesDomain() {
         repository.save(entityOf(1101, LocalDate.of(2026, 5, 8), 3, 9, 15, 21, 27, 33, 40));
         em.flush();
@@ -105,7 +105,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
-    @DisplayName("테스트")
+    @DisplayName("find top by order by round desc returns latest")
     void findTopByOrderByRoundDescReturnsLatest() {
         repository.save(savedRound1200());
         repository.save(savedRound1202());
@@ -119,7 +119,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
-    @DisplayName("테스트")
+    @DisplayName("find max round works")
     void findMaxRoundWorks() {
         repository.save(entityOf(1300, LocalDate.of(2026, 5, 1), 1, 7, 13, 22, 34, 45, 8));
         repository.save(entityOf(1302, LocalDate.of(2026, 5, 15), 2, 8, 14, 23, 35, 44, 9));
@@ -130,7 +130,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
-    @DisplayName("테스트")
+    @DisplayName("exists by round returns correctly")
     void existsByRoundReturnsCorrectly() {
         repository.save(entityOf(1400, LocalDate.of(2026, 5, 1), 1, 7, 13, 22, 34, 45, 8));
         em.flush();
@@ -141,7 +141,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
-    @DisplayName("테스트")
+    @DisplayName("find all by order by round desc paginates")
     void findAllByOrderByRoundDescPaginates() {
         for (int r = 1500; r < 1510; r++) {
             repository.save(entityOf(r, LocalDate.of(2026, 5, 1).plusWeeks(r - 1500),
@@ -158,7 +158,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
-    @DisplayName("테스트")
+    @DisplayName("rejects bonus equal to main number by check constraint")
     void rejectsBonusEqualToMainNumberByCheckConstraint() {
         WinningNumberEntity bad = new WinningNumberEntity(
                 1600, LocalDate.of(2026, 6, 1),
@@ -172,7 +172,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
-    @DisplayName("테스트")
+    @DisplayName("rejects out of order numbers by check constraint")
     void rejectsOutOfOrderNumbersByCheckConstraint() {
         WinningNumberEntity bad = new WinningNumberEntity(
                 1601, LocalDate.of(2026, 6, 8),
@@ -186,7 +186,7 @@ class WinningNumberRepositoryIT {
 
     @Test
     @Transactional
-    @DisplayName("테스트")
+    @DisplayName("rejects negative first prize by check constraint")
     void rejectsNegativeFirstPrizeByCheckConstraint() {
         WinningNumberEntity bad = new WinningNumberEntity(
                 1602, LocalDate.of(2026, 6, 15),

@@ -41,7 +41,7 @@ import org.springframework.web.context.WebApplicationContext;
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
 @ExtendWith(RestDocumentationExtension.class)
-    @DisplayName("테스트")
+    @DisplayName("tests for WinningNumberCollectControllerTest")
 class WinningNumberCollectControllerTest {
 
     @Autowired
@@ -60,7 +60,7 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("post collect delegates null target round when body absent")
     void postCollectDelegatesNullTargetRoundWhenBodyAbsent() throws Exception {
         Mockito.when(collectService.collect(isNull()))
                 .thenReturn(new CollectResponse(3, 0, 0, 1103, List.of(), true, 2000, false));
@@ -75,7 +75,7 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("post collect delegates specified target round")
     void postCollectDelegatesSpecifiedTargetRound() throws Exception {
         Mockito.when(collectService.collect(1103))
                 .thenReturn(new CollectResponse(2, 1, 0, 1103, List.of(), false, null, false));
@@ -89,20 +89,20 @@ class WinningNumberCollectControllerTest {
                         requestFields(
                                 fieldWithPath("targetRound").type(JsonFieldType.STRING)
                                         .optional()
-                                        .description("설명")
+                                        .description("?ㅻ챸")
                         ),
                         responseFields(
-                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("설명"),
-                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("설명"),
-                                fieldWithPath("data.collected").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.skipped").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.failed").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.latestRound").type(JsonFieldType.NUMBER).description("설명"),
-                                fieldWithPath("data.failedRounds").type(JsonFieldType.ARRAY).description("설명"),
-                                fieldWithPath("data.truncated").type(JsonFieldType.BOOLEAN).description("설명"),
-                                fieldWithPath("data.nextRound").type(JsonFieldType.NUMBER).optional().description("설명"),
-                                fieldWithPath("data.notDrawn").type(JsonFieldType.BOOLEAN).description("설명"),
-                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("설명")
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("?ㅻ챸"),
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("?ㅻ챸"),
+                                fieldWithPath("data.collected").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.skipped").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.failed").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.latestRound").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
+                                fieldWithPath("data.failedRounds").type(JsonFieldType.ARRAY).description("?ㅻ챸"),
+                                fieldWithPath("data.truncated").type(JsonFieldType.BOOLEAN).description("?ㅻ챸"),
+                                fieldWithPath("data.nextRound").type(JsonFieldType.NUMBER).optional().description("?ㅻ챸"),
+                                fieldWithPath("data.notDrawn").type(JsonFieldType.BOOLEAN).description("?ㅻ챸"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("?ㅻ챸")
                         )
                 ))
                 .andExpect(status().isOk())
@@ -113,7 +113,7 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("post collect returns502 on external api failure")
     void postCollectReturns502OnExternalApiFailure() throws Exception {
         Mockito.when(collectService.collect(isNull()))
                 .thenThrow(new BusinessException(ErrorCode.EXTERNAL_API_FAILURE));
@@ -124,7 +124,7 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("post collect returns400 on invalid target round")
     void postCollectReturns400OnInvalidTargetRound() throws Exception {
         mockMvc.perform(post("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)

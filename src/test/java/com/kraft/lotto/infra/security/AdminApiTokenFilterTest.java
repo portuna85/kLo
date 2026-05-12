@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-    @DisplayName("테스트")
+    @DisplayName("tests for AdminApiTokenFilterTest")
 class AdminApiTokenFilterTest {
 
     private final AdminApiTokenFilter filter = new AdminApiTokenFilter(
@@ -24,7 +24,7 @@ class AdminApiTokenFilterTest {
     );
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("ignores non protected endpoint")
     void ignoresNonProtectedEndpoint() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/winning-numbers/latest");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -37,7 +37,7 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("blocks missing token")
     void blocksMissingToken() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/winning-numbers/refresh");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -51,7 +51,7 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("blocks protected endpoint with context path")
     void blocksProtectedEndpointWithContextPath() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/klo/api/winning-numbers/refresh");
         request.setContextPath("/klo");
@@ -66,7 +66,7 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("blocks invalid token")
     void blocksInvalidToken() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/winning-numbers/refresh");
         request.addHeader("X-Kraft-Admin-Token", "wrong-token");
@@ -81,7 +81,7 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("allows valid token")
     void allowsValidToken() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/winning-numbers/refresh");
         request.addHeader("X-Kraft-Admin-Token", "secret-token");
@@ -95,7 +95,7 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("blocks admin lotto draw endpoint without token")
     void blocksAdminLottoDrawEndpointWithoutToken() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/admin/lotto/draws/collect-next");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -108,7 +108,7 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("allows admin lotto draw endpoint with valid token")
     void allowsAdminLottoDrawEndpointWithValidToken() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/admin/lotto/draws/collect-next");
         request.addHeader("X-Kraft-Admin-Token", "secret-token");
@@ -122,7 +122,7 @@ class AdminApiTokenFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("blocks when server token is not configured")
     void blocksWhenServerTokenIsNotConfigured() throws Exception {
         AdminApiTokenFilter missingConfigFilter = new AdminApiTokenFilter(
                 new KraftAdminProperties("", "X-Kraft-Admin-Token"),

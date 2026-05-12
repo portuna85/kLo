@@ -9,10 +9,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 /**
- * ?ㅽ럺 16.7 Config Binding ?뚯뒪??
+ * ??쎈읃 16.7 Config Binding ???뮞??
  *
- * <p>{@code kraft.*} prefix ??{@code @ConfigurationProperties} ?ㅼ씠 ?뺤긽 諛붿씤?⑸릺?붿? 寃利앺븳??
- * test ?꾨줈??湲곗?媛?
+ * <p>{@code kraft.*} prefix ??{@code @ConfigurationProperties} ??쇱뵠 ?類ㅺ맒 獄쏅뗄???몃┷?遺? 野꺜筌앹빜釉??
+ * test ?袁⑥쨮??疫꿸퀣?揶?
  * <ul>
  *     <li>kraft.api.client=mock / url=http://localhost</li>
  *     <li>kraft.recommend.max-attempts=1000</li>
@@ -20,7 +20,7 @@ import org.springframework.test.context.ActiveProfiles;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-    @DisplayName("테스트")
+    @DisplayName("tests for KraftPropertiesBindingTest")
 class KraftPropertiesBindingTest {
 
     @Autowired
@@ -33,7 +33,7 @@ class KraftPropertiesBindingTest {
     KraftRecommendRateLimitProperties rateLimit;
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("binds api properties")
     void bindsApiProperties() {
         assertThat(api.client()).isEqualTo("mock");
         assertThat(api.url()).isEqualTo("http://localhost");
@@ -46,7 +46,7 @@ class KraftPropertiesBindingTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("binds recommend properties")
     void bindsRecommendProperties() {
         assertThat(recommend.maxAttempts()).isEqualTo(1000);
         assertThat(recommend.rules().birthdayThreshold()).isEqualTo(31);
@@ -55,7 +55,7 @@ class KraftPropertiesBindingTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("binds rate limit properties")
     void bindsRateLimitProperties() {
         assertThat(rateLimit.endpoint("recommend").maxRequests()).isEqualTo(30);
         assertThat(rateLimit.endpoint("recommend").windowSeconds()).isEqualTo(60);

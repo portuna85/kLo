@@ -16,18 +16,18 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-    @DisplayName("테스트")
+    @DisplayName("tests for DhLotteryApiClientTest")
 class DhLotteryApiClientTest {
 
     private final DhLotteryApiClient client =
             new DhLotteryApiClient(null, new ObjectMapper(), "http://localhost");
 
     @Nested
-    @DisplayName("테스트")
+    @DisplayName("tests for Parse")
     class Parse {
 
         @Test
-    @DisplayName("테스트")
+    @DisplayName("parse converts valid response to domain")
         void parseConvertsValidResponseToDomain() {
             String body = """
                     {
@@ -56,7 +56,7 @@ class DhLotteryApiClientTest {
         }
 
         @Test
-    @DisplayName("테스트")
+    @DisplayName("parse throws when required field is missing")
         void parseThrowsWhenRequiredFieldIsMissing() {
             String body = """
                     {"returnValue": "success", "drwNoDate": "2024-01-06"}
@@ -65,21 +65,21 @@ class DhLotteryApiClientTest {
         }
 
         @Test
-    @DisplayName("테스트")
+    @DisplayName("parse throws on html response")
         void parseThrowsOnHtmlResponse() {
             assertThatThrownBy(() -> client.parse(1102, "<html>error</html>"))
                     .isInstanceOf(LottoApiClientException.class);
         }
 
         @Test
-    @DisplayName("테스트")
+    @DisplayName("parse throws on blank response")
         void parseThrowsOnBlankResponse() {
             assertThatThrownBy(() -> client.parse(1102, " "))
                     .isInstanceOf(LottoApiClientException.class);
         }
 
         @Test
-    @DisplayName("테스트")
+    @DisplayName("parse throws on return value fail")
         void parseThrowsOnReturnValueFail() {
             String body = """
                     {"returnValue":"fail","drwNo":1102}
@@ -89,7 +89,7 @@ class DhLotteryApiClientTest {
         }
 
         @Test
-    @DisplayName("테스트")
+    @DisplayName("parse throws on round mismatch")
         void parseThrowsOnRoundMismatch() {
             String body = """
                     {
@@ -113,7 +113,7 @@ class DhLotteryApiClientTest {
         }
 
         @Test
-    @DisplayName("테스트")
+    @DisplayName("parse throws on int overflow")
         void parseThrowsOnIntOverflow() {
             String body = """
                     {
@@ -138,11 +138,11 @@ class DhLotteryApiClientTest {
     }
 
     @Nested
-    @DisplayName("테스트")
+    @DisplayName("tests for FetchRetry")
     class FetchRetry {
 
         @Test
-    @DisplayName("테스트")
+    @DisplayName("fetch retries on network failure")
         void fetchRetriesOnNetworkFailure() {
             DhLotteryApiClient spyClient = spy(new DhLotteryApiClient(null, new ObjectMapper(), "http://localhost", 2, 0, null));
             String successBody = """
@@ -172,7 +172,7 @@ class DhLotteryApiClientTest {
         }
 
         @Test
-    @DisplayName("테스트")
+    @DisplayName("fetch throws when retry exhausted")
         void fetchThrowsWhenRetryExhausted() {
             DhLotteryApiClient spyClient = spy(new DhLotteryApiClient(null, new ObjectMapper(), "http://localhost", 2, 0, null));
             doThrow(new LottoApiClientException("network")).when(spyClient).doFetch(1102);

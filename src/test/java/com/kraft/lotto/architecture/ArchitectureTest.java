@@ -10,21 +10,21 @@ import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.DisplayName;
 
 /**
- * ?袁り텕??우퓗 域뱀뮇?????뮞??
+ * ?熬곥굤????고뱱 ?잙?裕?????裕??
  *
- * <p>??쎈읃 16.8 / 3 ?袁り텕??우퓗 ?癒?뒅??揶쏅벡???뺣뼄:
+ * <p>???덉쓢 16.8 / 3 ?熬곥굤????고뱱 ???????띠룆踰???類ｋ펲:
  * <ul>
- *     <li>domain ?④쑴留?? Spring/JPA/Web ??뤵??揶쎛筌왖筌왖 ??낅뮉??</li>
- *     <li>domain ?④쑴留?? BusinessException(support ?④쑴留???됱뇚)??筌욊낯??筌〓챷???? ??낅뮉??</li>
- *     <li>Controller(web ?④쑴留???JPA Entity/Repository(infrastructure ?④쑴留???筌욊낯??筌〓챷???? ??낅뮉??</li>
- *     <li>{@code @Entity} ?????삳뮉 feature.*.infrastructure ???텕筌왖 ????癒?춸 鈺곕똻???뺣뼄.</li>
+ *     <li>domain ??ｌ뫒筌?? Spring/JPA/Web ??琉돠???띠럾?嶺뚯솘?嶺뚯솘? ???낅츎??</li>
+ *     <li>domain ??ｌ뫒筌?? BusinessException(support ??ｌ뫒筌????깅뇶)??嶺뚯쉳???嶺뚣볦굣???? ???낅츎??</li>
+ *     <li>Controller(web ??ｌ뫒筌???JPA Entity/Repository(infrastructure ??ｌ뫒筌???嶺뚯쉳???嶺뚣볦굣???? ???낅츎??</li>
+ *     <li>{@code @Entity} ???????노츎 feature.*.infrastructure ????뺟춯?뼿 ???????異??브퀡????類ｋ펲.</li>
  * </ul>
  */
 @AnalyzeClasses(
         packages = "com.kraft.lotto",
         importOptions = {ImportOption.DoNotIncludeTests.class}
 )
-    @DisplayName("테스트")
+    @DisplayName("tests for ArchitectureTest")
 class ArchitectureTest {
 
     @ArchTest
@@ -38,7 +38,7 @@ class ArchitectureTest {
                             "org.hibernate..",
                             "org.springframework.web.."
                     )
-                    .as("domain ?④쑴留?? Spring/JPA/Web/Hibernate????뤵??곴퐣??????뺣뼄");
+                    .as("domain ??ｌ뫒筌?? Spring/JPA/Web/Hibernate????琉돠??怨댄맋??????類ｋ펲");
 
     @ArchTest
     static final ArchRule domain_should_not_use_business_exception =
@@ -46,7 +46,7 @@ class ArchitectureTest {
                     .that().resideInAPackage("..feature..domain..")
                     .should().dependOnClassesThat()
                     .haveFullyQualifiedName("com.kraft.lotto.support.BusinessException")
-                    .as("domain ?④쑴留?? support.BusinessException??筌욊낯??筌〓챷???곴퐣??????뺣뼄");
+                    .as("domain ??ｌ뫒筌?? support.BusinessException??嶺뚯쉳???嶺뚣볦굣???怨댄맋??????類ｋ펲");
 
     @ArchTest
     static final ArchRule controllers_should_not_use_infrastructure =
@@ -54,12 +54,12 @@ class ArchitectureTest {
                     .that().resideInAPackage("..feature..web..")
                     .should().dependOnClassesThat()
                     .resideInAPackage("..feature..infrastructure..")
-                    .as("Controller(web ?④쑴留???JPA Entity/Repository(infrastructure ?④쑴留???筌욊낯??筌〓챷???곴퐣??????뺣뼄");
+                    .as("Controller(web ??ｌ뫒筌???JPA Entity/Repository(infrastructure ??ｌ뫒筌???嶺뚯쉳???嶺뚣볦굣???怨댄맋??????類ｋ펲");
 
     @ArchTest
     static final ArchRule entities_should_reside_in_infrastructure_packages =
             classes()
                     .that().areAnnotatedWith(jakarta.persistence.Entity.class)
                     .should().resideInAPackage("..feature..infrastructure..")
-                    .as("@Entity ?????삳뮉 feature.*.infrastructure ???텕筌왖 ????癒?춸 ?袁⑺뒄??곷튊 ??뺣뼄");
+                    .as("@Entity ???????노츎 feature.*.infrastructure ????뺟춯?뼿 ???????異??熬곣뫚???怨룻뒍 ??類ｋ펲");
 }

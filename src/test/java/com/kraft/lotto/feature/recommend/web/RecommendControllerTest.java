@@ -40,15 +40,15 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 /**
- * RecommendController WebMvc slice ???裕??
- * ?곌랜?삯뇡??熬곥굤????????繹먮봿???琉우뿰 ???쳜?猿낆뿉??댁몠 ???됱굚??ApiResponse ?????嶺뚯쉶理먨ㅇ??類ｋ펲.
- * ?곌랜?삯뇡??筌먦끉???롪틵?嶺뚯빘鍮? ?곌랙?х뙴??Security ???? ???裕?筌뤾쑬?????臾먮뺄??類ｋ펲.
+ * RecommendController WebMvc slice ???獒??
+ * ?怨뚮옖???눀???ш낄援????????濚밸Ŧ遊???筌뚯슦肉????爾??용굞肉???곷첓 ????깃탾??ApiResponse ?????癲ル슣?띰ℓ癒ⓦ뀋??筌먲퐢??
+ * ?怨뚮옖???눀??嶺뚮Ĳ????濡ろ떟?癲ル슣鍮섌뜮? ?怨뚮옓?????Security ???? ???獒?嶺뚮ㅎ???????얜Ŧ類??筌먲퐢??
  */
 @WebMvcTest(controllers = RecommendController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
 @ExtendWith(RestDocumentationExtension.class)
-    @DisplayName("테스트")
+    @DisplayName("tests for RecommendControllerTest")
 class RecommendControllerTest {
 
     @Autowired
@@ -67,7 +67,7 @@ class RecommendControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("post recommend returns ok")
     void postRecommendReturnsOk() throws Exception {
         Mockito.when(recommendService.recommend(3))
                 .thenReturn(new RecommendResponse(List.of(
@@ -85,14 +85,14 @@ class RecommendControllerTest {
                         requestFields(
                                 fieldWithPath("count").type(JsonFieldType.NUMBER)
                                         .optional()
-                                        .description("설명")
+                                        .description("?ㅻ챸")
                         ),
                         responseFields(
-                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("설명"),
-                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("설명"),
-                                fieldWithPath("data.combinations").type(JsonFieldType.ARRAY).description("설명"),
-                                fieldWithPath("data.combinations[].numbers").type(JsonFieldType.ARRAY).description("설명"),
-                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("설명")
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("?ㅻ챸"),
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("?ㅻ챸"),
+                                fieldWithPath("data.combinations").type(JsonFieldType.ARRAY).description("?ㅻ챸"),
+                                fieldWithPath("data.combinations[].numbers").type(JsonFieldType.ARRAY).description("?ㅻ챸"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("?ㅻ챸")
                         )
                 ))
                 .andExpect(status().isOk())
@@ -103,7 +103,7 @@ class RecommendControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("post recommend uses default count when body absent")
     void postRecommendUsesDefaultCountWhenBodyAbsent() throws Exception {
         Mockito.when(recommendService.recommend(5))
                 .thenReturn(new RecommendResponse(List.of(
@@ -121,7 +121,7 @@ class RecommendControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("post recommend returns400 when count out of range")
     void postRecommendReturns400WhenCountOutOfRange() throws Exception {
         mockMvc.perform(post("/api/recommend")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -132,7 +132,7 @@ class RecommendControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("post recommend maps business exception to status")
     void postRecommendMapsBusinessExceptionToStatus() throws Exception {
         Mockito.when(recommendService.recommend(5))
                 .thenThrow(new BusinessException(ErrorCode.LOTTO_GENERATION_TIMEOUT));
@@ -144,11 +144,11 @@ class RecommendControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("get rules returns rule list")
     void getRulesReturnsRuleList() throws Exception {
         Mockito.when(recommendService.rules()).thenReturn(List.of(
-                new RuleDto("PastWinningRule", "??λ닁??1???獄????브퀗?ч뜮????熬곣뫗??????됰뎄???브퀗?ч뜮??? ??戮곕뇶??紐껊퉵??"),
-                new RuleDto("BirthdayBiasRule", "6???뺢퀡???먯쾸? 嶺뚮ㅄ維筌?31 ??袁⑤┃????諭逾??뺢퀡????筌뤿굝???브퀗?ч뜮??? ??戮곕뇶??紐껊퉵??")
+                new RuleDto("PastWinningRule", "??貫???1?????????釉뚰????????ш끽維???????곕럡???釉뚰?????? ??筌믨퀡???筌뤾퍓???"),
+                new RuleDto("BirthdayBiasRule", "6???類????癒?씀? 癲ル슢?꾤땟?嶺?31 ??熬곣뫀?????獄????類?????嶺뚮ㅏ援???釉뚰?????? ??筌믨퀡???筌뤾퍓???")
         ));
 
         mockMvc.perform(get("/api/recommend/rules"))
@@ -156,11 +156,11 @@ class RecommendControllerTest {
                         preprocessRequest(prettyPrint()),
                         preprocessResponse(prettyPrint()),
                         responseFields(
-                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("설명"),
-                                fieldWithPath("data").type(JsonFieldType.ARRAY).description("설명"),
-                                fieldWithPath("data[].name").type(JsonFieldType.STRING).description("설명"),
-                                fieldWithPath("data[].reason").type(JsonFieldType.STRING).description("설명"),
-                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("설명")
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("?ㅻ챸"),
+                                fieldWithPath("data").type(JsonFieldType.ARRAY).description("?ㅻ챸"),
+                                fieldWithPath("data[].name").type(JsonFieldType.STRING).description("?ㅻ챸"),
+                                fieldWithPath("data[].reason").type(JsonFieldType.STRING).description("?ㅻ챸"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("?ㅻ챸")
                         )
                 ))
                 .andExpect(status().isOk())

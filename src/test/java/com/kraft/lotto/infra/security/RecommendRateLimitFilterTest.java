@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-    @DisplayName("테스트")
+    @DisplayName("tests for RecommendRateLimitFilterTest")
 class RecommendRateLimitFilterTest {
 
     private static final int MAX_REQUESTS = 3;
@@ -64,7 +64,7 @@ class RecommendRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("allows requests within limit")
     void allowsRequestsWithinLimit() throws Exception {
         for (int i = 0; i < MAX_REQUESTS; i++) {
             assertThat(executeRequest(postRecommend("10.0.0.1"))).isEqualTo(200);
@@ -72,7 +72,7 @@ class RecommendRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("blocks requests over limit")
     void blocksRequestsOverLimit() throws Exception {
         for (int i = 0; i < MAX_REQUESTS; i++) {
             executeRequest(postRecommend("10.0.0.2"));
@@ -82,7 +82,7 @@ class RecommendRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("blocks refresh requests over limit")
     void blocksRefreshRequestsOverLimit() throws Exception {
         for (int i = 0; i < MAX_REQUESTS; i++) {
             executeRequest(postRefresh("10.0.0.7"));
@@ -93,7 +93,7 @@ class RecommendRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("ignores non limited endpoint")
     void ignoresNonLimitedEndpoint() throws Exception {
         for (int i = 0; i < MAX_REQUESTS + 1; i++) {
             assertThat(executeRequest(post("/api/winning-numbers/latest", "10.0.0.8"))).isEqualTo(200);
@@ -101,7 +101,7 @@ class RecommendRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("different ips have independent buckets")
     void differentIpsHaveIndependentBuckets() throws Exception {
         for (int i = 0; i < MAX_REQUESTS; i++) {
             executeRequest(postRecommend("10.0.0.3"));
@@ -111,7 +111,7 @@ class RecommendRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("uses x forwarded for only from trusted proxy")
     void usesXForwardedForOnlyFromTrustedProxy() throws Exception {
         MockHttpServletRequest req = postRecommend("127.0.0.1");
         req.addHeader("X-Forwarded-For", "203.0.113.1, 10.0.0.5");
@@ -123,7 +123,7 @@ class RecommendRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("ignores x forwarded for for untrusted remote")
     void ignoresXForwardedForForUntrustedRemote() throws Exception {
         MockHttpServletRequest req = postRecommend("203.0.113.9");
         req.addHeader("X-Forwarded-For", "198.51.100.1");
@@ -139,7 +139,7 @@ class RecommendRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("blocked response body contains error code")
     void blockedResponseBodyContainsErrorCode() throws Exception {
         for (int i = 0; i < MAX_REQUESTS; i++) {
             executeRequest(postRecommend("10.0.0.6"));
@@ -153,7 +153,7 @@ class RecommendRateLimitFilterTest {
 
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("blocked response contains retry after header")
     void blockedResponseContainsRetryAfterHeader() throws Exception {
         for (int i = 0; i < MAX_REQUESTS; i++) {
             executeRequest(postRecommend("10.0.0.11"));
@@ -166,7 +166,7 @@ class RecommendRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("applies different endpoint limits")
     void appliesDifferentEndpointLimits() throws Exception {
         RecommendRateLimitFilter splitFilter = new RecommendRateLimitFilter(
                 new KraftRecommendRateLimitProperties(
@@ -190,10 +190,10 @@ class RecommendRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("blocks new ip when capacity exceeded")
     @SuppressWarnings("unchecked")
     void blocksNewIpWhenCapacityExceeded() throws Exception {
-        // requestHistory ?袁⑤굡??筌욊낯??筌?쑴????몄쎗 ?λ뜃???怨밴묶??筌띾슢諭??
+        // requestHistory ?熬곣뫀援??嶺뚯쉳???嶺??????紐꾩럸 ?貫?????⑤객臾??嶺뚮씭??キ??
         java.lang.reflect.Field field = RecommendRateLimitFilter.class.getDeclaredField("requestHistory");
         field.setAccessible(true);
         Map<String, Deque<Long>> history = (Map<String, Deque<Long>>) field.get(filter);
@@ -208,7 +208,7 @@ class RecommendRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("concurrent requests respect limit")
     void concurrentRequestsRespectLimit() throws Exception {
         int threads = 10;
         AtomicInteger allowed = new AtomicInteger(0);

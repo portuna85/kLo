@@ -13,7 +13,7 @@ import java.util.Random;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-    @DisplayName("테스트")
+    @DisplayName("tests for RecommendServiceTest")
 class RecommendServiceTest {
 
     private static final long FIXED_SEED = 1L;
@@ -30,7 +30,7 @@ class RecommendServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("throws invalid count when count is zero")
     void throwsInvalidCountWhenCountIsZero() {
         var service = service(List.of());
 
@@ -41,7 +41,7 @@ class RecommendServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("throws invalid count when count is eleven")
     void throwsInvalidCountWhenCountIsEleven() {
         var service = service(List.of());
 
@@ -52,7 +52,7 @@ class RecommendServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("returns one combination when count is one")
     void returnsOneCombinationWhenCountIsOne() {
         var service = service(List.of(new BirthdayBiasRule()));
 
@@ -62,7 +62,7 @@ class RecommendServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("returns ten combinations when count is ten")
     void returnsTenCombinationsWhenCountIsTen() {
         var service = service(List.of(new BirthdayBiasRule()));
 
@@ -72,7 +72,7 @@ class RecommendServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("returns requested number of combinations")
     void returnsRequestedNumberOfCombinations() {
         var service = service(List.of(new BirthdayBiasRule()));
 
@@ -82,7 +82,7 @@ class RecommendServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("throws generation timeout when all excluded")
     void throwsGenerationTimeoutWhenAllExcluded() {
         List<ExclusionRule> rules = List.of(excludeAll());
         var service = new RecommendService(rules, new LottoRecommender(rules, new Random(FIXED_SEED), 50));
@@ -94,7 +94,7 @@ class RecommendServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("rules returns registered rule names and reasons")
     void rulesReturnsRegisteredRuleNamesAndReasons() {
         var service = service(List.of(new BirthdayBiasRule()));
 

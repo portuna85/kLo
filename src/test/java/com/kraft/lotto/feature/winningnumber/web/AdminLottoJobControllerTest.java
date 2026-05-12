@@ -19,7 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = AdminLottoJobController.class)
 @Import(GlobalExceptionHandler.class)
-    @DisplayName("테스트")
+    @DisplayName("tests for AdminLottoJobControllerTest")
 class AdminLottoJobControllerTest {
 
     @Autowired

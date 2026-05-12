@@ -18,7 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = AdminLottoDrawController.class)
 @Import(GlobalExceptionHandler.class)
-    @DisplayName("테스트")
+    @DisplayName("tests for AdminLottoDrawControllerTest")
 class AdminLottoDrawControllerTest {
 
     @Autowired
@@ -28,7 +28,7 @@ class AdminLottoDrawControllerTest {
     LottoCollectionService collectionService;
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("refresh rejects invalid round")
     void refreshRejectsInvalidRound() throws Exception {
         mockMvc.perform(post("/admin/lotto/draws/0/refresh"))
                 .andExpect(status().isBadRequest())
@@ -39,7 +39,7 @@ class AdminLottoDrawControllerTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("backfill rejects invalid range params")
     void backfillRejectsInvalidRangeParams() throws Exception {
         mockMvc.perform(post("/admin/lotto/draws/backfill")
                         .param("from", "1")

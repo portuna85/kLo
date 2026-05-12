@@ -127,9 +127,6 @@ kraft:
       redis:
         enabled: ${KRAFT_RECOMMEND_RATE_LIMIT_REDIS_ENABLED:false}
         key-prefix: ${KRAFT_RECOMMEND_RATE_LIMIT_REDIS_KEY_PREFIX:kraft:rate-limit}
-      recommend:
-        max-requests: ${KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS:30}
-        window-seconds: ${KRAFT_RECOMMEND_RATE_LIMIT_WINDOW_SECONDS:60}
       collect:
         max-requests: ${KRAFT_COLLECT_RATE_LIMIT_MAX_REQUESTS:10}
         window-seconds: ${KRAFT_COLLECT_RATE_LIMIT_WINDOW_SECONDS:300}

@@ -30,11 +30,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Verify prod profile file exists in source
+      - name: Verify prod profile files exist in source
         run: |
           test -f src/main/resources/application.yml
           test -f src/main/resources/application-local.yml
           test -f src/main/resources/application-prod.yml
+
+      - name: Validate Docker Compose file
+        run: docker compose config -q
 
       - name: Validate required production secrets
         env:
@@ -101,20 +104,15 @@ jobs:
       - name: Prepare logs directory for bind mount
         run: |
           mkdir -p ./logs
-          # Host UID/GID and container UID/GID can differ.
-          # Keep ownership with runner and open write permission for container user.
           sudo chown -R $USER:$USER ./logs || true
           sudo chmod -R 777 ./logs
 
       - name: Stop existing services
         run: |
-          # Stop legacy systemd service if it exists, so Docker can own the app port.
           sudo systemctl stop klo 2>/dev/null || true
           sudo systemctl disable klo 2>/dev/null || true
 
-          # Remove previous Docker Compose containers before rebuilding.
           docker compose down --remove-orphans || true
-
           docker compose ps || true
 
       - name: Build and restart services

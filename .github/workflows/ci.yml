@@ -6,6 +6,9 @@ on:
   push:
     branches: [ main, develop ]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -20,11 +23,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up JDK 21 (Temurin)
-        uses: actions/setup-java@v4
+      - name: Set up JDK 25 (Temurin)
+        uses: actions/setup-java@v5
         with:
-          distribution: 'temurin'
-          java-version: '21'
+          distribution: temurin
+          java-version: '25'
 
       - name: Setup Gradle with cache
         uses: gradle/actions/setup-gradle@v4
@@ -37,11 +40,10 @@ jobs:
       - name: Build and test
         run: ./gradlew --no-daemon clean build
 
-      - name: Verify prod profile is packaged in jar
+      - name: Verify prod profile resources are packaged in jar
         run: |
           ./gradlew --no-daemon bootJar -x test
-          jar tf build/libs/app.jar | grep -E 'BOOT-INF/classes/application(-prod|-local)?\.yml|BOOT-INF/classes/application\.yml'
-          jar tf build/libs/app.jar | grep -q 'BOOT-INF/classes/application-prod.yml'
+          pwsh ./scripts/verify-prod-profile-in-jar.ps1 -JarPath build/libs/app.jar
 
       - name: Upload test report
         if: always()

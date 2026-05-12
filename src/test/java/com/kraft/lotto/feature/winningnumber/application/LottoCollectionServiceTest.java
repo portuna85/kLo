@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 
-    @DisplayName("테스트")
+    @DisplayName("tests for LottoCollectionServiceTest")
 class LottoCollectionServiceTest {
 
     private final LottoApiClient lottoApiClient = mock(LottoApiClient.class);
@@ -37,7 +37,7 @@ class LottoCollectionServiceTest {
             lottoApiClient, winningNumberRepository, persister, fetchLogRepository, eventPublisher, Clock.systemUTC(), 0);
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("collect draw skips existing round")
     void collectDrawSkipsExistingRound() {
         when(winningNumberRepository.existsByRound(1102)).thenReturn(true);
         when(winningNumberRepository.findMaxRound()).thenReturn(Optional.of(1102));
@@ -50,7 +50,7 @@ class LottoCollectionServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("refresh draw upserts existing round")
     void refreshDrawUpsertsExistingRound() {
         WinningNumber winningNumber = sample(1102);
         when(lottoApiClient.fetch(1102)).thenReturn(Optional.of(winningNumber));
@@ -65,7 +65,7 @@ class LottoCollectionServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("collect next draw collects only next round")
     void collectNextDrawCollectsOnlyNextRound() {
         WinningNumber winningNumber = sample(1103);
         when(winningNumberRepository.findMaxRound()).thenReturn(Optional.of(1102), Optional.of(1103));
@@ -80,7 +80,7 @@ class LottoCollectionServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("success log does not persist raw response")
     void successLogDoesNotPersistRawResponse() {
         WinningNumber winningNumber = sample(1103);
         when(winningNumberRepository.findMaxRound()).thenReturn(Optional.of(1102), Optional.of(1103));
@@ -96,7 +96,7 @@ class LottoCollectionServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("collect missing draws collects only missing rounds")
     void collectMissingDrawsCollectsOnlyMissingRounds() {
         WinningNumber winningNumber = sample(2);
         when(winningNumberRepository.findMaxRound()).thenReturn(Optional.of(3), Optional.of(3));
@@ -112,7 +112,7 @@ class LottoCollectionServiceTest {
     }
 
     @Test
-    @DisplayName("테스트")
+    @DisplayName("backfill rejects invalid range")
     void backfillRejectsInvalidRange() {
         assertThatExceptionOfType(BusinessException.class)
                 .isThrownBy(() -> service.backfill(10, 1));
