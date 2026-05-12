@@ -2,12 +2,12 @@
 
 # ============================================================
 #  KraftLotto — Multi-stage Dockerfile
-#  - JDK 21 build → JRE 21 runtime (non-root)
+#  - JDK 25 build → JRE 25 runtime (non-root)
 #  - Gradle dependency caching via BuildKit cache mounts
 # ============================================================
 
 # ---- Build stage ----
-FROM eclipse-temurin:21-jdk AS build
+FROM eclipse-temurin:25-jdk AS build
 WORKDIR /workspace
 
 # 1) Gradle wrapper / 빌드 스크립트 먼저 복사하여 의존성 캐시를 활용
@@ -27,7 +27,7 @@ RUN --mount=type=cache,target=/root/.gradle \
  && ./gradlew --no-daemon clean bootJar -x test
 
 # ---- Runtime stage ----
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 WORKDIR /app
 
 # healthcheck 용 curl 만 추가
