@@ -36,9 +36,6 @@ jobs:
           test -f src/main/resources/application-local.yml
           test -f src/main/resources/application-prod.yml
 
-      - name: Validate Docker Compose file
-        run: docker compose config -q
-
       - name: Validate required production secrets
         env:
           KRAFT_DB_NAME: ${{ secrets.KRAFT_DB_NAME }}
@@ -100,6 +97,9 @@ jobs:
           KRAFT_HEALTHCHECK_TIMEOUT_SECONDS=3
           EOF
           chmod 600 .env
+
+      - name: Validate Docker Compose file
+        run: docker compose config -q
 
       - name: Prepare logs directory for bind mount
         run: |
