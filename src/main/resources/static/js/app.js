@@ -1,12 +1,12 @@
 (() => {
   'use strict';
 
-  // ───────────────────────── Logger ─────────────────────────
-  // 단계별 구조화 로깅.
-  //   - 레벨: debug < info < warn < error  (silent 로 전체 차단)
-  //   - 활성화: URL ?debug=1, localStorage['kraft-log-level'] 또는 KraftLog.setLevel(...)
-  //   - 출력 형식: [HH:MM:SS.mmm] [LEVEL] [scope] message  { ...context }
-  //   - 각 단계는 logger.step('scope') 로 만든 자식 로거를 사용해 흐름을 일관되게 추적.
+  // ????????????????????????? Logger ?????????????????????????
+  // ?④퀎蹂?援ъ“??濡쒓퉭.
+  //   - ?덈꺼: debug < info < warn < error  (silent 濡??꾩껜 李⑤떒)
+  //   - ?쒖꽦?? URL ?debug=1, localStorage['kraft-log-level'] ?먮뒗 KraftLog.setLevel(...)
+  //   - 異쒕젰 ?뺤떇: [HH:MM:SS.mmm] [LEVEL] [scope] message  { ...context }
+  //   - 媛??④퀎??logger.step('scope') 濡?留뚮뱺 ?먯떇 濡쒓굅瑜??ъ슜???먮쫫???쇨??섍쾶 異붿쟻.
   const Logger = (() => {
     const LEVELS = { debug: 10, info: 20, warn: 30, error: 40, silent: 99 };
     const LEVEL_KEY = 'kraft-log-level';
@@ -53,7 +53,7 @@
       info:  (m, c) => emit('info',  scope, m, c),
       warn:  (m, c) => emit('warn',  scope, m, c),
       error: (m, c) => emit('error', scope, m, c),
-      step:  (sub) => make(`${scope} › ${sub}`),
+      step:  (sub) => make(`${scope} ??${sub}`),
       time:  (label) => {
         const t0 = performance.now();
         return {
@@ -73,19 +73,19 @@
         if (!(lvl in LEVELS)) { console.warn('unknown log level:', lvl); return; }
         current = lvl;
         try { localStorage.setItem(LEVEL_KEY, lvl); } catch (_) { /* noop */ }
-        emit('info', 'app', `log level → ${lvl}`);
+        emit('info', 'app', `log level ??${lvl}`);
       },
       getLevel: () => current
     };
   })();
 
-  // 콘솔에서 수동 제어 가능하도록 노출.
+  // 肄섏넄?먯꽌 ?섎룞 ?쒖뼱 媛?ν븯?꾨줉 ?몄텧.
   window.KraftLog = Logger;
 
   const log = Logger.root;
-  log.info(`KraftLotto UI 시작 (level=${Logger.getLevel()})`);
+  log.info(`KraftLotto UI ?쒖옉 (level=${Logger.getLevel()})`);
 
-  // ───────────────────────── Theme ─────────────────────────
+  // ????????????????????????? Theme ?????????????????????????
   const THEME_KEY = 'kraft-theme';
   const setTheme = (t) => {
     document.documentElement.setAttribute('data-bs-theme', t);
@@ -102,11 +102,11 @@
     setTheme(t);
   };
 
-  // ───────────────────────── fetch + ApiResponse ─────────────────────────
+  // ????????????????????????? fetch + ApiResponse ?????????????????????????
   const api = async (url, init) => {
     const method = (init && init.method) || 'GET';
     const flog = Logger.step(`api ${method} ${url}`);
-    // 민감 header 마스킹 유틸 적용
+    // 誘쇨컧 header 留덉뒪???좏떥 ?곸슜
     const maskHeaders = (headers) => {
       if (!headers) return headers;
       const SENSITIVE = [
@@ -125,28 +125,28 @@
     try {
       res = await fetch(url, { headers: { 'Accept': 'application/json' }, ...init });
     } catch (netErr) {
-      flog.error('네트워크 오류', { error: netErr.message });
+      flog.error('?ㅽ듃?뚰겕 ?ㅻ쪟', { error: netErr.message });
       throw netErr;
     }
     let body = null;
     try { body = await res.json(); } catch (_) { /* noop */ }
     t.end({ status: res.status, ok: res.ok });
     if (!body || typeof body.success !== 'boolean') {
-      flog.error('응답 형식 오류', { status: res.status, body });
-      throw new Error(`서버 응답 형식이 올바르지 않습니다 (HTTP ${res.status})`);
+      flog.error('?묐떟 ?뺤떇 ?ㅻ쪟', { status: res.status, body });
+      throw new Error(`?쒕쾭 ?묐떟 ?뺤떇???щ컮瑜댁? ?딆뒿?덈떎 (HTTP ${res.status})`);
     }
     if (!body.success) {
-      const err = body.error ?? { code: 'UNKNOWN', message: '알 수 없는 오류' };
-      flog.warn('API 실패 응답', { status: res.status, code: err.code, message: err.message });
+      const err = body.error ?? { code: 'UNKNOWN', message: '?????녿뒗 ?ㅻ쪟' };
+      flog.warn('API ?ㅽ뙣 ?묐떟', { status: res.status, code: err.code, message: err.message });
       const e = new Error(err.message || err.code);
       e.code = err.code;
       throw e;
     }
-    flog.debug('성공', { status: res.status });
+    flog.debug('?깃났', { status: res.status });
     return body.data;
   };
 
-  // ───────────────────────── Toast ─────────────────────────
+  // ????????????????????????? Toast ?????????????????????????
   let toastTimer = null;
   const toast = (msg, isError = false) => {
     const el = document.getElementById('toast');
@@ -156,10 +156,10 @@
     el.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
-    (isError ? Logger.step('toast').warn : Logger.step('toast').debug)('표시', { msg });
+    (isError ? Logger.step('toast').warn : Logger.step('toast').debug)('?쒖떆', { msg });
   };
 
-  // ───────────────────────── 유틸: 버튼 로딩 상태 ─────────────────────────
+  // ????????????????????????? ?좏떥: 踰꾪듉 濡쒕뵫 ?곹깭 ?????????????????????????
   const withLoading = async (btn, fn) => {
     const prev = btn.innerHTML;
     btn.disabled = true;
@@ -173,7 +173,7 @@
     }
   };
 
-  // ───────────────────────── 6볼 렌더 ─────────────────────────
+  // ????????????????????????? 6蹂??뚮뜑 ?????????????????????????
   const ballClass = (n) =>
     n <= 10 ? 'b1' : n <= 20 ? 'b2' : n <= 30 ? 'b3' : n <= 40 ? 'b4' : 'b5';
 
@@ -209,7 +209,7 @@
     container.appendChild(p);
   };
 
-  // ───────────────────────── 추천 ─────────────────────────
+  // ????????????????????????? 異붿쿇 ?????????????????????????
   const onRecommend = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -238,18 +238,18 @@
         });
       } catch (err) {
         setTextMessage(out, err.message, 'text-danger small mb-0');
-        toast(`추천 실패: ${err.code ?? ''} ${err.message}`, true);
+        toast(`異붿쿇 ?ㅽ뙣: ${err.code ?? ''} ${err.message}`, true);
       }
     });
   };
 
-  // ───────────────────────── 당첨번호 렌더 ─────────────────────────
+  // ????????????????????????? ?뱀꺼踰덊샇 ?뚮뜑 ?????????????????????????
   const renderWinning = (wn, container) => {
     container.replaceChildren();
     const head = document.createElement('div');
     head.className = 'd-flex justify-content-between align-items-center mb-2';
     const roundStrong = document.createElement('strong');
-    roundStrong.textContent = `${wn.round}회`;
+    roundStrong.textContent = `${wn.round}??;
     const dateSpan = document.createElement('span');
     dateSpan.className = 'text-muted small';
     dateSpan.textContent = wn.drawDate;
@@ -260,9 +260,9 @@
     const dl = document.createElement('dl');
     dl.className = 'kraft-kv';
     const kv = [
-      ['1등 당첨금', `${fmtNum(wn.firstPrize)} 원`],
-      ['1등 당첨자', `${fmtNum(wn.firstWinners)} 명`],
-      ['총 판매금', `${fmtNum(wn.totalSales)} 원`]
+      ['1???뱀꺼湲?, `${fmtNum(wn.firstPrize)} ??],
+      ['1???뱀꺼??, `${fmtNum(wn.firstWinners)} 紐?],
+      ['珥??먮ℓ湲?, `${fmtNum(wn.totalSales)} ??]
     ];
     kv.forEach(([k, v]) => {
       const dt = document.createElement('dt');
@@ -275,7 +275,7 @@
     container.appendChild(dl);
   };
 
-  // ───────────────────────── 최신 회차 ─────────────────────────
+  // ????????????????????????? 理쒖떊 ?뚯감 ?????????????????????????
   const loadLatest = async () => {
     const out = document.getElementById('latest-result');
     try {
@@ -283,11 +283,11 @@
       renderWinning(data, out);
     } catch (err) {
       setTextMessage(out, err.message, 'text-danger small mb-0');
-      toast(`최신 회차 로드 실패: ${err.message}`, true);
+      toast(`理쒖떊 ?뚯감 濡쒕뱶 ?ㅽ뙣: ${err.message}`, true);
     }
   };
 
-  // ───────────────────────── 회차 검색 ─────────────────────────
+  // ????????????????????????? ?뚯감 寃???????????????????????????
   const onByRound = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -295,7 +295,7 @@
     const out = document.getElementById('round-result');
 
     if (!Number.isInteger(round) || round < 1) {
-      setTextMessage(out, '1 이상의 올바른 회차를 입력해 주세요.', 'text-danger small mb-0');
+      setTextMessage(out, '1 ?댁긽???щ컮瑜??뚯감瑜??낅젰??二쇱꽭??', 'text-danger small mb-0');
       return;
     }
 
@@ -313,14 +313,14 @@
     });
   };
 
-  // ───────────────────────── 회차 목록 (페이지네이션) ─────────────────────────
+  // ????????????????????????? ?뚯감 紐⑸줉 (?섏씠吏?ㅼ씠?? ?????????????????????????
   const listState = { page: 0, size: 20, totalPages: 0, totalElements: 0, abortCtrl: null };
 
   const renderList = (pageData) => {
     const out = document.getElementById('list-result');
     out.replaceChildren();
     if (!pageData.content || pageData.content.length === 0) {
-      setTextMessage(out, '표시할 회차가 없습니다.', 'text-muted small mb-0');
+      setTextMessage(out, '?쒖떆???뚯감媛 ?놁뒿?덈떎.', 'text-muted small mb-0');
       return;
     }
     pageData.content.forEach((wn) => {
@@ -328,7 +328,7 @@
       row.className = 'kraft-list-row';
       const r = document.createElement('span');
       r.className = 'round';
-      r.textContent = `${wn.round}회`;
+      r.textContent = `${wn.round}??;
       const d = document.createElement('span');
       d.className = 'date';
       d.textContent = wn.drawDate;
@@ -344,13 +344,13 @@
     const prev = document.getElementById('list-prev');
     const next = document.getElementById('list-next');
     const cur = listState.totalPages === 0 ? 0 : listState.page + 1;
-    info.textContent = `${cur} / ${listState.totalPages} 페이지 · 총 ${fmtNum(listState.totalElements)}회차`;
+    info.textContent = `${cur} / ${listState.totalPages} ?섏씠吏 쨌 珥?${fmtNum(listState.totalElements)}?뚯감`;
     prev.disabled = listState.page <= 0;
     next.disabled = listState.totalPages === 0 || listState.page >= listState.totalPages - 1;
   };
 
   const loadList = async () => {
-    // 이전 진행 중인 요청이 있으면 취소 (빠른 페이지 전환 경쟁 조건 방지)
+    // ?댁쟾 吏꾪뻾 以묒씤 ?붿껌???덉쑝硫?痍⑥냼 (鍮좊Ⅸ ?섏씠吏 ?꾪솚 寃쎌웳 議곌굔 諛⑹?)
     if (listState.abortCtrl) listState.abortCtrl.abort();
     listState.abortCtrl = new AbortController();
     const { signal } = listState.abortCtrl;
@@ -374,7 +374,7 @@
     }
   };
 
-  // ───────────────────────── 당첨번호 수집 트리거 ─────────────────────────
+  // ????????????????????????? ?뱀꺼踰덊샇 ?섏쭛 ?몃━嫄??????????????????????????
   const onCollectRefresh = async (e) => {
     e.preventDefault();
     const clog = Logger.step('collect-refresh');
@@ -386,14 +386,14 @@
     const btn = e.currentTarget.querySelector('[type="submit"]');
 
     if (!adminToken) {
-      out.textContent = '관리자 토큰을 입력해 주세요.';
+      out.textContent = '愿由ъ옄 ?좏겙???낅젰??二쇱꽭??';
       out.className = 'small mt-2 text-danger';
       return;
     }
 
-    out.textContent = '수집 요청 중…';
+    out.textContent = '?섏쭛 ?붿껌 以묅?;
     out.className = 'small mt-2 text-muted';
-    clog.info('수집 요청', { targetRound });
+    clog.info('?섏쭛 ?붿껌', { targetRound });
 
     await withLoading(btn, async () => {
       try {
@@ -405,28 +405,28 @@
           },
           body: JSON.stringify(targetRound == null ? {} : { targetRound })
         });
-        out.textContent = `수집 완료 · 신규 ${data.collected} · 스킵 ${data.skipped} · 실패 ${data.failed} · 최신 ${data.latestRound}회`;
+        out.textContent = `?섏쭛 ?꾨즺 쨌 ?좉퇋 ${data.collected} 쨌 ?ㅽ궢 ${data.skipped} 쨌 ?ㅽ뙣 ${data.failed} 쨌 理쒖떊 ${data.latestRound}??;
         out.className = 'small mt-2 text-success';
-        toast(`수집 완료: 신규 ${data.collected} · 최신 ${data.latestRound}회`);
-        clog.info('수집 성공', { collected: data.collected, latestRound: data.latestRound });
+        toast(`?섏쭛 ?꾨즺: ?좉퇋 ${data.collected} 쨌 理쒖떊 ${data.latestRound}??);
+        clog.info('?섏쭛 ?깃났', { collected: data.collected, latestRound: data.latestRound });
         listState.page = 0;
         loadLatest();
         loadList();
         loadFrequency();
       } catch (err) {
         if (err.name === 'TypeError') {
-          out.textContent = `네트워크 오류: ${err.message}`;
+          out.textContent = `?ㅽ듃?뚰겕 ?ㅻ쪟: ${err.message}`;
         } else {
-          out.textContent = `실패: ${err.message}`;
+          out.textContent = `?ㅽ뙣: ${err.message}`;
         }
         out.className = 'small mt-2 text-danger';
-        clog.warn('수집 실패', { code: err.code, message: err.message });
-        toast(`수집 실패: ${err.message}`, true);
+        clog.warn('?섏쭛 ?ㅽ뙣', { code: err.code, message: err.message });
+        toast(`?섏쭛 ?ㅽ뙣: ${err.message}`, true);
       }
     });
   };
 
-  // ───────────────────────── 빈도 ─────────────────────────
+  // ????????????????????????? 鍮덈룄 ?????????????????????????
   const loadFrequency = async () => {
     const out = document.getElementById('freq-result');
     const lowOut = document.getElementById('freq-low6-result');
@@ -445,13 +445,13 @@
       const lowSix = new Set(
         lowSixList.map((d) => d.number)
       );
+      const lowSixNumbers = lowSixList.map((d) => d.number).sort((a, b) => a - b);
       out.replaceChildren();
       data.forEach(({ number, count }) => {
         const cell = document.createElement('div');
         cell.className = 'kraft-freq-cell';
         if (lowSix.has(number)) {
           cell.classList.add('low-freq');
-          cell.classList.add(count > 0 ? 'has-win' : 'no-win');
         }
         const pct = Math.round((count / max) * 100);
         const n = document.createElement('span');
@@ -471,16 +471,17 @@
       });
       if (lowOut) {
         lowOut.replaceChildren();
-        lowSixList.forEach(({ number, count }) => {
-          const item = document.createElement('span');
-          item.className = `kraft-freq-low6-item ${count > 0 ? 'has-win' : 'no-win'}`;
-          item.textContent = `${number}번`;
-          const status = document.createElement('strong');
-          status.className = 'status';
-          status.textContent = count > 0 ? '1등 이력 있음' : '1등 이력 없음';
-          item.appendChild(status);
-          lowOut.appendChild(item);
-        });
+        const params = new URLSearchParams();
+        lowSixNumbers.forEach((n) => params.append('numbers', String(n)));
+        const history = await api(`/api/winning-numbers/stats/combination-prize-history?${params.toString()}`);
+        const summary = document.createElement('div');
+        summary.className = 'small';
+        const combo = history.numbers.join(', ');
+        const firstRounds = history.firstPrizeHits.map((h) => `${h.round}회`).join(', ') || '없음';
+        const secondRounds = history.secondPrizeHits.map((h) => `${h.round}회`).join(', ') || '없음';
+        summary.innerHTML =
+          `<strong>조합 ${combo}</strong> · 1등 ${history.firstPrizeCount}회 (${firstRounds}) · 2등 ${history.secondPrizeCount}회 (${secondRounds})`;
+        lowOut.appendChild(summary);
       }
     } catch (err) {
       setTextMessage(out, err.message, 'text-danger small mb-0');
@@ -490,7 +491,7 @@
     }
   };
 
-  // ───────────────────────── Bootstrap ─────────────────────────
+  // ????????????????????????? Bootstrap ?????????????????????????
   document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     document.getElementById('themeToggle')?.addEventListener('click', () => {

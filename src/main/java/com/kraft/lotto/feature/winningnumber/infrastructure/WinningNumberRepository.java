@@ -1,5 +1,6 @@
 package com.kraft.lotto.feature.winningnumber.infrastructure;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -28,7 +29,27 @@ public interface WinningNumberRepository extends JpaRepository<WinningNumberEnti
     @Query("select w.n1, w.n2, w.n3, w.n4, w.n5, w.n6 from WinningNumberEntity w order by w.round asc")
     List<Object[]> findAllCombinationsOrderByRoundAsc();
 
-    /** frequency 집계 전용: 본번호 6개 컬럼만 투영하여 전체 엔티티 로드를 회피한다. */
     @Query("select w.n1, w.n2, w.n3, w.n4, w.n5, w.n6 from WinningNumberEntity w")
     List<Object[]> findAllNumbersForFrequency();
+
+    @Query("""
+            select w.round as round, w.drawDate as drawDate,
+                   w.n1 as n1, w.n2 as n2, w.n3 as n3, w.n4 as n4, w.n5 as n5, w.n6 as n6,
+                   w.bonusNumber as bonusNumber
+            from WinningNumberEntity w
+            order by w.round desc
+            """)
+    List<CombinationPrizeRow> findAllForCombinationPrizeHistory();
+
+    interface CombinationPrizeRow {
+        Integer getRound();
+        LocalDate getDrawDate();
+        Integer getN1();
+        Integer getN2();
+        Integer getN3();
+        Integer getN4();
+        Integer getN5();
+        Integer getN6();
+        Integer getBonusNumber();
+    }
 }

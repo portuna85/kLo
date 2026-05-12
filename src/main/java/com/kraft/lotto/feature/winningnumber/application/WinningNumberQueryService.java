@@ -4,11 +4,15 @@ import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberMapper;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberRepository;
 import com.kraft.lotto.feature.winningnumber.event.WinningNumbersCollectedEvent;
 import com.kraft.lotto.feature.winningnumber.web.dto.NumberFrequencyDto;
+import com.kraft.lotto.feature.winningnumber.web.dto.CombinationPrizeHitDto;
+import com.kraft.lotto.feature.winningnumber.web.dto.CombinationPrizeHistoryDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberPageDto;
 import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Set;
 import java.util.stream.IntStream;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -77,6 +81,39 @@ public class WinningNumberQueryService {
                 .toList();
     }
 
+    public CombinationPrizeHistoryDto combinationPrizeHistory(List<Integer> numbers) {
+        validateCombination(numbers);
+        List<Integer> normalized = numbers.stream().sorted().toList();
+        Set<Integer> target = Set.copyOf(normalized);
+        List<CombinationPrizeHitDto> firstPrizeHits = new ArrayList<>();
+        List<CombinationPrizeHitDto> secondPrizeHits = new ArrayList<>();
+
+        for (var row : repository.findAllForCombinationPrizeHistory()) {
+            Set<Integer> mains = Set.of(row.getN1(), row.getN2(), row.getN3(), row.getN4(), row.getN5(), row.getN6());
+            if (mains.equals(target)) {
+                firstPrizeHits.add(new CombinationPrizeHitDto(row.getRound(), row.getDrawDate()));
+                continue;
+            }
+            int mainMatches = 0;
+            for (Integer n : target) {
+                if (mains.contains(n)) {
+                    mainMatches++;
+                }
+            }
+            if (mainMatches == 5 && target.contains(row.getBonusNumber())) {
+                secondPrizeHits.add(new CombinationPrizeHitDto(row.getRound(), row.getDrawDate()));
+            }
+        }
+
+        return new CombinationPrizeHistoryDto(
+                normalized,
+                firstPrizeHits.size(),
+                secondPrizeHits.size(),
+                firstPrizeHits,
+                secondPrizeHits
+        );
+    }
+
     @EventListener
     @CacheEvict(cacheNames = "winningNumberFrequency", allEntries = true)
     public void evictFrequencyCacheOnCollected(WinningNumbersCollectedEvent event) {
@@ -86,6 +123,16 @@ public class WinningNumberQueryService {
     private static void countMainNumbers(long[] counts, Object[] row) {
         for (Object number : row) {
             counts[(Integer) number]++;
+        }
+    }
+
+    private static void validateCombination(List<Integer> numbers) {
+        if (numbers == null || numbers.size() != 6) {
+            throw new BusinessException(ErrorCode.LOTTO_INVALID_TARGET_ROUND, "번호는 6개여야 합니다.");
+        }
+        boolean validRange = numbers.stream().allMatch(n -> n >= 1 && n <= 45);
+        if (!validRange || numbers.stream().distinct().count() != 6) {
+            throw new BusinessException(ErrorCode.LOTTO_INVALID_TARGET_ROUND, "번호는 1~45 중복 없는 6개여야 합니다.");
         }
     }
 }
