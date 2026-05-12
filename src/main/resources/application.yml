@@ -84,6 +84,12 @@ kraft:
       lock-at-most-for: ${KRAFT_LOTTO_SCHEDULER_LOCK_AT_MOST_FOR:PT10M}
       lock-at-least-for: ${KRAFT_LOTTO_SCHEDULER_LOCK_AT_LEAST_FOR:PT10S}
   collect:
+    backfill:
+      max-concurrent-jobs: ${KRAFT_COLLECT_BACKFILL_MAX_CONCURRENT_JOBS:2}
+      queue-capacity: ${KRAFT_COLLECT_BACKFILL_QUEUE_CAPACITY:10}
+      job-retention: ${KRAFT_COLLECT_BACKFILL_JOB_RETENTION:PT6H}
+      cleanup-interval: ${KRAFT_COLLECT_BACKFILL_CLEANUP_INTERVAL:PT10M}
+      thread-name-prefix: ${KRAFT_COLLECT_BACKFILL_THREAD_NAME_PREFIX:backfill-job-}
     auto:
       enabled: ${KRAFT_COLLECT_AUTO_ENABLED:true}
       zone: ${KRAFT_COLLECT_AUTO_ZONE:Asia/Seoul}
