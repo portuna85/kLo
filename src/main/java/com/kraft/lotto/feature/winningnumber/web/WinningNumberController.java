@@ -3,6 +3,7 @@ package com.kraft.lotto.feature.winningnumber.web;
 import com.kraft.lotto.feature.winningnumber.application.WinningNumberQueryService;
 import com.kraft.lotto.feature.winningnumber.web.dto.NumberFrequencyDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.CombinationPrizeHistoryDto;
+import com.kraft.lotto.feature.winningnumber.web.dto.FrequencySummaryDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberPageDto;
 import com.kraft.lotto.support.ApiResponse;
@@ -51,6 +52,11 @@ public class WinningNumberController {
     @GetMapping("/stats/frequency")
     public ApiResponse<List<NumberFrequencyDto>> frequency() {
         return ApiResponse.success(queryService.frequency());
+    }
+
+    @GetMapping("/stats/frequency-summary")
+    public ApiResponse<FrequencySummaryDto> frequencySummary() {
+        return ApiResponse.success(queryService.frequencySummary());
     }
 
     @GetMapping("/stats/combination-prize-history")

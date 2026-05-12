@@ -11,7 +11,7 @@ import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication
+@SpringBootApplication(excludeName = "org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration")
 @ConfigurationPropertiesScan
 @EnableScheduling
 @EnableCaching
@@ -22,6 +22,7 @@ public class KraftLottoApplication {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager("winningNumberFrequency");
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 .maximumSize(100)
+                .recordStats()
                 .expireAfterWrite(Duration.ofMinutes(45)));
         return cacheManager;
     }

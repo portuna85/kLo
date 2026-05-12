@@ -6,6 +6,7 @@ import com.kraft.lotto.feature.winningnumber.event.WinningNumbersCollectedEvent;
 import com.kraft.lotto.feature.winningnumber.web.dto.NumberFrequencyDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.CombinationPrizeHitDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.CombinationPrizeHistoryDto;
+import com.kraft.lotto.feature.winningnumber.web.dto.FrequencySummaryDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberPageDto;
 import com.kraft.lotto.support.BusinessException;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.stream.IntStream;
+import java.util.Comparator;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.event.EventListener;
@@ -112,6 +114,18 @@ public class WinningNumberQueryService {
                 firstPrizeHits,
                 secondPrizeHits
         );
+    }
+
+    public FrequencySummaryDto frequencySummary() {
+        List<NumberFrequencyDto> frequencies = frequency();
+        List<Integer> lowSixNumbers = frequencies.stream()
+                .sorted(Comparator.comparingLong(NumberFrequencyDto::count).thenComparingInt(NumberFrequencyDto::number))
+                .limit(6)
+                .map(NumberFrequencyDto::number)
+                .sorted()
+                .toList();
+        CombinationPrizeHistoryDto lowSixHistory = combinationPrizeHistory(lowSixNumbers);
+        return new FrequencySummaryDto(frequencies, lowSixHistory);
     }
 
     @EventListener
