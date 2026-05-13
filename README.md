@@ -1,216 +1,174 @@
-﻿# Kraft Lotto
+# 🎰 Kraft Lotto
 
-Spring Boot 4 기반의 로또 서비스입니다. 추천 번호 생성, 당첨번호 수집/조회, 관리자 수집 작업, REST Docs 문서 제공 기능을 포함합니다.
+> **Spring Boot 4 기반의 로또 추천 서비스**  
+> 추천 번호 생성 · 당첨번호 조회/관리 · 통계 분석 · REST Docs 자동 문서화
 
-## 주요 기능
+---
 
-- 로또 번호 추천 API (`POST /api/recommend`)
-- 당첨번호 조회 API (`/api/winning-numbers`)
-- 당첨번호 통계 API (빈도, 빈도 요약, 조합 당첨 이력)
-- 관리자 수집 API (`/admin/lotto/**`) + 토큰 인증
-- 자동 수집 스케줄러 + ShedLock 기반 분산 락
-- Actuator 헬스체크 (`/actuator/health/readiness`)
-- REST Docs 정적 문서 (`/docs/`)
+## ✨ 주요 기능
 
-## 기술 스택
+| 기능 | 엔드포인트 |
+|------|-----------|
+| 🎯 추천 번호 생성 | `POST /api/recommend` |
+| 📋 당첨번호 조회 | `/api/winning-numbers/**` |
+| 📊 번호별 출현 빈도/요약 통계 | `/api/winning-numbers/stats/**` |
+| 🔧 관리자 수동 수집/갱신 | `/admin/lotto/**` |
+| 💚 Actuator 헬스체크 | `/actuator/health/readiness` |
+| 📖 REST Docs 문서 | `/docs/index.html` |
 
-- Java 25
-- Spring Boot 4.0.5
-- Spring Web, Validation, Security, Actuator
-- Spring Data JPA, Flyway, MariaDB
-- Cache(Caffeine), 선택적 Redis 기반 Rate Limit
-- Micrometer + OTLP Tracing
-- Thymeleaf + WebJars(Bootstrap, Bootstrap Icons)
-- JUnit 5, Spring Test, Testcontainers, ArchUnit, REST Docs
+---
 
-## 프로젝트 구조
+## 🛠️ 기술 스택
 
-- `src/main/java/com/kraft/lotto/feature/recommend`: 추천 도메인/서비스/API
-- `src/main/java/com/kraft/lotto/feature/winningnumber`: 당첨번호 수집/조회/스케줄러/API
-- `src/main/java/com/kraft/lotto/infra/config`: 환경변수 바인딩, `.env` 로딩, 배포 필수값 검증
-- `src/main/java/com/kraft/lotto/infra/security`: Rate Limit, Admin 토큰 필터
-- `src/main/resources/db/migration`: Flyway 마이그레이션
-- `src/docs/asciidoc`: REST Docs 원본
+```
+Language   : Java 25
+Framework  : Spring Boot 4.0.5
+Web/보안   : Spring Web · Validation · Security · Actuator
+데이터     : Spring Data JPA · Flyway · MariaDB
+캐시       : Caffeine Cache · (선택) Redis Rate Limit
+추적       : Micrometer + OTLP Tracing
+프론트엔드 : Thymeleaf + Bootstrap (WebJars)
+테스트     : JUnit 5 · REST Docs · Testcontainers · ArchUnit
+```
 
-## 실행 전 요구사항
+---
 
-- JDK 25
-- Docker / Docker Compose (로컬 통합 실행 시)
-- MariaDB 11+ (컨테이너 외부 실행 시)
+## 🚀 빠른 시작
 
-## 빠른 시작 (Docker Compose)
-
-1. 환경파일 생성
+### 1단계 — 환경 변수 파일 복사
 
 ```bash
 cp .env.example .env
 ```
 
-2. 필수 값 수정
+### 2단계 — 필수 값 설정
 
-- `KRAFT_DB_PASSWORD`
-- `KRAFT_DB_ROOT_PASSWORD`
-- `KRAFT_ADMIN_API_TOKENS`
+`.env` 파일을 열고 아래 세 항목을 반드시 채우세요.
 
-3. 실행
+```dotenv
+KRAFT_DB_PASSWORD=<DB 비밀번호>
+KRAFT_DB_ROOT_PASSWORD=<루트 비밀번호>
+KRAFT_ADMIN_API_TOKENS=<관리자 API 토큰>
+```
+
+> ⚠️ **이 세 값이 없으면 `prod` 프로파일에서 애플리케이션이 기동되지 않습니다.**
+
+### 3단계 — 컨테이너 실행
 
 ```bash
 docker compose up -d --build
 ```
 
-4. 확인
+### 4단계 — 동작 확인
 
-- 앱: `http://localhost:8080/`
-- 헬스: `http://localhost:8080/actuator/health/readiness`
-- 문서: `http://localhost:8080/docs/`
-
-## 로컬 실행 (컨테이너 없이)
-
-1. `.env` 준비
-
-- `SPRING_PROFILES_ACTIVE=local`
-- `KRAFT_IN_CONTAINER=false`
-- `KRAFT_DB_LOCAL_HOST=localhost`
-- `KRAFT_DB_URL`이 로컬 DB를 가리키는지 확인
-
-2. 실행
-
-```bash
-./gradlew bootRun
+```
+앱     →  http://localhost:8080/
+헬스   →  http://localhost:8080/actuator/health/readiness
+문서   →  http://localhost:8080/docs/index.html
 ```
 
-Windows:
+---
 
-```powershell
+## 💻 로컬 실행
+
+```bash
+# macOS / Linux
+./gradlew bootRun
+
+# Windows
 .\gradlew.bat bootRun
 ```
 
-## 환경변수
+---
 
-핵심 환경변수:
-
-- `SPRING_PROFILES_ACTIVE`: `local` 또는 `prod`
-- `KRAFT_DB_NAME`, `KRAFT_DB_URL`, `KRAFT_DB_USER`, `KRAFT_DB_PASSWORD`, `KRAFT_DB_ROOT_PASSWORD`
-- `KRAFT_ADMIN_API_TOKENS` (쉼표로 다중 토큰 가능)
-- `KRAFT_ADMIN_TOKEN_HEADER` (기본 `X-Kraft-Admin-Token`)
-- `KRAFT_API_CLIENT` (`mock` 또는 `real`)
-- `KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS`, `KRAFT_RECOMMEND_RATE_LIMIT_WINDOW_SECONDS`
-- `KRAFT_COLLECT_RATE_LIMIT_MAX_REQUESTS`, `KRAFT_COLLECT_RATE_LIMIT_WINDOW_SECONDS`
-
-배포 시 필수 시크릿 검증은 Gradle 태스크로 확인 가능합니다.
+## 🔨 빌드 · 테스트 · 문서화
 
 ```bash
-./gradlew -q printRequiredEnvVars
+# 전체 빌드
+./gradlew clean build
+
+# 통합 테스트
+./gradlew integrationTest
+
+# REST Docs 생성
+./gradlew asciidoctor
+
+# 문서 포함 JAR 패키징
+./gradlew bootJarWithDocs
 ```
 
-## 보안 및 제한
+---
 
-- 인증 없이 허용:
-- `GET /api/winning-numbers/**`
-- `POST /api/recommend`
-- `GET /actuator/health/**`
-- `GET /docs/**`
+## 📡 API 레퍼런스
 
-- 관리자 토큰 필요:
-- `POST /api/winning-numbers/refresh` (레거시, deprecation header 포함)
-- `/admin/**` 전체
+### Public API
 
-- Rate limit 대상:
-- `POST /api/recommend`
-- `POST /api/winning-numbers/refresh`
-- `POST /admin/lotto/draws/*` 수집 계열
+```http
+POST   /api/recommend
+GET    /api/recommend/rules
 
-## API 요약
+GET    /api/winning-numbers/latest
+GET    /api/winning-numbers/{round}
+GET    /api/winning-numbers?page={page}&size={size}
 
-추천:
+GET    /api/winning-numbers/stats/frequency
+GET    /api/winning-numbers/stats/frequency-summary
+```
 
-- `POST /api/recommend`
-- body: `{ "count": 1..10 }` (`null`/생략 시 기본 5)
-- `GET /api/recommend/rules`
+### Admin API
 
-당첨번호 조회:
+```http
+POST   /api/winning-numbers/refresh                    # (레거시)
+POST   /admin/lotto/draws/collect-next
+POST   /admin/lotto/draws/collect-missing
+POST   /admin/lotto/draws/{drwNo}/refresh
+POST   /admin/lotto/draws/backfill?from=...&to=...
+POST   /admin/lotto/jobs/backfill?from=...&to=...
+GET    /admin/lotto/jobs/{jobId}
+```
 
-- `GET /api/winning-numbers/latest`
-- `GET /api/winning-numbers/{round}` (`1..3000`)
-- `GET /api/winning-numbers?page=0&size=20`
-- `GET /api/winning-numbers/stats/frequency`
-- `GET /api/winning-numbers/stats/frequency-summary`
-- `GET /api/winning-numbers/stats/combination-prize-history?numbers=1,2,3,4,5,6`
-
-관리자 수집:
-
-- `POST /admin/lotto/draws/collect-next`
-- `POST /admin/lotto/draws/collect-missing`
-- `POST /admin/lotto/draws/{drwNo}/refresh`
-- `POST /admin/lotto/draws/backfill?from=...&to=...`
-- `POST /admin/lotto/jobs/backfill?from=...&to=...`
-- `GET /admin/lotto/jobs/{jobId}`
-
-관리자 API 호출 시 헤더:
+Admin 요청 시 헤더에 토큰을 포함해야 합니다.
 
 ```http
 X-Kraft-Admin-Token: <token>
 ```
 
-## 자동 수집 스케줄
+---
 
-기본 타임존은 `Asia/Seoul`입니다.
+## ⚙️ CI/CD 파이프라인
 
-- 토요일 21:10 collect-next
-- 토요일 21:20, 21:40 재시도 collect-next
-- 토요일 22:10 재시도 collect-next
-- 일요일 06:10 collect-missing
-- 매일 09:00 collect-missing
+```
+CI  (ci.yml)
+ ├── 테스트 실행
+ ├── 빌드
+ ├── JAR 생성
+ └── build/generated-snippets → artifact 업로드
 
-모든 잡은 ShedLock으로 동시 실행을 제어합니다.
-
-## 빌드 / 테스트 / 문서
-
-전체 빌드 + 테스트:
-
-```bash
-./gradlew clean build
+CD  (workflow_run 트리거)
+ ├── CI artifact에서 snippets 다운로드
+ ├── Docker 이미지 빌드
+ ├── 서버 배포
+ └── (수동 실행 시) fallback: ./gradlew test → snippets 재생성
 ```
 
-통합 테스트(@Tag("it")):
+---
+
+## 🧰 유용한 명령어
+
+**필수 환경 변수 목록 확인**
 
 ```bash
-./gradlew integrationTest
+./gradlew -q printRequiredEnvVars
 ```
 
-REST Docs 생성:
+**JAR 리소스 검증 (prod 프로파일 포함 여부)**
 
-```bash
-./gradlew asciidoctor
+```powershell
+pwsh ./scripts/verify-prod-profile-in-jar.ps1 -JarPath build/libs/app-with-docs.jar
 ```
 
-문서 포함 JAR:
+---
 
-```bash
-./gradlew bootJarWithDocs
-```
+## 📄 라이선스
 
-## Docker 이미지
-
-로컬 빌드:
-
-```bash
-docker build -t kraft-lotto-app:local .
-```
-
-특징:
-
-- 멀티스테이지 빌드 (JDK 25 -> JRE 25)
-- non-root 사용자 실행
-- `/app/healthcheck.sh` 기반 컨테이너 헬스체크
-
-## 운영 참고
-
-- `scripts/verify-prod-profile-in-jar.ps1`: JAR에 `application*.yml` 포함 여부 검증
-- `docs/deploy/nginx/*.conf`: Nginx 배포 예시
-- CI: 테스트/문서/JAR 검증 자동화 (`.github/workflows/ci.yml`)
-- CD: self-hosted runner에서 Compose 배포 (`.github/workflows/cd.yml`)
-
-## 라이선스
-
-MIT License (`LICENSE` 참고)
+MIT License — 자세한 내용은 [`LICENSE`](LICENSE) 파일을 참고하세요.

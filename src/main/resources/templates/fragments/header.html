@@ -13,18 +13,13 @@
   <link rel="stylesheet" th:href="@{/css/app.css}" />
 </head>
 <body>
-<nav th:fragment="navbar(active)" class="navbar navbar-expand-md sticky-top kraft-navbar shadow-sm">
+<nav th:fragment="navbar(active)" class="navbar navbar-expand sticky-top kraft-navbar shadow-sm">
   <div class="container">
     <a class="navbar-brand fw-bold d-flex align-items-center gap-2" th:href="@{/}">
       <i class="bi bi-stars text-warning"></i>
       <span>최고의번호</span>
     </a>
-    <button class="navbar-toggler" type="button"
-            data-bs-toggle="collapse" data-bs-target="#kraft-nav"
-            aria-controls="kraft-nav" aria-expanded="false" aria-label="메뉴 열기">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div id="kraft-nav" class="collapse navbar-collapse">
+    <div id="kraft-nav" class="navbar-collapse">
       <ul class="navbar-nav me-auto">
         <li class="nav-item">
           <a class="nav-link"

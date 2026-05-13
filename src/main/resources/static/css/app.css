@@ -29,6 +29,11 @@ body {
 /* Navbar / Footer */
 .kraft-navbar { background: var(--kraft-surface); border-bottom: 1px solid var(--bs-border-color); }
 .kraft-footer { background: var(--kraft-surface); }
+.kraft-navbar .navbar-collapse {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
 /* Card */
 .kraft-card {
@@ -139,7 +144,25 @@ body {
 }
 
 @media (max-width: 575.98px) {
-  .kraft-freq-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .kraft-freq-grid {
+    grid-template-columns: repeat(9, minmax(52px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .kraft-freq-grid::-webkit-scrollbar {
+    height: 6px;
+  }
+  .kraft-navbar .container {
+    gap: 8px;
+  }
+  .kraft-navbar .navbar-brand span {
+    font-size: 18px;
+  }
+  .kraft-navbar .nav-link {
+    padding-left: .5rem;
+    padding-right: .5rem;
+    font-size: 14px;
+  }
 }
 
 /* 회차 목록 (페이지네이션) */
@@ -157,7 +180,12 @@ body {
 .kraft-list-row .round { font-weight: 700; }
 .kraft-list-row .date { color: var(--kraft-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 @media (max-width: 575.98px) {
-  .kraft-list-row { grid-template-columns: 1fr; }
+  .kraft-list-row { grid-template-columns: 72px 92px 1fr; }
+  .kraft-ball {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
 }
 
 /* Toast */

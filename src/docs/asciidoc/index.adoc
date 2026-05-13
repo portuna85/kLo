@@ -62,8 +62,8 @@ include::{snippets}/winning-numbers-frequency/response-fields.adoc[]
 
 === POST /api/winning-numbers/refresh
 
-include::{snippets}/winning-numbers-refresh/http-request.adoc[opts=optional]
-include::{snippets}/winning-numbers-refresh/request-fields.adoc[opts=optional]
-include::{snippets}/winning-numbers-refresh/http-response.adoc[opts=optional]
-include::{snippets}/winning-numbers-refresh/response-fields.adoc[opts=optional]
+include::{snippets}/winning-numbers-refresh/http-request.adoc[]
+include::{snippets}/winning-numbers-refresh/request-fields.adoc[]
+include::{snippets}/winning-numbers-refresh/http-response.adoc[]
+include::{snippets}/winning-numbers-refresh/response-fields.adoc[]
 

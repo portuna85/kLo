@@ -1,6 +1,14 @@
 package com.kraft.lotto.feature.winningnumber.web;
 
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessRequest;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessResponse;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -20,10 +28,14 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.restdocs.RestDocumentationContextProvider;
+import org.springframework.restdocs.RestDocumentationExtension;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @ExtendWith(MockitoExtension.class)
+@ExtendWith(RestDocumentationExtension.class)
 @DisplayName("tests for WinningNumberCollectControllerTest")
 class WinningNumberCollectControllerTest {
 
@@ -33,10 +45,11 @@ class WinningNumberCollectControllerTest {
     MockMvc mockMvc;
 
     @BeforeEach
-    void setUp() {
+    void setUp(RestDocumentationContextProvider restDocumentation) {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new WinningNumberCollectController(collectService))
                 .setControllerAdvice(new GlobalExceptionHandler())
+                .apply(documentationConfiguration(restDocumentation))
                 .build();
     }
 
@@ -67,6 +80,25 @@ class WinningNumberCollectControllerTest {
         mockMvc.perform(post("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"targetRound\":\"1103\"}"))
+                .andDo(document("winning-numbers-refresh",
+                        preprocessRequest(prettyPrint()),
+                        preprocessResponse(prettyPrint()),
+                        requestFields(
+                                fieldWithPath("targetRound").type(JsonFieldType.STRING).description("수집 종료 대상 회차(선택)")
+                        ),
+                        responseFields(
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("요청 성공 여부"),
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("수집 결과"),
+                                fieldWithPath("data.collected").type(JsonFieldType.NUMBER).description("새로 저장된 회차 수"),
+                                fieldWithPath("data.skipped").type(JsonFieldType.NUMBER).description("건너뛴 회차 수"),
+                                fieldWithPath("data.failed").type(JsonFieldType.NUMBER).description("수집 실패 회차 수"),
+                                fieldWithPath("data.latestRound").type(JsonFieldType.NUMBER).description("수집 완료 후 최신 회차"),
+                                fieldWithPath("data.failedRounds").type(JsonFieldType.ARRAY).description("실패한 회차 목록"),
+                                fieldWithPath("data.truncated").type(JsonFieldType.BOOLEAN).description("호출당 최대 수집 한도 도달 여부"),
+                                fieldWithPath("data.nextRound").type(JsonFieldType.NULL).optional().description("다음 호출 시작 회차"),
+                                fieldWithPath("data.notDrawn").type(JsonFieldType.BOOLEAN).description("추첨 미완료 회차로 중단 여부"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("오류 정보")
+                        )))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Deprecation", "true"))
                 .andExpect(jsonPath("$.data.collected").value(2))
