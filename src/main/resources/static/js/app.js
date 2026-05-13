@@ -304,6 +304,7 @@
       const summaryData = await api('/api/winning-numbers/stats/frequency-summary');
       const data = summaryData.frequencies;
       const max = data.reduce((m, d) => Math.max(m, d.count), 1);
+      const min = data.reduce((m, d) => Math.min(m, d.count), Number.MAX_SAFE_INTEGER);
       const lowSixList = [...data].sort((a, b) => a.count - b.count || a.number - b.number).slice(0, 6);
       const lowSix = new Set(lowSixList.map((d) => d.number));
 
@@ -326,6 +327,8 @@
 
         const small = document.createElement('small');
         small.textContent = count;
+        if (count === max) small.classList.add('count-max');
+        if (count === min) small.classList.add('count-min');
 
         cell.appendChild(n);
         cell.appendChild(bar);
