@@ -1,4 +1,4 @@
-ï»¿(() => {
+(() => {
   'use strict';
 
   const THEME_KEY = 'kraft-theme';
@@ -22,10 +22,10 @@
     let body = null;
     try { body = await res.json(); } catch (_) {}
     if (!body || typeof body.success !== 'boolean') {
-      throw new Error(`ìœ íš¨í•˜ì§€ ì•Šì€ ì‘ë‹µì…ë‹ˆë‹¤. (HTTP ${res.status})`);
+      throw new Error(`À¯È¿ÇÏÁö ¾ÊÀº ÀÀ´äÀÔ´Ï´Ù. (HTTP ${res.status})`);
     }
     if (!body.success) {
-      const err = body.error ?? { code: 'UNKNOWN', message: 'ìš”ì²­ ì²˜ë¦¬ ì‹¤íŒ¨' };
+      const err = body.error ?? { code: 'UNKNOWN', message: '¿äÃ» Ã³¸® ½ÇÆĞ' };
       const e = new Error(err.message || err.code);
       e.code = err.code;
       throw e;
@@ -87,7 +87,7 @@
     head.className = 'd-flex justify-content-between align-items-center mb-2';
 
     const roundStrong = document.createElement('strong');
-    roundStrong.textContent = `${wn.round}íšŒ`;
+    roundStrong.textContent = `${wn.round}È¸`;
     const dateSpan = document.createElement('span');
     dateSpan.className = 'text-muted small';
     dateSpan.textContent = wn.drawDate;
@@ -100,9 +100,9 @@
     const dl = document.createElement('dl');
     dl.className = 'kraft-kv';
     const kv = [
-      ['1ë“± ë‹¹ì²¨ê¸ˆ', `${fmtNum(wn.firstPrize)} ì›`],
-      ['1ë“± ë‹¹ì²¨ì', `${fmtNum(wn.firstWinners)} ëª…`],
-      ['ì´ íŒë§¤ê¸ˆ', `${fmtNum(wn.totalSales)} ì›`]
+      ['1µî ´çÃ·±İ', `${fmtNum(wn.firstPrize)} ¿ø`],
+      ['1µî ´çÃ·ÀÚ', `${fmtNum(wn.firstWinners)} ¸í`],
+      ['ÃÑ ÆÇ¸Å±İ', `${fmtNum(wn.totalSales)} ¿ø`]
     ];
 
     kv.forEach(([k, v]) => {
@@ -166,7 +166,7 @@
     const out = document.getElementById('round-result');
 
     if (!Number.isInteger(round) || round < 1) {
-      setTextMessage(out, '1 ì´ìƒì˜ ì •ìˆ˜ íšŒì°¨ë¥¼ ì…ë ¥í•˜ì„¸ìš”.', 'text-danger small mb-0');
+      setTextMessage(out, '1 ÀÌ»óÀÇ Á¤¼ö È¸Â÷¸¦ ÀÔ·ÂÇÏ¼¼¿ä.', 'text-danger small mb-0');
       return;
     }
 
@@ -189,7 +189,7 @@
     const out = document.getElementById('list-result');
     out.replaceChildren();
     if (!pageData.content || pageData.content.length === 0) {
-      setTextMessage(out, 'ì¡°íšŒëœ íšŒì°¨ê°€ ì—†ìŠµë‹ˆë‹¤.', 'text-muted small mb-0');
+      setTextMessage(out, 'Á¶È¸µÈ È¸Â÷°¡ ¾ø½À´Ï´Ù.', 'text-muted small mb-0');
       return;
     }
 
@@ -198,7 +198,7 @@
       row.className = 'kraft-list-row';
       const r = document.createElement('span');
       r.className = 'round';
-      r.textContent = `${wn.round}íšŒ`;
+      r.textContent = `${wn.round}È¸`;
       const d = document.createElement('span');
       d.className = 'date';
       d.textContent = wn.drawDate;
@@ -214,7 +214,7 @@
     const prev = document.getElementById('list-prev');
     const next = document.getElementById('list-next');
     const cur = listState.totalPages === 0 ? 0 : listState.page + 1;
-    info.textContent = `${cur} / ${listState.totalPages} í˜ì´ì§€ Â· ì´ ${fmtNum(listState.totalElements)}ê±´`;
+    info.textContent = `${cur} / ${listState.totalPages} ÆäÀÌÁö ¡¤ ÃÑ ${fmtNum(listState.totalElements)}°Ç`;
     prev.disabled = listState.page <= 0;
     next.disabled = listState.totalPages === 0 || listState.page >= listState.totalPages - 1;
   };
@@ -287,9 +287,9 @@
         const summary = document.createElement('div');
         summary.className = 'small';
         const combo = history.numbers.join(', ');
-        const firstRounds = history.firstPrizeHits.map((h) => `${h.round}íšŒ`).join(', ') || 'ì—†ìŒ';
-        const secondRounds = history.secondPrizeHits.map((h) => `${h.round}íšŒ`).join(', ') || 'ì—†ìŒ';
-        summary.innerHTML = `<strong>ì¡°í•© ${combo}</strong> Â· 1ë“± ${history.firstPrizeCount}íšŒ (${firstRounds}) Â· 2ë“± ${history.secondPrizeCount}íšŒ (${secondRounds})`;
+        const firstRounds = history.firstPrizeHits.map((h) => `${h.round}È¸`).join(', ') || '¾øÀ½';
+        const secondRounds = history.secondPrizeHits.map((h) => `${h.round}È¸`).join(', ') || '¾øÀ½';
+        summary.innerHTML = `<strong>Á¶ÇÕ ${combo}</strong> ¡¤ 1µî ${history.firstPrizeCount}È¸ (${firstRounds}) ¡¤ 2µî ${history.secondPrizeCount}È¸ (${secondRounds})`;
         lowOut.appendChild(summary);
       }
     } catch (err) {
@@ -297,58 +297,7 @@
       if (lowOut) setTextMessage(lowOut, err.message, 'text-danger small mb-0');
     }
   };
-
-  const onCollectRefresh = async (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const targetRoundRaw = String(fd.get('targetRound') || '').trim();
-    const targetRound = targetRoundRaw === '' ? null : targetRoundRaw;
-    const adminToken = String(fd.get('adminToken') || '').trim();
-    const out = document.getElementById('collect-result');
-    const btn = e.currentTarget.querySelector('[type="submit"]');
-
-    if (!adminToken) {
-      if (out) {
-        out.textContent = 'ê´€ë¦¬ì í† í°ì„ ì…ë ¥í•˜ì„¸ìš”.';
-        out.className = 'small mt-2 text-danger';
-      }
-      return;
-    }
-
-    if (out) {
-      out.textContent = 'ìˆ˜ì§‘ ìš”ì²­ ì¤‘...';
-      out.className = 'small mt-2 text-muted';
-    }
-
-    await withLoading(btn, async () => {
-      try {
-        const data = await api('/api/winning-numbers/refresh', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Kraft-Admin-Token': adminToken
-          },
-          body: JSON.stringify(targetRound == null ? {} : { targetRound })
-        });
-
-        if (out) {
-          out.textContent = `ìˆ˜ì§‘ ì™„ë£Œ: ì €ì¥ ${data.collected}, ê±´ë„ˆëœ€ ${data.skipped}, ì‹¤íŒ¨ ${data.failed}, ìµœì‹  ${data.latestRound}íšŒ`;
-          out.className = 'small mt-2 text-success';
-        }
-
-        listState.page = 0;
-        loadLatest();
-        loadList();
-        loadFrequency();
-      } catch (err) {
-        if (out) {
-          out.textContent = `ìˆ˜ì§‘ ì‹¤íŒ¨: ${err.message}`;
-          out.className = 'small mt-2 text-danger';
-        }
-      }
-    });
-  };
-
+`n
   document.addEventListener('DOMContentLoaded', () => {
     initTheme();
 
@@ -359,7 +308,6 @@
 
     document.getElementById('form-recommend')?.addEventListener('submit', onRecommend);
     document.getElementById('form-by-round')?.addEventListener('submit', onByRound);
-    document.getElementById('form-collect-refresh')?.addEventListener('submit', onCollectRefresh);
 
     document.getElementById('list-prev')?.addEventListener('click', () => {
       if (listState.page > 0) {
@@ -386,3 +334,5 @@
     loadList();
   });
 })();
+
+

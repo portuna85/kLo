@@ -84,3 +84,23 @@ tasks.register<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJarW
 tasks.jar {
     enabled = false
 }
+
+tasks.register("printRequiredEnvVars") {
+    group = "help"
+    description = "Print environment variable names required for production deploy checks."
+    doLast {
+        val validatorFile = file("src/main/java/com/kraft/lotto/infra/config/RequiredConfigValidator.java")
+        val content = validatorFile.readText()
+        val block = Regex("""REQUIRED_DEPLOY_ENV_VARS\s*=\s*List\.of\(([\s\S]*?)\);""")
+            .find(content)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?: error("REQUIRED_DEPLOY_ENV_VARS block not found in RequiredConfigValidator.java")
+        Regex(""""([A-Z0-9_]+)"""")
+            .findAll(block)
+            .map { it.groupValues[1] }
+            .toList()
+            .distinct()
+            .forEach { println(it) }
+    }
+}

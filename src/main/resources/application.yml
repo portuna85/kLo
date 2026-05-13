@@ -42,8 +42,11 @@ spring:
     locations: classpath:db/migration
   cache:
     type: caffeine
+    cache-names:
+      - winningNumberFrequency
+      - combinationPrizeHistory
     caffeine:
-      spec: maximumSize=100,expireAfterWrite=45m
+      spec: maximumSize=100,expireAfterWrite=45m,recordStats
 
 server:
   shutdown: graceful

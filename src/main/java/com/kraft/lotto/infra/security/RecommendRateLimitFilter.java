@@ -150,6 +150,10 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
             int retryAfter = (int) Math.max(1L, windowSeconds - ((now / 1000L) % windowSeconds));
             return new Decision(false, retryAfter);
         } catch (RuntimeException ex) {
+            if (redisProperties.strict()) {
+                log.warn("redis rate-limit failed in strict mode, request blocked", ex);
+                return new Decision(false, 5);
+            }
             log.warn("redis rate-limit failed, fallback to in-memory", ex);
             return decideByInMemory(endpoint, clientIp, now, limit);
         }
@@ -200,29 +204,29 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
         if ("/api/recommend".equals(path) || "/api/v1/recommend".equals(path)) {
             return Endpoint.RECOMMEND;
         }
-        if ("/api/winning-numbers/refresh".equals(path) || "/api/v1/winning-numbers/refresh".equals(path)) {
+        if ("/api/winning-numbers/refresh".equals(path)
+                || "/api/v1/winning-numbers/refresh".equals(path)
+                || isAdminCollectPath(path)) {
             return Endpoint.COLLECT;
         }
         return null;
     }
 
+    private static boolean isAdminCollectPath(String path) {
+        if (path == null) {
+            return false;
+        }
+        if ("/admin/lotto/draws/collect-next".equals(path)
+                || "/admin/lotto/draws/collect-missing".equals(path)
+                || "/admin/lotto/draws/backfill".equals(path)) {
+            return true;
+        }
+        return path.matches("^/admin/lotto/draws/\\d+/refresh$");
+    }
+
     private static String resolveClientIp(HttpServletRequest request) {
         String remoteAddr = normalizeIp(request.getRemoteAddr());
-        if (remoteAddr == null) {
-            return UNKNOWN_CLIENT_IP;
-        }
-        if (!isTrustedProxy(remoteAddr)) {
-            return remoteAddr;
-        }
-
-        String fwd = request.getHeader("X-Forwarded-For");
-        if (fwd != null && !fwd.isBlank()) {
-            String forwardedClientIp = normalizeIp(fwd.split(",")[0]);
-            if (forwardedClientIp != null) {
-                return forwardedClientIp;
-            }
-        }
-        return remoteAddr;
+        return remoteAddr == null ? UNKNOWN_CLIENT_IP : remoteAddr;
     }
 
     private static String normalizeIp(String value) {
@@ -230,15 +234,6 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
             return null;
         }
         return value.trim();
-    }
-
-    private static boolean isTrustedProxy(String remoteAddr) {
-        try {
-            java.net.InetAddress addr = java.net.InetAddress.getByName(remoteAddr);
-            return addr.isLoopbackAddress() || addr.isSiteLocalAddress() || addr.isLinkLocalAddress();
-        } catch (java.net.UnknownHostException ex) {
-            return false;
-        }
     }
 
     private enum Endpoint {

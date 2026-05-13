@@ -5,10 +5,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "kraft.recommend.rate-limit.redis")
 public record KraftRateLimitRedisProperties(
         boolean enabled,
-        String keyPrefix
+        String keyPrefix,
+        boolean strict
 ) {
     public KraftRateLimitRedisProperties() {
-        this(false, "kraft:rate-limit");
+        this(false, "kraft:rate-limit", false);
     }
 
     public String resolvedKeyPrefix() {

@@ -15,6 +15,7 @@ import com.kraft.lotto.support.ErrorCode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.junit.jupiter.api.Assertions;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -125,6 +126,14 @@ class WinningNumberQueryServiceTest {
         assertThat(result.get(7).count()).isZero();
         // ?????? ??? 2?뺢퀡?? 0??
         assertThat(result.get(1).count()).isZero();
+    }
+
+    @Test
+    @DisplayName("combination history cache key is order-insensitive")
+    void combinationHistoryCacheKeyIsOrderInsensitive() {
+        String key1 = WinningNumberQueryService.combinationHistoryCacheKey(List.of(1, 7, 13, 22, 34, 45));
+        String key2 = WinningNumberQueryService.combinationHistoryCacheKey(List.of(45, 22, 13, 7, 34, 1));
+        Assertions.assertEquals(key1, key2);
     }
 }
 

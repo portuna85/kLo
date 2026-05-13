@@ -14,6 +14,7 @@ import com.kraft.lotto.support.ErrorCode;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.Comparator;
 import org.springframework.cache.annotation.CacheEvict;
@@ -83,6 +84,10 @@ public class WinningNumberQueryService {
                 .toList();
     }
 
+    @Cacheable(
+            cacheNames = "combinationPrizeHistory",
+            key = "T(com.kraft.lotto.feature.winningnumber.application.WinningNumberQueryService).combinationHistoryCacheKey(#numbers)"
+    )
     public CombinationPrizeHistoryDto combinationPrizeHistory(List<Integer> numbers) {
         validateCombination(numbers);
         List<Integer> normalized = numbers.stream().sorted().toList();
@@ -129,7 +134,7 @@ public class WinningNumberQueryService {
     }
 
     @EventListener
-    @CacheEvict(cacheNames = "winningNumberFrequency", allEntries = true)
+    @CacheEvict(cacheNames = {"winningNumberFrequency", "combinationPrizeHistory"}, allEntries = true)
     public void evictFrequencyCacheOnCollected(WinningNumbersCollectedEvent event) {
         // cache eviction handled by annotation
     }
@@ -148,5 +153,15 @@ public class WinningNumberQueryService {
         if (!validRange || numbers.stream().distinct().count() != 6) {
             throw new BusinessException(ErrorCode.LOTTO_INVALID_TARGET_ROUND, "번호는 1~45 중복 없는 6개여야 합니다.");
         }
+    }
+
+    public static String combinationHistoryCacheKey(List<Integer> numbers) {
+        if (numbers == null) {
+            return "null";
+        }
+        return numbers.stream()
+                .sorted()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
     }
 }

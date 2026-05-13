@@ -10,6 +10,17 @@ import org.springframework.mock.env.MockEnvironment;
 class RequiredConfigValidatorTest {
 
     @Test
+    void exposesRequiredDeployEnvVars() {
+        assertThat(RequiredConfigValidator.requiredDeployEnvVars())
+                .containsExactly(
+                        "KRAFT_DB_NAME",
+                        "KRAFT_DB_USER",
+                        "KRAFT_DB_PASSWORD",
+                        "KRAFT_DB_ROOT_PASSWORD",
+                        "KRAFT_ADMIN_API_TOKEN");
+    }
+
+    @Test
     void addsProblemWhenProdProfileAndAdminTokenBlank() {
         MockEnvironment env = new MockEnvironment();
         env.setActiveProfiles("prod");

@@ -2,6 +2,7 @@ package com.kraft.lotto.feature.winningnumber.application;
 
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -15,9 +16,12 @@ public class WinningNumberAutoCollectScheduler {
     private static final Logger log = LoggerFactory.getLogger(WinningNumberAutoCollectScheduler.class);
 
     private final LottoCollectionService collectionService;
+    private final MeterRegistry meterRegistry;
 
-    public WinningNumberAutoCollectScheduler(LottoCollectionService collectionService) {
+    public WinningNumberAutoCollectScheduler(LottoCollectionService collectionService,
+                                             MeterRegistry meterRegistry) {
         this.collectionService = collectionService;
+        this.meterRegistry = meterRegistry;
     }
 
     @Scheduled(
@@ -82,6 +86,7 @@ public class WinningNumberAutoCollectScheduler {
             log.info("lotto collect-next done trigger={} collected={} skipped={} failed={} latestRound={} notDrawn={}",
                     trigger, response.collected(), response.skipped(), response.failed(), response.latestRound(), response.notDrawn());
         } catch (Exception ex) {
+            meterRegistry.counter("kraft.scheduler.collect.failure", "trigger", trigger).increment();
             log.warn("lotto collect-next fail trigger={}", trigger, ex);
         }
     }
@@ -93,6 +98,7 @@ public class WinningNumberAutoCollectScheduler {
             log.info("lotto collect-missing done trigger={} collected={} skipped={} failed={} latestRound={} failedRounds={}",
                     trigger, response.collected(), response.skipped(), response.failed(), response.latestRound(), response.failedRounds());
         } catch (Exception ex) {
+            meterRegistry.counter("kraft.scheduler.collect.failure", "trigger", trigger).increment();
             log.warn("lotto collect-missing fail trigger={}", trigger, ex);
         }
     }

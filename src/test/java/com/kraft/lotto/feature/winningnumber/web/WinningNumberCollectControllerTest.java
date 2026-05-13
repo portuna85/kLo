@@ -1,15 +1,8 @@
 package com.kraft.lotto.feature.winningnumber.web;
 
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
-import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
-import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessRequest;
-import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessResponse;
-import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -23,39 +16,27 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Import;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.restdocs.RestDocumentationContextProvider;
-import org.springframework.restdocs.RestDocumentationExtension;
-import org.springframework.restdocs.payload.JsonFieldType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
-@WebMvcTest(controllers = WinningNumberCollectController.class)
-@AutoConfigureMockMvc(addFilters = false)
-@Import(GlobalExceptionHandler.class)
-@ExtendWith(RestDocumentationExtension.class)
-    @DisplayName("tests for WinningNumberCollectControllerTest")
+@ExtendWith(MockitoExtension.class)
+@DisplayName("tests for WinningNumberCollectControllerTest")
 class WinningNumberCollectControllerTest {
 
-    @Autowired
-    WebApplicationContext context;
+    @Mock
+    LottoCollectionService collectService;
 
     MockMvc mockMvc;
 
-    @MockitoBean
-    LottoCollectionService collectService;
-
     @BeforeEach
-    void setUp(RestDocumentationContextProvider restDocumentation) {
-        this.mockMvc = MockMvcBuilders.webAppContextSetup(context)
-                .apply(documentationConfiguration(restDocumentation))
+    void setUp() {
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(new WinningNumberCollectController(collectService))
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
 
@@ -67,6 +48,9 @@ class WinningNumberCollectControllerTest {
 
         mockMvc.perform(post("/api/winning-numbers/refresh"))
                 .andExpect(status().isOk())
+                .andExpect(header().string("Deprecation", "true"))
+                .andExpect(header().string("Sunset", "Thu, 31 Jul 2026 23:59:59 GMT"))
+                .andExpect(header().string("Link", "</admin/lotto/draws/collect-next>; rel=\"successor-version\""))
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.collected").value(3))
                 .andExpect(jsonPath("$.data.latestRound").value(1103))
@@ -83,29 +67,8 @@ class WinningNumberCollectControllerTest {
         mockMvc.perform(post("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"targetRound\":\"1103\"}"))
-                .andDo(document("winning-numbers-refresh",
-                        preprocessRequest(prettyPrint()),
-                        preprocessResponse(prettyPrint()),
-                        requestFields(
-                                fieldWithPath("targetRound").type(JsonFieldType.STRING)
-                                        .optional()
-                                        .description("?ㅻ챸")
-                        ),
-                        responseFields(
-                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("?ㅻ챸"),
-                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("?ㅻ챸"),
-                                fieldWithPath("data.collected").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
-                                fieldWithPath("data.skipped").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
-                                fieldWithPath("data.failed").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
-                                fieldWithPath("data.latestRound").type(JsonFieldType.NUMBER).description("?ㅻ챸"),
-                                fieldWithPath("data.failedRounds").type(JsonFieldType.ARRAY).description("?ㅻ챸"),
-                                fieldWithPath("data.truncated").type(JsonFieldType.BOOLEAN).description("?ㅻ챸"),
-                                fieldWithPath("data.nextRound").type(JsonFieldType.NUMBER).optional().description("?ㅻ챸"),
-                                fieldWithPath("data.notDrawn").type(JsonFieldType.BOOLEAN).description("?ㅻ챸"),
-                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("?ㅻ챸")
-                        )
-                ))
                 .andExpect(status().isOk())
+                .andExpect(header().string("Deprecation", "true"))
                 .andExpect(jsonPath("$.data.collected").value(2))
                 .andExpect(jsonPath("$.data.skipped").value(1))
                 .andExpect(jsonPath("$.data.truncated").value(false))
@@ -113,7 +76,7 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("post collect returns502 on external api failure")
+    @DisplayName("post collect returns 502 on external api failure")
     void postCollectReturns502OnExternalApiFailure() throws Exception {
         Mockito.when(collectService.collect(isNull()))
                 .thenThrow(new BusinessException(ErrorCode.EXTERNAL_API_FAILURE));
@@ -124,7 +87,7 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("post collect returns400 on invalid target round")
+    @DisplayName("post collect returns 400 on invalid target round")
     void postCollectReturns400OnInvalidTargetRound() throws Exception {
         mockMvc.perform(post("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)

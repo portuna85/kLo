@@ -86,10 +86,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception ex, HttpServletRequest req) {
+        String safeQuery = maskSensitiveQuery(req.getQueryString());
         log.error("Unhandled exception at {} {} (query={})",
-                req.getMethod(), req.getRequestURI(), req.getQueryString(), ex);
+                req.getMethod(), req.getRequestURI(), safeQuery, ex);
         return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus())
                 .body(ApiResponse.failure(ErrorCode.INTERNAL_SERVER_ERROR));
+    }
+
+    static String maskSensitiveQuery(String queryString) {
+        if (queryString == null || queryString.isBlank()) {
+            return "";
+        }
+        return queryString.replaceAll("(?i)(token|secret|key)=([^&]*)", "$1=***");
     }
 
     private static ErrorCode resolveFieldValidationCode(String field) {

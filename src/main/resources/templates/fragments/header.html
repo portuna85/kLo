@@ -1,15 +1,10 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<!--
-  공통 헤더 fragment.
-  - head(title): <title> 과 공통 메타/스타일을 주입
-  - navbar(active): 상단 내비게이션 (active = home | docs | ...)
--->
 <head th:fragment="head(title)">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
-  <meta name="description" content="로또 6/45 편향 회피형 추천 서비스 — 생일 편중·등차수열·연속번호 등 통계적으로 편향된 조합을 자동으로 걸러냅니다." />
+  <meta name="description" content="로또 6/45 추천 서비스" />
   <title th:text="${title} ?: '최고의번호'">최고의번호</title>
 
   <link rel="icon" type="image/svg+xml" th:href="@{/images/favicon.svg}" />
@@ -48,54 +43,8 @@
               aria-label="테마 전환">
         <i class="bi bi-moon-stars"></i>
       </button>
-      <button id="collectTrigger" type="button"
-              class="btn btn-sm btn-outline-secondary ms-2"
-              data-bs-toggle="modal" data-bs-target="#collectModal"
-              aria-label="당첨번호 갱신 열기" title="당첨번호 갱신">
-        <i class="bi bi-cloud-download"></i>
-      </button>
     </div>
   </div>
 </nav>
-
-<!-- 당첨번호 수집 트리거 모달 -->
-<div th:fragment="collectModal" class="modal fade" id="collectModal" tabindex="-1"
-     aria-labelledby="collectModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="collectModalLabel">
-          <i class="bi bi-cloud-download me-1"></i> 당첨번호 갱신
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
-      </div>
-      <form id="form-collect-refresh" novalidate>
-        <div class="modal-body">
-          <div class="mb-2">
-            <label class="form-label small text-muted mb-1" for="collect-admin-token">관리자 토큰</label>
-            <input id="collect-admin-token" name="adminToken" type="password"
-                   class="form-control form-control-sm" autocomplete="off"
-                   placeholder="X-Kraft-Admin-Token" required />
-          </div>
-          <div class="mb-2">
-            <label class="form-label small text-muted mb-1" for="collect-target-round">
-              대상 회차 <span class="text-muted">(선택, 비우면 최신까지 자동)</span>
-            </label>
-            <input id="collect-target-round" name="targetRound" type="number" min="1"
-                   class="form-control form-control-sm" placeholder="예: 1100" />
-          </div>
-          <div id="collect-result" class="small mt-2" aria-live="polite"></div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">취소</button>
-          <button type="submit" class="btn btn-sm btn-primary">
-            <i class="bi bi-cloud-download me-1"></i> 수집 실행
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
 </body>
 </html>
-
