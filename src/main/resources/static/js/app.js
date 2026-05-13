@@ -69,8 +69,22 @@
     }
   };
 
-  const skeleton = () => '<div class="placeholder-glow"><span class="placeholder col-7"></span></div>';
-  const fmtNum = (n) => Number(n ?? 0).toLocaleString('ko-KR');
+  const numberFormatter = new Intl.NumberFormat('ko-KR');
+
+  const createSkeleton = (widthClass = 'col-7') => {
+    const wrap = document.createElement('div');
+    wrap.className = 'placeholder-glow';
+    const placeholder = document.createElement('span');
+    placeholder.className = `placeholder ${widthClass}`;
+    wrap.appendChild(placeholder);
+    return wrap;
+  };
+
+  const showSkeleton = (container, widthClass = 'col-7') => {
+    container.replaceChildren(createSkeleton(widthClass));
+  };
+
+  const fmtNum = (n) => numberFormatter.format(Number(n ?? 0));
 
   const setTextMessage = (container, text, className = 'small mb-0') => {
     container.replaceChildren();
@@ -159,7 +173,7 @@
     const count = Number(fd.get('count') || 5);
     const out = document.getElementById('recommend-result');
     const btn = e.currentTarget.querySelector('[type="submit"]');
-    out.innerHTML = skeleton();
+    showSkeleton(out);
 
     await withLoading(btn, async () => {
       try {
@@ -168,7 +182,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ count })
         });
-        out.replaceChildren();
+        const fragment = document.createDocumentFragment();
         data.combinations.forEach((c, i) => {
           const row = document.createElement('div');
           row.className = 'kraft-combo';
@@ -177,8 +191,9 @@
           idx.textContent = `#${i + 1}`;
           row.appendChild(idx);
           row.appendChild(ballsRow(c.numbers));
-          out.appendChild(row);
+          fragment.appendChild(row);
         });
+        out.replaceChildren(fragment);
       } catch (err) {
         setTextMessage(out, err.message, 'text-danger small mb-0');
       }
@@ -207,7 +222,7 @@
     }
 
     const btn = e.currentTarget.querySelector('[type="submit"]');
-    out.innerHTML = skeleton();
+    showSkeleton(out);
 
     await withLoading(btn, async () => {
       try {
@@ -223,12 +238,12 @@
 
   const renderList = (pageData) => {
     const out = document.getElementById('list-result');
-    out.replaceChildren();
     if (!pageData.content || pageData.content.length === 0) {
       setTextMessage(out, '조회된 회차가 없습니다.', 'text-muted small mb-0');
       return;
     }
 
+    const fragment = document.createDocumentFragment();
     pageData.content.forEach((wn) => {
       const row = document.createElement('div');
       row.className = 'kraft-list-row';
@@ -241,8 +256,9 @@
       row.appendChild(r);
       row.appendChild(d);
       row.appendChild(ballsRow(wn.numbers, wn.bonusNumber));
-      out.appendChild(row);
+      fragment.appendChild(row);
     });
+    out.replaceChildren(fragment);
   };
 
   const updatePager = () => {
@@ -261,7 +277,7 @@
     const { signal } = listState.abortCtrl;
 
     const out = document.getElementById('list-result');
-    out.innerHTML = skeleton();
+    showSkeleton(out);
     try {
       const data = await api(`/api/winning-numbers?page=${listState.page}&size=${listState.size}`, { signal });
       listState.abortCtrl = null;
@@ -279,9 +295,9 @@
   const loadFrequency = async () => {
     const out = document.getElementById('freq-result');
     const lowOut = document.getElementById('freq-low6-result');
-    out.innerHTML = '<div class="placeholder-glow w-100"><span class="placeholder col-12"></span></div>';
+    showSkeleton(out, 'col-12');
     if (lowOut) {
-      lowOut.innerHTML = '<div class="placeholder-glow w-100"><span class="placeholder col-8"></span></div>';
+      showSkeleton(lowOut, 'col-8');
     }
 
     try {
@@ -291,7 +307,7 @@
       const lowSixList = [...data].sort((a, b) => a.count - b.count || a.number - b.number).slice(0, 6);
       const lowSix = new Set(lowSixList.map((d) => d.number));
 
-      out.replaceChildren();
+      const fragment = document.createDocumentFragment();
       data.forEach(({ number, count }) => {
         const cell = document.createElement('div');
         cell.className = 'kraft-freq-cell';
@@ -314,18 +330,23 @@
         cell.appendChild(n);
         cell.appendChild(bar);
         cell.appendChild(small);
-        out.appendChild(cell);
+        fragment.appendChild(cell);
       });
+      out.replaceChildren(fragment);
 
       if (lowOut) {
         lowOut.replaceChildren();
         const history = summaryData.lowSixCombinationHistory;
         const summary = document.createElement('div');
         summary.className = 'small';
-        const combo = history.numbers.join(', ');
+        const strong = document.createElement('strong');
+        strong.textContent = `조합 ${history.numbers.join(', ')}`;
         const firstRounds = history.firstPrizeHits.map((h) => `${h.round}회`).join(', ') || '없음';
         const secondRounds = history.secondPrizeHits.map((h) => `${h.round}회`).join(', ') || '없음';
-        summary.innerHTML = `<strong>조합 ${combo}</strong> · 1등 ${history.firstPrizeCount}회 (${firstRounds}) · 2등 ${history.secondPrizeCount}회 (${secondRounds})`;
+        summary.append(
+          strong,
+          ` · 1등 ${history.firstPrizeCount}회 (${firstRounds}) · 2등 ${history.secondPrizeCount}회 (${secondRounds})`
+        );
         lowOut.appendChild(summary);
       }
     } catch (err) {
