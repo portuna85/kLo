@@ -67,12 +67,9 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.named("asciidoctor") {
     dependsOn(tasks.test)
     dependsOn("integrationTest")
-    // -x test로 테스트를 건너뛴 경우에도 asciidoctor가 실패하지 않도록
-    // 태스크 실행 직전에 snippetsDir을 보장한다.
-    doFirst {
-        snippetsDir.get().asFile.mkdirs()
-    }
-    inputs.dir(snippetsDir)
+    // optional(true): -x test로 테스트를 건너뛰어 generated-snippets가 없어도
+    // Gradle 구성 시점 입력 검증에서 실패하지 않도록 선택적 입력으로 선언
+    inputs.dir(snippetsDir).optional(true)
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
@@ -94,7 +91,13 @@ tasks.register<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJarW
     group = "build"
     description = "Builds bootJar with REST Docs included."
     dependsOn("asciidoctor")
-    mainClass.set(tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar").flatMap { it.mainClass })
+    // SpringBootExtension을 통해 mainClass를 안정적으로 참조
+    // (flatMap lazy provider는 구성 시점에 값이 없어 실패할 수 있음)
+    mainClass.set(
+        project.extensions
+            .getByType<org.springframework.boot.gradle.dsl.SpringBootExtension>()
+            .mainClass
+    )
     targetJavaVersion.set(JavaVersion.VERSION_25)
     archiveFileName.set("app-with-docs.jar")
     from(layout.buildDirectory.dir("docs/asciidoc")) {
