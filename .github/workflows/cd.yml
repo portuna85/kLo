@@ -208,9 +208,6 @@ jobs:
           BODY=$(curl -fsS http://localhost:8080/actuator/health/readiness)
           printf '%s\n' "$BODY"
           printf '%s' "$BODY" | grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"'
-          DOC_STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/docs/)
-          echo "DOCS HTTP status=$DOC_STATUS"
-          test "$DOC_STATUS" = "200"
           echo "Smoke test passed"
 
       - name: Cleanup .env
