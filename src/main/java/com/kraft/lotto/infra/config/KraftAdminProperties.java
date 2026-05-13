@@ -8,8 +8,10 @@ public record KraftAdminProperties(
         String apiTokens,
         String tokenHeader
 ) {
+    private static final String DEFAULT_TOKEN_HEADER = "X-Kraft-Admin-Token";
+
     public String resolvedTokenHeader() {
-        return tokenHeader == null || tokenHeader.isBlank() ? "X-Kraft-Admin-Token" : tokenHeader.trim();
+        return normalize(tokenHeader, DEFAULT_TOKEN_HEADER);
     }
 
     public boolean hasApiToken() {
@@ -18,17 +20,35 @@ public record KraftAdminProperties(
 
     public java.util.List<String> resolvedApiTokens() {
         java.util.LinkedHashSet<String> tokens = new java.util.LinkedHashSet<>();
-        if (apiTokens != null && !apiTokens.isBlank()) {
-            for (String token : apiTokens.split(",")) {
-                String trimmed = token.trim();
-                if (!trimmed.isEmpty()) {
-                    tokens.add(trimmed);
-                }
-            }
+        for (String token : splitTokens(apiTokens)) {
+            tokens.add(token);
         }
-        if (apiToken != null && !apiToken.isBlank()) {
-            tokens.add(apiToken.trim());
+        String singleToken = normalize(apiToken, null);
+        if (singleToken != null) {
+            tokens.add(singleToken);
         }
         return java.util.List.copyOf(tokens);
+    }
+
+    private static java.util.List<String> splitTokens(String rawTokens) {
+        if (rawTokens == null || rawTokens.isBlank()) {
+            return java.util.List.of();
+        }
+        java.util.List<String> result = new java.util.ArrayList<>();
+        for (String token : rawTokens.split(",")) {
+            String normalized = normalize(token, null);
+            if (normalized != null) {
+                result.add(normalized);
+            }
+        }
+        return result;
+    }
+
+    private static String normalize(String value, String defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? defaultValue : trimmed;
     }
 }

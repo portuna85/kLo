@@ -67,6 +67,11 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.named("asciidoctor") {
     dependsOn(tasks.test)
     dependsOn("integrationTest")
+    // -x test로 테스트를 건너뛴 경우에도 asciidoctor가 실패하지 않도록
+    // 태스크 실행 직전에 snippetsDir을 보장한다.
+    doFirst {
+        snippetsDir.get().asFile.mkdirs()
+    }
     inputs.dir(snippetsDir)
 }
 

@@ -14,23 +14,23 @@ import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 /**
- * 애플리케이션 시작 시 필수 설정값을 검증한다.
+ * ???ャ뀖??域????⑤젰????筌믨퀣援?????ш끽維?????源놁젳??좊즴????濡ろ떟?癲ル슣鍮섌뜮?믩눀??
  *
- * <p>미해결 placeholder가 런타임까지 전파되어 난해한 오류를 만드는 상황을
- * 시작 단계에서 차단하기 위한 검증기다.</p>
+ * <p>雅?퍔瑗띰㎖硫대쑏?믠뫁臾?placeholder??좊읈? ?????ш낄猷?湲븐땡?堉온 ??ш낄援???筌뚯슦苑??????뤅??????곸씔??癲ル슢?????????????
+ * ??筌믨퀣援???影?됀?????癲ル슓堉곁땟??????꾨탿 ??ш낄援η뵳??濡ろ떟?癲ル슣鍮섌뜮蹂〓뎨??</p>
  */
 public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordered {
 
-    /** DotenvEnvironmentPostProcessor 이후에 실행한다. */
+    /** DotenvEnvironmentPostProcessor ??熬곣뫖???????덈틖??筌먲퐢?? */
     public static final int ORDER = DotenvEnvironmentPostProcessor.ORDER + 100;
 
-    /** 필수 설정 키와 설명. */
+    /** ??ш끽維?????源놁젳 ??? ????용럡. */
     private static final Map<String, String> REQUIRED = new LinkedHashMap<>();
 
     static {
         REQUIRED.put("spring.datasource.url", "DB JDBC URL (env: KRAFT_DB_URL)");
-        REQUIRED.put("spring.datasource.username", "DB 계정 (env: KRAFT_DB_USER)");
-        REQUIRED.put("spring.datasource.password", "DB 비밀번호 (env: KRAFT_DB_PASSWORD)");
+        REQUIRED.put("spring.datasource.username", "DB ??節뚮쳮??(env: KRAFT_DB_USER)");
+        REQUIRED.put("spring.datasource.password", "DB ?????類????(env: KRAFT_DB_PASSWORD)");
     }
 
     private static final List<String> REQUIRED_DEPLOY_ENV_VARS = List.of(
@@ -38,7 +38,7 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
             "KRAFT_DB_USER",
             "KRAFT_DB_PASSWORD",
             "KRAFT_DB_ROOT_PASSWORD",
-            "KRAFT_ADMIN_API_TOKEN"
+            "KRAFT_ADMIN_API_TOKENS"
     );
 
     private static final Pattern JDBC_URL_PATTERN =
@@ -61,14 +61,14 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
             try {
                 raw = env.getProperty(key);
             } catch (RuntimeException placeholderFail) {
-                problems.add(format(key, entry.getValue(), "placeholder 해석 실패: " + placeholderFail.getMessage()));
+                problems.add(format(key, entry.getValue(), "placeholder ???⑤똾留?????됰꽡: " + placeholderFail.getMessage()));
                 continue;
             }
 
             if (raw == null || raw.isBlank()) {
-                problems.add(format(key, entry.getValue(), "값이 비어 있음"));
+                problems.add(format(key, entry.getValue(), "??좊즴???????룹젂????源낆쓱"));
             } else if (raw.contains("${")) {
-                problems.add(format(key, entry.getValue(), "미해결 placeholder 포함: " + raw));
+                problems.add(format(key, entry.getValue(), "雅?퍔瑗띰㎖硫대쑏?믠뫁臾?placeholder ???? " + raw));
             }
         }
 
@@ -77,9 +77,9 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
             String host = extractJdbcHost(jdbcUrl);
             if (host != null && !isHostResolvable(host)) {
                 problems.add(
-                        "  - [spring.datasource.url] DB 호스트 DNS 조회 실패: '" + host + "'\n"
-                                + "      - 로컬 실행이면 KRAFT_DB_LOCAL_HOST=localhost 설정 또는 KRAFT_DB_URL 재지정\n"
-                                + "      - host rewrite를 끄려면 KRAFT_DB_HOST_REWRITE=false 설정"
+                        "  - [spring.datasource.url] DB ?嶺뚮ㅎ?ц짆??DNS ?釉뚰???????됰꽡: '" + host + "'\n"
+                                + "      - ?棺??짆?쏆춾?????덈틖?????KRAFT_DB_LOCAL_HOST=localhost ???源놁젳 ???獒?KRAFT_DB_URL ?????n"
+                                + "      - host rewrite????ш끽維??ъ땡?KRAFT_DB_HOST_REWRITE=false ???源놁젳"
                 );
             }
         }
@@ -92,14 +92,14 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
             String msg = """
 
                     ============================================================
-                    KraftLotto 시작 중단: 필수 설정이 누락되었거나 유효하지 않습니다.
+                    KraftLotto ??筌믨퀣援?濚욌꼬?댄꺇?? ??ш끽維?????源놁젳????ш끽維곲??筌?癲꾧퀗???믩쨨????レ챺???? ?????????덊렡.
                     ============================================================
                     %s
 
-                    해결 방법:
-                      - 프로젝트 루트의 .env 파일을 채웁니다. (.env.example 참고)
-                      - 현재 셸 환경 변수로 값을 주입한 뒤 재실행합니다.
-                      - 컨테이너 실행 시 docker compose up -d 를 사용합니다.
+                    ????됰쐳 ?袁⑸젻泳?쉬??
+                      - ??ш끽維곩ㅇ???됰씭肄???룸Ŧ爾???.env ??????癲???????덊렡. (.env.example 癲ル슔?蹂앸듋??
+                      - ??ш끽維????????듬젿 ?怨뚮뼚???嚥?큔 ??좊즴?????낆뒩??????????????????덊렡.
+                      - ???爾??????????덈틖 ??docker compose up -d ???????筌뤾퍓???
                     """.formatted(String.join(System.lineSeparator(), problems));
             throw new IllegalStateException(msg);
         }
@@ -127,11 +127,14 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
             return;
         }
         String token = safeGet(env, "kraft.admin.api-token");
-        if (token == null || token.isBlank()) {
+        String tokens = safeGet(env, "kraft.admin.api-tokens");
+        boolean hasToken = token != null && !token.isBlank();
+        boolean hasTokens = tokens != null && !tokens.isBlank();
+        if (!hasToken && !hasTokens) {
             problems.add(format(
-                    "kraft.admin.api-token",
-                    "관리자 API 토큰 (env: KRAFT_ADMIN_API_TOKEN)",
-                    "prod 프로필에서 값이 비어 있음"
+                    "kraft.admin.api-tokens",
+                    "Admin API token list (env: KRAFT_ADMIN_API_TOKENS, legacy: KRAFT_ADMIN_API_TOKEN)",
+                    "blank in prod profile"
             ));
         }
     }
@@ -140,9 +143,9 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
         if (!env.matchesProfiles("prod")) {
             return;
         }
-        requireNonBlank(env, problems, "kraft.api.url", "로또 API URL (env: KRAFT_API_URL)");
+        requireNonBlank(env, problems, "kraft.api.url", "?棺??짆??API URL (env: KRAFT_API_URL)");
         requireNonBlank(env, problems, "kraft.recommend.max-attempts",
-                "추천 최대 시도 횟수 (env: KRAFT_RECOMMEND_MAX_ATTEMPTS)");
+                "??⑤베毓??癲ル슔?됭짆? ??筌먲퐣??????낅묄 (env: KRAFT_RECOMMEND_MAX_ATTEMPTS)");
     }
 
     private static void requireNonBlank(ConfigurableEnvironment env,
@@ -151,14 +154,14 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
                                         String desc) {
         String value = safeGet(env, key);
         if (value == null || value.isBlank()) {
-            problems.add(format(key, desc, "prod 프로필에서 값이 비어 있음"));
+            problems.add(format(key, desc, "prod ??ш끽維곩ㅇ??ш끽維?????좊즴???????룹젂????源낆쓱"));
         }
     }
 
     /**
-     * 실행 환경별 프로필 정책을 강제한다.
-     * - KRAFT_IN_CONTAINER=true  : 반드시 prod
-     * - 그 외(local 실행)         : 반드시 local
+     * ????덈틖 ????듬젿????ш끽維곩ㅇ???嶺뚮Ĳ??????좊즴甕???筌먲퐢??
+     * - KRAFT_IN_CONTAINER=true  : ?袁⑸즵?쀫쓧???prod
+     * - ????local ????덈틖)         : ?袁⑸즵?쀫쓧???local
      */
     static void addProfilePolicyProblems(ConfigurableEnvironment env, List<String> problems) {
         boolean inContainer = Boolean.parseBoolean(env.getProperty("KRAFT_IN_CONTAINER", "false"));
@@ -169,8 +172,8 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
             if (!env.matchesProfiles("prod")) {
                 problems.add(format(
                         "spring.profiles.active",
-                        "활성 프로필",
-                        "KRAFT_IN_CONTAINER=true 인 경우 prod 여야 함 (현재: " + active + ")"
+                        "active profile",
+                        "KRAFT_IN_CONTAINER=true requires prod profile (current: " + active + ")"
                 ));
             }
             return;
@@ -179,13 +182,13 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
         if (!env.matchesProfiles("local")) {
             problems.add(format(
                     "spring.profiles.active",
-                    "활성 프로필",
-                    "로컬 실행에서는 local 이어야 함 (현재: " + active + ")"
+                    "active profile",
+                    "local runtime requires local profile (current: " + active + ")"
             ));
         }
     }
 
-    /** {@code jdbc:<vendor>://<host>[:port]/...} 형태에서 host를 추출한다. 실패 시 null. */
+    /** {@code jdbc:<vendor>://<host>[:port]/...} ?嶺뚮쮳釉띚?????host????⑤베毓???筌먲퐢?? ????됰꽡 ??null. */
     static String extractJdbcHost(String jdbcUrl) {
         Matcher m = JDBC_URL_PATTERN.matcher(jdbcUrl);
         return m.find() ? m.group(1) : null;

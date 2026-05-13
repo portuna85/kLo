@@ -1,17 +1,11 @@
-# ============================================================
-#  KraftLotto — Docker Compose
-#  - 모든 환경 변수는 .env 한 파일에서 주입됩니다 (SSoT).
-#  - 비밀값은 본 파일에 절대 하드코딩하지 않습니다.
-# ============================================================
-name: kraft-lotto
+﻿name: kraft-lotto
 
 services:
   mariadb:
     image: mariadb:11.7
+    pull_policy: missing
     container_name: kraft-lotto-mariadb
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
       MARIADB_DATABASE: ${KRAFT_DB_NAME:?KRAFT_DB_NAME is required}
       MARIADB_USER: ${KRAFT_DB_USER:?KRAFT_DB_USER is required}
@@ -20,12 +14,14 @@ services:
       TZ: Asia/Seoul
     ports:
       - "${KRAFT_DB_PORT:-3306}:3306"
-    expose:
-      - "3306"
     networks:
       - kraft-net
     volumes:
       - kraft-lotto-db:/var/lib/mysql
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test:
         - CMD
@@ -41,6 +37,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    pull_policy: missing
     image: kraft-lotto-app:local
     container_name: kraft-lotto-app
     restart: unless-stopped
@@ -50,12 +47,9 @@ services:
     env_file:
       - .env
     environment:
-      # ⬇⬇⬇ 변경: fallback을 local에서 필수값(:?)으로 강화
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:?SPRING_PROFILES_ACTIVE is required (e.g. local|prod)}
       KRAFT_IN_CONTAINER: "true"
       KRAFT_DB_URL: jdbc:mariadb://mariadb:3306/${KRAFT_DB_NAME:?KRAFT_DB_NAME is required}?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Seoul&connectTimeout=3000
-      KRAFT_HEALTHCHECK_URL: http://localhost:8080/actuator/health/readiness
-      KRAFT_HEALTHCHECK_TIMEOUT_SECONDS: "3"
       TZ: Asia/Seoul
     ports:
       - "${KRAFT_APP_PORT:-8080}:8080"
@@ -63,6 +57,10 @@ services:
       - kraft-net
     volumes:
       - ./logs:/app/logs
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: [ "CMD", "/app/healthcheck.sh" ]
       interval: 15s

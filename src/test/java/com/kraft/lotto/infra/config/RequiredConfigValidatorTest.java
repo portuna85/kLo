@@ -17,7 +17,7 @@ class RequiredConfigValidatorTest {
                         "KRAFT_DB_USER",
                         "KRAFT_DB_PASSWORD",
                         "KRAFT_DB_ROOT_PASSWORD",
-                        "KRAFT_ADMIN_API_TOKEN");
+                        "KRAFT_ADMIN_API_TOKENS");
     }
 
     @Test
@@ -25,12 +25,13 @@ class RequiredConfigValidatorTest {
         MockEnvironment env = new MockEnvironment();
         env.setActiveProfiles("prod");
         env.setProperty("kraft.admin.api-token", " ");
+        env.setProperty("kraft.admin.api-tokens", " ");
         List<String> problems = new ArrayList<>();
 
         RequiredConfigValidator.addProdAdminTokenProblem(env, problems);
 
         assertThat(problems).hasSize(1);
-        assertThat(problems.get(0)).contains("kraft.admin.api-token");
+        assertThat(problems.get(0)).contains("kraft.admin.api-tokens");
     }
 
     @Test
@@ -48,7 +49,19 @@ class RequiredConfigValidatorTest {
     void doesNotAddProblemWhenProdTokenPresent() {
         MockEnvironment env = new MockEnvironment();
         env.setActiveProfiles("prod");
-        env.setProperty("kraft.admin.api-token", "token-value");
+        env.setProperty("kraft.admin.api-tokens", "token-value-a,token-value-b");
+        List<String> problems = new ArrayList<>();
+
+        RequiredConfigValidator.addProdAdminTokenProblem(env, problems);
+
+        assertThat(problems).isEmpty();
+    }
+
+    @Test
+    void doesNotAddProblemWhenOnlyLegacyProdTokenPresent() {
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("prod");
+        env.setProperty("kraft.admin.api-token", "legacy-token-value");
         List<String> problems = new ArrayList<>();
 
         RequiredConfigValidator.addProdAdminTokenProblem(env, problems);
