@@ -18,7 +18,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 class AdminApiTokenFilterTest {
 
     private final AdminApiTokenFilter filter = new AdminApiTokenFilter(
-            new KraftAdminProperties("secret-token", "X-Kraft-Admin-Token"),
+            new KraftAdminProperties("secret-token", "", "X-Kraft-Admin-Token"),
             new ObjectMapper(),
             new SimpleMeterRegistry()
     );
@@ -125,7 +125,7 @@ class AdminApiTokenFilterTest {
     @DisplayName("blocks when server token is not configured")
     void blocksWhenServerTokenIsNotConfigured() throws Exception {
         AdminApiTokenFilter missingConfigFilter = new AdminApiTokenFilter(
-                new KraftAdminProperties("", "X-Kraft-Admin-Token"),
+                new KraftAdminProperties("", "", "X-Kraft-Admin-Token"),
                 new ObjectMapper(),
                 new SimpleMeterRegistry()
         );
@@ -138,5 +138,24 @@ class AdminApiTokenFilterTest {
 
         assertThat(response.getStatus()).isEqualTo(401);
         verifyNoInteractions(chain);
+    }
+
+    @Test
+    @DisplayName("allows one of rotated csv tokens")
+    void allowsOneOfRotatedCsvTokens() throws Exception {
+        AdminApiTokenFilter rotatedFilter = new AdminApiTokenFilter(
+                new KraftAdminProperties("", "token-a, token-b", "X-Kraft-Admin-Token"),
+                new ObjectMapper(),
+                new SimpleMeterRegistry()
+        );
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/admin/lotto/draws/collect-next");
+        request.addHeader("X-Kraft-Admin-Token", "token-b");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+
+        rotatedFilter.doFilter(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        verify(chain).doFilter(request, response);
     }
 }

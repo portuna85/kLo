@@ -56,6 +56,10 @@ server:
   http2:
     enabled: true
   forward-headers-strategy: NATIVE
+  tomcat:
+    remoteip:
+      remote-ip-header: X-Forwarded-For
+      internal-proxies: 127\\.0\\.0\\.1|::1|192\\.168\\.0\\.\\d{1,3}
 
 management:
   tracing:
@@ -117,6 +121,7 @@ kraft:
     mock-latest-round: ${KRAFT_API_MOCK_LATEST_ROUND:1200}
   admin:
     api-token: ${KRAFT_ADMIN_API_TOKEN:}
+    api-tokens: ${KRAFT_ADMIN_API_TOKENS:}
     token-header: ${KRAFT_ADMIN_TOKEN_HEADER:X-Kraft-Admin-Token}
   recommend:
     max-attempts: ${KRAFT_RECOMMEND_MAX_ATTEMPTS:5000}

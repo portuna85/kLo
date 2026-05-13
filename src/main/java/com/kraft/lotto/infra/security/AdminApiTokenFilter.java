@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Collections;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -68,7 +69,7 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
         }
 
         String provided = request.getHeader(properties.resolvedTokenHeader());
-        if (!matches(provided, properties.apiToken())) {
+        if (!matchesAny(provided, properties.resolvedApiTokens())) {
             meterRegistry.counter("kraft.api.admin_token.blocked", "reason", "invalid_token").increment();
             writeUnauthorizedResponse(response);
             return;
@@ -95,13 +96,21 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
         response.getWriter().write(objectMapper.writeValueAsString(body));
     }
 
-    private static boolean matches(String provided, String expected) {
-        if (provided == null || expected == null) {
+    private static boolean matchesAny(String provided, List<String> expectedTokens) {
+        if (provided == null || expectedTokens == null || expectedTokens.isEmpty()) {
             return false;
         }
         byte[] providedBytes = provided.getBytes(StandardCharsets.UTF_8);
-        byte[] expectedBytes = expected.getBytes(StandardCharsets.UTF_8);
-        return MessageDigest.isEqual(providedBytes, expectedBytes);
+        for (String expected : expectedTokens) {
+            if (expected == null) {
+                continue;
+            }
+            byte[] expectedBytes = expected.getBytes(StandardCharsets.UTF_8);
+            if (MessageDigest.isEqual(providedBytes, expectedBytes)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String pathWithinApplication(HttpServletRequest request) {

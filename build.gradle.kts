@@ -70,6 +70,13 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveFileName.set("app.jar")
 }
 
+tasks.register<Test>("integrationTest") {
+    group = "verification"
+    description = "Runs integration tests tagged with @Tag(\"it\")"
+    useJUnitPlatform { includeTags("it") }
+    shouldRunAfter("test")
+}
+
 tasks.register<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJarWithDocs") {
     group = "build"
     description = "Builds bootJar with REST Docs included."

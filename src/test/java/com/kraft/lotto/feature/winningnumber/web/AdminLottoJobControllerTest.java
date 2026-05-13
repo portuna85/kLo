@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.kraft.lotto.feature.winningnumber.application.BackfillJobService;
 import com.kraft.lotto.feature.winningnumber.web.dto.BackfillJobStatusResponse;
+import com.kraft.lotto.TestCacheConfig;
 import com.kraft.lotto.support.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = AdminLottoJobController.class)
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, TestCacheConfig.class})
     @DisplayName("tests for AdminLottoJobControllerTest")
 class AdminLottoJobControllerTest {
 

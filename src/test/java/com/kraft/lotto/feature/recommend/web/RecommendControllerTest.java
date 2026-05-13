@@ -17,6 +17,7 @@ import com.kraft.lotto.feature.recommend.application.RecommendService;
 import com.kraft.lotto.feature.recommend.web.dto.CombinationDto;
 import com.kraft.lotto.feature.recommend.web.dto.RecommendResponse;
 import com.kraft.lotto.feature.recommend.web.dto.RuleDto;
+import com.kraft.lotto.TestCacheConfig;
 import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
 import com.kraft.lotto.support.GlobalExceptionHandler;
@@ -46,7 +47,7 @@ import org.springframework.web.context.WebApplicationContext;
  */
 @WebMvcTest(controllers = RecommendController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, TestCacheConfig.class})
 @ExtendWith(RestDocumentationExtension.class)
     @DisplayName("tests for RecommendControllerTest")
 class RecommendControllerTest {

@@ -55,4 +55,28 @@ class RequiredConfigValidatorTest {
 
         assertThat(problems).isEmpty();
     }
+
+    @Test
+    void addsProblemsWhenProdOperationalConfigsMissing() {
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("prod");
+        List<String> problems = new ArrayList<>();
+
+        RequiredConfigValidator.addProdOperationalConfigProblems(env, problems);
+
+        assertThat(problems).hasSize(2);
+        assertThat(problems.get(0)).contains("kraft.api.url");
+        assertThat(problems.get(1)).contains("kraft.recommend.max-attempts");
+    }
+
+    @Test
+    void doesNotAddOperationalConfigProblemsOutsideProd() {
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("local");
+        List<String> problems = new ArrayList<>();
+
+        RequiredConfigValidator.addProdOperationalConfigProblems(env, problems);
+
+        assertThat(problems).isEmpty();
+    }
 }

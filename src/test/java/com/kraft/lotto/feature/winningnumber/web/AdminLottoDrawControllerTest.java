@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.kraft.lotto.feature.winningnumber.application.LottoCollectionService;
+import com.kraft.lotto.TestCacheConfig;
 import com.kraft.lotto.support.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = AdminLottoDrawController.class)
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, TestCacheConfig.class})
     @DisplayName("tests for AdminLottoDrawControllerTest")
 class AdminLottoDrawControllerTest {
 

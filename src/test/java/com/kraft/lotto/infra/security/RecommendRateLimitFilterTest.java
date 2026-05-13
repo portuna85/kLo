@@ -111,8 +111,8 @@ class RecommendRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("uses x forwarded for only from trusted proxy")
-    void usesXForwardedForOnlyFromTrustedProxy() throws Exception {
+    @DisplayName("ignores x forwarded for and uses remote addr")
+    void ignoresXForwardedForAndUsesRemoteAddr() throws Exception {
         MockHttpServletRequest req = postRecommend("127.0.0.1");
         req.addHeader("X-Forwarded-For", "203.0.113.1, 10.0.0.5");
 
@@ -123,8 +123,8 @@ class RecommendRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("ignores x forwarded for for untrusted remote")
-    void ignoresXForwardedForForUntrustedRemote() throws Exception {
+    @DisplayName("same remote addr shares bucket regardless of forwarded header")
+    void sameRemoteAddrSharesBucketRegardlessOfForwardedHeader() throws Exception {
         MockHttpServletRequest req = postRecommend("203.0.113.9");
         req.addHeader("X-Forwarded-For", "198.51.100.1");
 
@@ -133,9 +133,9 @@ class RecommendRateLimitFilterTest {
         }
         assertThat(executeRequest(req)).isEqualTo(429);
 
-        MockHttpServletRequest another = postRecommend("203.0.113.10");
-        another.addHeader("X-Forwarded-For", "198.51.100.1");
-        assertThat(executeRequest(another)).isEqualTo(200);
+        MockHttpServletRequest sameIpWithDifferentForwarded = postRecommend("203.0.113.9");
+        sameIpWithDifferentForwarded.addHeader("X-Forwarded-For", "198.51.100.99");
+        assertThat(executeRequest(sameIpWithDifferentForwarded)).isEqualTo(429);
     }
 
     @Test

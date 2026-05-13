@@ -15,6 +15,7 @@ import com.kraft.lotto.feature.winningnumber.application.WinningNumberQueryServi
 import com.kraft.lotto.feature.winningnumber.web.dto.NumberFrequencyDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberPageDto;
+import com.kraft.lotto.TestCacheConfig;
 import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
 import com.kraft.lotto.support.GlobalExceptionHandler;
@@ -39,7 +40,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 @WebMvcTest(controllers = WinningNumberController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, TestCacheConfig.class})
 @ExtendWith(RestDocumentationExtension.class)
     @DisplayName("tests for WinningNumberControllerTest")
 class WinningNumberControllerTest {

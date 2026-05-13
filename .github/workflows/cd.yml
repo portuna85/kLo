@@ -51,6 +51,18 @@ jobs:
             fi
           done < .required-envs
 
+      - name: Mask production secrets in logs
+        env:
+          ALL_SECRETS_JSON: ${{ toJson(secrets) }}
+        run: |
+          set -eu
+          while IFS= read -r name; do
+            [ -z "$name" ] && continue
+            value="$(printf '%s' "$ALL_SECRETS_JSON" | jq -r --arg key "$name" '.[$key] // ""')"
+            [ -z "$value" ] && continue
+            printf '::add-mask::%s\n' "$value"
+          done < .required-envs
+
       - name: Create .env (safe)
         env:
           ALL_SECRETS_JSON: ${{ toJson(secrets) }}

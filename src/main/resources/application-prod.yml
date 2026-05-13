@@ -2,6 +2,13 @@
 # Secrets must be injected from environment variables and never hard-coded.
 
 spring:
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    clean-disabled: true
+    out-of-order: false
+    validate-on-migrate: true
   jpa:
     properties:
       hibernate:

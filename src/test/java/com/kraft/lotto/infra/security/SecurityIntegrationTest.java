@@ -170,6 +170,7 @@ class SecurityIntegrationTest {
 
     private void givenSecurityProperties() {
         Mockito.when(adminProperties.apiToken()).thenReturn("test-admin-token");
+        Mockito.when(adminProperties.resolvedApiTokens()).thenReturn(List.of("test-admin-token"));
         Mockito.when(adminProperties.hasApiToken()).thenReturn(true);
         Mockito.when(adminProperties.resolvedTokenHeader()).thenReturn("X-Kraft-Admin-Token");
         Mockito.when(rateLimitProperties.endpoint("recommend"))
