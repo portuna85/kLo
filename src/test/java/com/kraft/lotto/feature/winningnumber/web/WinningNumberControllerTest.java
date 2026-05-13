@@ -42,7 +42,7 @@ import org.springframework.web.context.WebApplicationContext;
 @AutoConfigureMockMvc(addFilters = false)
 @Import({GlobalExceptionHandler.class, TestCacheConfig.class})
 @ExtendWith(RestDocumentationExtension.class)
-    @DisplayName("tests for WinningNumberControllerTest")
+@DisplayName("당첨 번호 조회 컨트롤러 테스트")
 class WinningNumberControllerTest {
     private static final int ROUND_EXISTING = 1102;
     private static final int ROUND_NOT_FOUND = 1200;
@@ -69,7 +69,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("get latest returns ok")
+    @DisplayName("최신 당첨 번호 조회 시 200 OK를 반환한다")
     void getLatestReturnsOk() throws Exception {
         Mockito.when(queryService.getLatest()).thenReturn(sample(ROUND_EXISTING));
 
@@ -98,7 +98,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("get by round returns ok")
+    @DisplayName("회차별 당첨 번호 조회 시 200 OK를 반환한다")
     void getByRoundReturnsOk() throws Exception {
         Mockito.when(queryService.getByRound(ROUND_EXISTING)).thenReturn(sample(ROUND_EXISTING));
 
@@ -125,7 +125,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("get by round returns404 when not found")
+    @DisplayName("존재하지 않는 회차 조회 시 404 Not Found를 반환한다")
     void getByRoundReturns404WhenNotFound() throws Exception {
         Mockito.when(queryService.getByRound(ROUND_NOT_FOUND))
                 .thenThrow(new BusinessException(ErrorCode.WINNING_NUMBER_NOT_FOUND));
@@ -137,7 +137,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("get list returns page")
+    @DisplayName("당첨 번호 목록 조회 시 페이징된 결과를 반환한다")
     void getListReturnsPage() throws Exception {
         Mockito.when(queryService.list(0, 20))
                 .thenReturn(new WinningNumberPageDto(List.of(sample(ROUND_EXISTING), sample(1101)), 0, 20, 2L, 1));
@@ -171,7 +171,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("get stats frequency returns ok")
+    @DisplayName("번호별 출현 빈도 통계 조회 시 200 OK를 반환한다")
     void getStatsFrequencyReturnsOk() throws Exception {
         List<NumberFrequencyDto> data = List.of(
                 new NumberFrequencyDto(1, 123),
@@ -201,7 +201,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("get list returns400 when page request invalid")
+    @DisplayName("잘못된 페이지 요청 시 400 Bad Request를 반환한다")
     void getListReturns400WhenPageRequestInvalid() throws Exception {
         mockMvc.perform(get("/api/winning-numbers?page=-1&size=0"))
                 .andExpect(status().isBadRequest())
@@ -210,7 +210,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("get by round returns400 when round is less than one")
+    @DisplayName("회차가 1보다 작으면 400 Bad Request를 반환한다")
     void getByRoundReturns400WhenRoundIsLessThanOne() throws Exception {
         mockMvc.perform(get("/api/winning-numbers/0"))
                 .andExpect(status().isBadRequest())
@@ -219,7 +219,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("get by round returns400 when round is not numeric")
+    @DisplayName("회차가 숫자가 아니면 400 Bad Request를 반환한다")
     void getByRoundReturns400WhenRoundIsNotNumeric() throws Exception {
         mockMvc.perform(get("/api/winning-numbers/10a"))
                 .andExpect(status().isBadRequest())
@@ -228,7 +228,7 @@ class WinningNumberControllerTest {
     }
 
     @Test
-    @DisplayName("get by round returns400 when round exceeds max")
+    @DisplayName("회차가 최대값을 초과하면 400 Bad Request를 반환한다")
     void getByRoundReturns400WhenRoundExceedsMax() throws Exception {
         mockMvc.perform(get("/api/winning-numbers/3001"))
                 .andExpect(status().isBadRequest())

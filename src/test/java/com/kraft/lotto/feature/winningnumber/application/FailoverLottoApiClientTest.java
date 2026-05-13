@@ -23,7 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-    @DisplayName("tests for FailoverLottoApiClientTest")
+@DisplayName("장애 복구 로또 API 클라이언트 테스트")
 class FailoverLottoApiClientTest {
 
     @Mock
@@ -47,7 +47,7 @@ class FailoverLottoApiClientTest {
     }
 
     @Test
-    @DisplayName("delegates to primary when healthy")
+    @DisplayName("정상 상태일 때는 기본 클라이언트에 위임한다")
     void delegatesToPrimaryWhenHealthy() {
         when(primary.fetch(1)).thenReturn(Optional.of(sample(1)));
 
@@ -57,7 +57,7 @@ class FailoverLottoApiClientTest {
     }
 
     @Test
-    @DisplayName("switches to fallback on primary failure")
+    @DisplayName("기본 클라이언트 실패 시 대체 클라이언트로 전환한다")
     void switchesToFallbackOnPrimaryFailure() {
         when(primary.fetch(1)).thenThrow(new LottoApiClientException("down"));
         when(fallback.fetch(1)).thenReturn(Optional.of(sample(1)));
@@ -67,7 +67,7 @@ class FailoverLottoApiClientTest {
     }
 
     @Test
-    @DisplayName("uses fallback while circuit open")
+    @DisplayName("서킷 브레이커가 열려 있는 동안 대체 클라이언트를 사용한다")
     void usesFallbackWhileCircuitOpen() {
         when(primary.fetch(1)).thenThrow(new LottoApiClientException("down"));
         when(fallback.fetch(anyInt())).thenReturn(Optional.empty());

@@ -53,7 +53,7 @@ import org.springframework.test.web.servlet.MockMvc;
         UserDetailsServiceAutoConfiguration.class
 })
 @ActiveProfiles("test")
-    @DisplayName("tests for SecurityIntegrationTest")
+@DisplayName("보안 통합 테스트")
 class SecurityIntegrationTest {
 
     @Autowired
@@ -78,7 +78,7 @@ class SecurityIntegrationTest {
     KraftRateLimitRedisProperties redisRateLimitProperties;
 
     @Test
-    @DisplayName("public recommend rules is accessible without auth")
+    @DisplayName("추천 규칙 조회는 인증 없이 접근 가능하다")
     void publicRecommendRulesIsAccessibleWithoutAuth() throws Exception {
         givenSecurityProperties();
         Mockito.when(recommendService.rules()).thenReturn(List.of());
@@ -89,7 +89,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("public winning numbers latest is accessible without auth")
+    @DisplayName("최신 당첨 번호 조회는 인증 없이 접근 가능하다")
     void publicWinningNumbersLatestIsAccessibleWithoutAuth() throws Exception {
         givenSecurityProperties();
         Mockito.when(queryService.getLatest()).thenReturn(new WinningNumberDto(
@@ -103,7 +103,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("winning number refresh requires admin token")
+    @DisplayName("당첨 번호 새로고침은 관리자 토큰이 필요하다")
     void winningNumberRefreshRequiresAdminToken() throws Exception {
         givenSecurityProperties();
         mockMvc.perform(post("/api/winning-numbers/refresh")
@@ -114,7 +114,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("winning number refresh is accessible with admin token")
+    @DisplayName("유효한 관리자 토큰이 있으면 당첨 번호 새로고침이 가능하다")
     void winningNumberRefreshIsAccessibleWithAdminToken() throws Exception {
         givenSecurityProperties();
         Mockito.when(collectService.collect(Mockito.nullable(Integer.class)))
@@ -132,7 +132,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("winning number refresh is rate limited by ip")
+    @DisplayName("당첨 번호 새로고침은 IP별로 요율이 제한된다")
     void winningNumberRefreshIsRateLimitedByIp() throws Exception {
         givenSecurityProperties();
         Mockito.when(collectService.collect(Mockito.nullable(Integer.class)))
@@ -161,7 +161,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    @DisplayName("unknown endpoint is denied")
+    @DisplayName("알 수 없는 엔드포인트는 접근이 거부된다")
     void unknownEndpointIsDenied() throws Exception {
         givenSecurityProperties();
         mockMvc.perform(get("/admin/unknown"))

@@ -20,7 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = AdminLottoJobController.class)
 @Import({GlobalExceptionHandler.class, TestCacheConfig.class})
-    @DisplayName("tests for AdminLottoJobControllerTest")
+@DisplayName("관리자 로또 작업 컨트롤러 테스트")
 class AdminLottoJobControllerTest {
 
     @Autowired
@@ -30,6 +30,7 @@ class AdminLottoJobControllerTest {
     BackfillJobService backfillJobService;
 
     @Test
+    @DisplayName("백필 작업을 시작하고 작업 ID를 반환한다")
     void startBackfillReturnsJobId() throws Exception {
         when(backfillJobService.start(1, 10))
                 .thenReturn(new BackfillJobStatusResponse("job-1", "QUEUED", 1, 10, null, null));
@@ -40,6 +41,7 @@ class AdminLottoJobControllerTest {
     }
 
     @Test
+    @DisplayName("존재하지 않는 작업 조회 시 404를 반환한다")
     void getJobReturns404WhenMissing() throws Exception {
         when(backfillJobService.get("missing")).thenReturn(null);
 

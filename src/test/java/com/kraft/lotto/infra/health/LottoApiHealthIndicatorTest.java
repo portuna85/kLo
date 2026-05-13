@@ -17,7 +17,7 @@ import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.Status;
 
 @ExtendWith(MockitoExtension.class)
-    @DisplayName("tests for LottoApiHealthIndicatorTest")
+@DisplayName("로또 API 헬스 인디케이터 테스트")
 class LottoApiHealthIndicatorTest {
 
     @Mock
@@ -31,7 +31,7 @@ class LottoApiHealthIndicatorTest {
     }
 
     @Test
-    @DisplayName("returns up when repository query succeeds")
+    @DisplayName("레포지토리 쿼리 성공 시 UP을 반환한다")
     void returnsUpWhenRepositoryQuerySucceeds() {
         WinningNumberEntity latest = org.mockito.Mockito.mock(WinningNumberEntity.class);
         when(winningNumberRepository.findMaxRound()).thenReturn(Optional.of(1100));
@@ -45,7 +45,7 @@ class LottoApiHealthIndicatorTest {
     }
 
     @Test
-    @DisplayName("returns down when repository query fails")
+    @DisplayName("레포지토리 쿼리 실패 시 DOWN을 반환한다")
     void returnsDownWhenRepositoryQueryFails() {
         when(winningNumberRepository.findMaxRound()).thenThrow(new RuntimeException("db down"));
 

@@ -19,7 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = AdminLottoDrawController.class)
 @Import({GlobalExceptionHandler.class, TestCacheConfig.class})
-    @DisplayName("tests for AdminLottoDrawControllerTest")
+@DisplayName("관리자 로또 당첨 정보 컨트롤러 테스트")
 class AdminLottoDrawControllerTest {
 
     @Autowired
@@ -29,7 +29,7 @@ class AdminLottoDrawControllerTest {
     LottoCollectionService collectionService;
 
     @Test
-    @DisplayName("refresh rejects invalid round")
+    @DisplayName("잘못된 회차의 새로고침 요청은 거부한다")
     void refreshRejectsInvalidRound() throws Exception {
         mockMvc.perform(post("/admin/lotto/draws/0/refresh"))
                 .andExpect(status().isBadRequest())
@@ -40,7 +40,7 @@ class AdminLottoDrawControllerTest {
     }
 
     @Test
-    @DisplayName("backfill rejects invalid range params")
+    @DisplayName("잘못된 범위의 백필 요청은 거부한다")
     void backfillRejectsInvalidRangeParams() throws Exception {
         mockMvc.perform(post("/admin/lotto/draws/backfill")
                         .param("from", "1")

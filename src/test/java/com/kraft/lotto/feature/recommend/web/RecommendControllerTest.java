@@ -49,7 +49,7 @@ import org.springframework.web.context.WebApplicationContext;
 @AutoConfigureMockMvc(addFilters = false)
 @Import({GlobalExceptionHandler.class, TestCacheConfig.class})
 @ExtendWith(RestDocumentationExtension.class)
-    @DisplayName("tests for RecommendControllerTest")
+@DisplayName("추천 컨트롤러 테스트")
 class RecommendControllerTest {
 
     @Autowired
@@ -68,7 +68,7 @@ class RecommendControllerTest {
     }
 
     @Test
-    @DisplayName("post recommend returns ok")
+    @DisplayName("추천 요청이 성공하면 200 OK를 반환한다")
     void postRecommendReturnsOk() throws Exception {
         Mockito.when(recommendService.recommend(3))
                 .thenReturn(new RecommendResponse(List.of(
@@ -104,7 +104,7 @@ class RecommendControllerTest {
     }
 
     @Test
-    @DisplayName("post recommend uses default count when body absent")
+    @DisplayName("본문이 없으면 기본 추천 개수를 사용한다")
     void postRecommendUsesDefaultCountWhenBodyAbsent() throws Exception {
         Mockito.when(recommendService.recommend(5))
                 .thenReturn(new RecommendResponse(List.of(
@@ -122,7 +122,7 @@ class RecommendControllerTest {
     }
 
     @Test
-    @DisplayName("post recommend returns400 when count out of range")
+    @DisplayName("추천 개수가 범위를 벗어나면 400 Bad Request를 반환한다")
     void postRecommendReturns400WhenCountOutOfRange() throws Exception {
         mockMvc.perform(post("/api/recommend")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -133,7 +133,7 @@ class RecommendControllerTest {
     }
 
     @Test
-    @DisplayName("post recommend maps business exception to status")
+    @DisplayName("비즈니스 예외 발생 시 적절한 상태 코드로 매핑한다")
     void postRecommendMapsBusinessExceptionToStatus() throws Exception {
         Mockito.when(recommendService.recommend(5))
                 .thenThrow(new BusinessException(ErrorCode.LOTTO_GENERATION_TIMEOUT));
@@ -145,7 +145,7 @@ class RecommendControllerTest {
     }
 
     @Test
-    @DisplayName("get rules returns rule list")
+    @DisplayName("규칙 목록 조회 시 규칙 리스트를 반환한다")
     void getRulesReturnsRuleList() throws Exception {
         Mockito.when(recommendService.rules()).thenReturn(List.of(
                 new RuleDto("PastWinningRule", "??貫???1?????????釉뚰????????ш끽維???????곕럡???釉뚰?????? ??筌믨퀡???筌뤾퍓???"),

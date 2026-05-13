@@ -4,12 +4,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
+@DisplayName("필수 설정 검증기 테스트")
 class RequiredConfigValidatorTest {
 
     @Test
+    @DisplayName("필수 배포 환경 변수 목록을 제공한다")
     void exposesRequiredDeployEnvVars() {
         assertThat(RequiredConfigValidator.requiredDeployEnvVars())
                 .containsExactly(
@@ -21,6 +24,7 @@ class RequiredConfigValidatorTest {
     }
 
     @Test
+    @DisplayName("운영 프로파일에서 관리자 토큰이 비어 있으면 문제를 추가한다")
     void addsProblemWhenProdProfileAndAdminTokenBlank() {
         MockEnvironment env = new MockEnvironment();
         env.setActiveProfiles("prod");
@@ -35,6 +39,7 @@ class RequiredConfigValidatorTest {
     }
 
     @Test
+    @DisplayName("운영 프로파일이 아니면 관리자 토큰 검증을 생략한다")
     void doesNotAddProblemOutsideProdProfile() {
         MockEnvironment env = new MockEnvironment();
         env.setActiveProfiles("local");
@@ -46,6 +51,7 @@ class RequiredConfigValidatorTest {
     }
 
     @Test
+    @DisplayName("운영 프로파일에서 관리자 토큰이 존재하면 문제를 추가하지 않는다")
     void doesNotAddProblemWhenProdTokenPresent() {
         MockEnvironment env = new MockEnvironment();
         env.setActiveProfiles("prod");
@@ -58,6 +64,7 @@ class RequiredConfigValidatorTest {
     }
 
     @Test
+    @DisplayName("레거시 관리자 토큰만 있어도 허용한다")
     void doesNotAddProblemWhenOnlyLegacyProdTokenPresent() {
         MockEnvironment env = new MockEnvironment();
         env.setActiveProfiles("prod");
@@ -70,6 +77,7 @@ class RequiredConfigValidatorTest {
     }
 
     @Test
+    @DisplayName("운영 환경에서 필수 운영 설정이 누락되면 문제를 추가한다")
     void addsProblemsWhenProdOperationalConfigsMissing() {
         MockEnvironment env = new MockEnvironment();
         env.setActiveProfiles("prod");
@@ -83,6 +91,7 @@ class RequiredConfigValidatorTest {
     }
 
     @Test
+    @DisplayName("운영 프로파일이 아니면 운영 설정 검증을 생략한다")
     void doesNotAddOperationalConfigProblemsOutsideProd() {
         MockEnvironment env = new MockEnvironment();
         env.setActiveProfiles("local");

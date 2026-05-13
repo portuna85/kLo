@@ -28,7 +28,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 @ExtendWith(MockitoExtension.class)
-    @DisplayName("tests for WinningNumberQueryServiceTest")
+@DisplayName("당첨 번호 조회 서비스 테스트")
 class WinningNumberQueryServiceTest {
 
     @Mock
@@ -51,7 +51,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("get latest returns latest")
+    @DisplayName("최신 당첨 번호를 조회한다")
     void getLatestReturnsLatest() {
         when(repository.findTopByOrderByRoundDesc()).thenReturn(Optional.of(entity(1100)));
 
@@ -62,7 +62,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("get latest throws not found when absent")
+    @DisplayName("당첨 번호가 없으면 최신 조회가 실패한다")
     void getLatestThrowsNotFoundWhenAbsent() {
         when(repository.findTopByOrderByRoundDesc()).thenReturn(Optional.empty());
 
@@ -73,7 +73,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("get by round throws not found when absent")
+    @DisplayName("해당 회차의 당첨 번호가 없으면 예외가 발생한다")
     void getByRoundThrowsNotFoundWhenAbsent() {
         when(repository.findById(2999)).thenReturn(Optional.empty());
 
@@ -84,7 +84,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("get by round throws not found when round is non positive")
+    @DisplayName("회차가 양수가 아니면 예외가 발생한다")
     void getByRoundThrowsNotFoundWhenRoundIsNonPositive() {
         assertThatExceptionOfType(BusinessException.class)
                 .isThrownBy(() -> service.getByRound(0))
@@ -93,7 +93,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("list applies size bounds and defaults")
+    @DisplayName("목록 조회 시 페이징과 기본값을 적용한다")
     void listAppliesSizeBoundsAndDefaults() {
         Page<WinningNumberEntity> page = new PageImpl<>(List.of(entity(2), entity(1)), PageRequest.of(0, 100), 2);
         when(repository.findAllByOrderByRoundDesc(any())).thenReturn(page);
@@ -107,7 +107,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("frequency aggregates only main numbers and returns all45")
+    @DisplayName("번호별 출현 빈도를 집계한다")
     void frequencyAggregatesOnlyMainNumbersAndReturnsAll45() {
         // ?????而?嶺뚮ㅄ維筌??곌랜梨띈떋??[1,7,13,22,34,45] / ?곌랜????8 ???곌랜?????노츎 嶺뚯쉶理????戮곕뇶
         Object[] row = {1, 7, 13, 22, 34, 45};
@@ -129,7 +129,7 @@ class WinningNumberQueryServiceTest {
     }
 
     @Test
-    @DisplayName("combination history cache key is order-insensitive")
+    @DisplayName("조합 이력 캐시 키는 순서에 상관없이 동일하다")
     void combinationHistoryCacheKeyIsOrderInsensitive() {
         String key1 = WinningNumberQueryService.combinationHistoryCacheKey(List.of(1, 7, 13, 22, 34, 45));
         String key2 = WinningNumberQueryService.combinationHistoryCacheKey(List.of(45, 22, 13, 7, 34, 1));

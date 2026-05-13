@@ -20,7 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-@DisplayName("tests for BackfillJobServiceTest")
+@DisplayName("백필 작업 서비스 테스트")
 class BackfillJobServiceTest {
 
     private BackfillJobService service;
@@ -33,7 +33,7 @@ class BackfillJobServiceTest {
     }
 
     @Test
-    @DisplayName("start limits concurrent jobs with bounded executor")
+    @DisplayName("유한 실행자를 사용하여 동시 작업 수를 제한한다")
     void startLimitsConcurrentJobsWithBoundedExecutor() throws Exception {
         LottoCollectionService collectionService = mock(LottoCollectionService.class);
         CountDownLatch firstJobStarted = new CountDownLatch(1);
@@ -76,7 +76,7 @@ class BackfillJobServiceTest {
     }
 
     @Test
-    @DisplayName("get cleans up expired completed jobs")
+    @DisplayName("만료된 완료 작업을 정리한다")
     void getCleansUpExpiredCompletedJobs() {
         LottoCollectionService collectionService = mock(LottoCollectionService.class);
         when(collectionService.backfill(anyInt(), anyInt()))

@@ -7,11 +7,11 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
-    @DisplayName("tests for KraftLottoApplicationTests")
+@DisplayName("애플리케이션 컨텍스트 로드 테스트")
 class KraftLottoApplicationTests {
 
     @Test
-    @DisplayName("context loads")
+    @DisplayName("컨텍스트가 정상적으로 로드된다")
     void contextLoads() {
     }
 }

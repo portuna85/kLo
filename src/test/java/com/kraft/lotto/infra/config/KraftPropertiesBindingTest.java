@@ -20,7 +20,7 @@ import org.springframework.test.context.ActiveProfiles;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-    @DisplayName("tests for KraftPropertiesBindingTest")
+@DisplayName("설정 프로퍼티 바인딩 테스트")
 class KraftPropertiesBindingTest {
 
     @Autowired
@@ -33,7 +33,7 @@ class KraftPropertiesBindingTest {
     KraftRecommendRateLimitProperties rateLimit;
 
     @Test
-    @DisplayName("binds api properties")
+    @DisplayName("API 프로퍼티가 정상적으로 바인딩된다")
     void bindsApiProperties() {
         assertThat(api.client()).isEqualTo("mock");
         assertThat(api.url()).isEqualTo("http://localhost");
@@ -46,7 +46,7 @@ class KraftPropertiesBindingTest {
     }
 
     @Test
-    @DisplayName("binds recommend properties")
+    @DisplayName("추천 규칙 프로퍼티가 정상적으로 바인딩된다")
     void bindsRecommendProperties() {
         assertThat(recommend.maxAttempts()).isEqualTo(1000);
         assertThat(recommend.rules().birthdayThreshold()).isEqualTo(31);
@@ -55,7 +55,7 @@ class KraftPropertiesBindingTest {
     }
 
     @Test
-    @DisplayName("binds rate limit properties")
+    @DisplayName("요율 제한 프로퍼티가 정상적으로 바인딩된다")
     void bindsRateLimitProperties() {
         assertThat(rateLimit.endpoint("recommend").maxRequests()).isEqualTo(30);
         assertThat(rateLimit.endpoint("recommend").windowSeconds()).isEqualTo(60);

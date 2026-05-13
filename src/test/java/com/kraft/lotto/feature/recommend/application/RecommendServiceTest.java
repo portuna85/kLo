@@ -13,7 +13,7 @@ import java.util.Random;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-    @DisplayName("tests for RecommendServiceTest")
+@DisplayName("추천 서비스 테스트")
 class RecommendServiceTest {
 
     private static final long FIXED_SEED = 1L;
@@ -30,7 +30,7 @@ class RecommendServiceTest {
     }
 
     @Test
-    @DisplayName("throws invalid count when count is zero")
+    @DisplayName("추천 개수가 0이면 예외가 발생한다")
     void throwsInvalidCountWhenCountIsZero() {
         var service = service(List.of());
 
@@ -41,7 +41,7 @@ class RecommendServiceTest {
     }
 
     @Test
-    @DisplayName("throws invalid count when count is eleven")
+    @DisplayName("추천 개수가 10을 초과하면 예외가 발생한다")
     void throwsInvalidCountWhenCountIsEleven() {
         var service = service(List.of());
 
@@ -52,7 +52,7 @@ class RecommendServiceTest {
     }
 
     @Test
-    @DisplayName("returns one combination when count is one")
+    @DisplayName("추천 개수가 1이면 한 개의 조합을 반환한다")
     void returnsOneCombinationWhenCountIsOne() {
         var service = service(List.of(new BirthdayBiasRule()));
 
@@ -62,7 +62,7 @@ class RecommendServiceTest {
     }
 
     @Test
-    @DisplayName("returns ten combinations when count is ten")
+    @DisplayName("추천 개수가 10이면 열 개의 조합을 반환한다")
     void returnsTenCombinationsWhenCountIsTen() {
         var service = service(List.of(new BirthdayBiasRule()));
 
@@ -72,7 +72,7 @@ class RecommendServiceTest {
     }
 
     @Test
-    @DisplayName("returns requested number of combinations")
+    @DisplayName("요청된 개수만큼의 조합을 반환한다")
     void returnsRequestedNumberOfCombinations() {
         var service = service(List.of(new BirthdayBiasRule()));
 
@@ -82,7 +82,7 @@ class RecommendServiceTest {
     }
 
     @Test
-    @DisplayName("throws generation timeout when all excluded")
+    @DisplayName("모든 조합이 제외되면 생성 타임아웃 예외가 발생한다")
     void throwsGenerationTimeoutWhenAllExcluded() {
         List<ExclusionRule> rules = List.of(excludeAll());
         var service = new RecommendService(rules, new LottoRecommender(rules, new Random(FIXED_SEED), 50));
@@ -94,7 +94,7 @@ class RecommendServiceTest {
     }
 
     @Test
-    @DisplayName("rules returns registered rule names and reasons")
+    @DisplayName("등록된 규칙 이름과 사유를 반환한다")
     void rulesReturnsRegisteredRuleNamesAndReasons() {
         var service = service(List.of(new BirthdayBiasRule()));
 

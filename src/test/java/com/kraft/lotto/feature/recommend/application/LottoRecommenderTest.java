@@ -11,7 +11,7 @@ import java.util.Random;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-    @DisplayName("tests for LottoRecommenderTest")
+@DisplayName("로또 추천기 테스트")
 class LottoRecommenderTest {
 
     private static final int LARGE_BUDGET = 100_000;
@@ -28,7 +28,7 @@ class LottoRecommenderTest {
     }
 
     @Test
-    @DisplayName("recommends requested count")
+    @DisplayName("요청된 개수만큼 추천한다")
     void recommendsRequestedCount() {
         List<LottoCombination> result = recommender(List.of(), 42L, LARGE_BUDGET).recommend(5);
 
@@ -42,7 +42,7 @@ class LottoRecommenderTest {
     }
 
     @Test
-    @DisplayName("recommendations are unique")
+    @DisplayName("추천된 번호 조합은 중복되지 않는다")
     void recommendationsAreUnique() {
         List<LottoCombination> result = recommender(List.of(), 7L, LARGE_BUDGET).recommend(10);
 
@@ -50,7 +50,7 @@ class LottoRecommenderTest {
     }
 
     @Test
-    @DisplayName("throws timeout when all combinations excluded")
+    @DisplayName("모든 조합이 제외되면 타임아웃 예외를 던진다")
     void throwsTimeoutWhenAllCombinationsExcluded() {
         LottoRecommender recommender = recommender(List.of(excludeAll()), 0L, 100);
 
@@ -59,7 +59,7 @@ class LottoRecommenderTest {
     }
 
     @Test
-    @DisplayName("rules are applied and excluded combinations not included")
+    @DisplayName("제외 규칙이 적용되어 제외된 조합은 포함되지 않는다")
     void rulesAreAppliedAndExcludedCombinationsNotIncluded() {
         // 嶺뚮ㅄ維獄??뺢퀡???먯쾸? 31 ??袁⑤┃???브퀗?ч뜮?????戮곕뇶??濡ル츎 ?잙?裕????⑤챷??
         List<LottoCombination> result = recommender(List.of(new BirthdayBiasRule()), 123L, LARGE_BUDGET)

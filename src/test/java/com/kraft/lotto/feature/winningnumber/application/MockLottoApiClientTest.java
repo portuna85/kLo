@@ -10,11 +10,11 @@ import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-    @DisplayName("tests for MockLottoApiClientTest")
+@DisplayName("모의 로또 API 클라이언트 테스트")
 class MockLottoApiClientTest {
 
     @Test
-    @DisplayName("fetch returns empty for undrawn round")
+    @DisplayName("추첨되지 않은 회차에 대해서는 빈 값을 반환한다")
     void fetchReturnsEmptyForUndrawnRound() {
         MockLottoApiClient client = new MockLottoApiClient(1100);
 
@@ -24,7 +24,7 @@ class MockLottoApiClientTest {
     }
 
     @Test
-    @DisplayName("fetch returns same combination for same round")
+    @DisplayName("동일한 회차에 대해서는 동일한 조합을 반환한다")
     void fetchReturnsSameCombinationForSameRound() {
         MockLottoApiClient client = new MockLottoApiClient(1100);
 
@@ -38,7 +38,7 @@ class MockLottoApiClientTest {
     }
 
     @Test
-    @DisplayName("fetch bonus does not overlap with main numbers")
+    @DisplayName("보너스 번호는 당첨 번호와 겹치지 않는다")
     void fetchBonusDoesNotOverlapWithMainNumbers() {
         MockLottoApiClient client = new MockLottoApiClient(2000);
 

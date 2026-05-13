@@ -16,18 +16,18 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-    @DisplayName("tests for DhLotteryApiClientTest")
+@DisplayName("동행복권 API 클라이언트 테스트")
 class DhLotteryApiClientTest {
 
     private final DhLotteryApiClient client =
             new DhLotteryApiClient(null, new ObjectMapper(), "http://localhost");
 
     @Nested
-    @DisplayName("tests for Parse")
+    @DisplayName("응답 파싱 테스트")
     class Parse {
 
         @Test
-    @DisplayName("parse converts valid response to domain")
+        @DisplayName("유효한 응답을 도메인 객체로 변환한다")
         void parseConvertsValidResponseToDomain() {
             String body = """
                     {
@@ -56,7 +56,7 @@ class DhLotteryApiClientTest {
         }
 
         @Test
-    @DisplayName("parse throws when required field is missing")
+        @DisplayName("필수 필드가 누락되면 예외가 발생한다")
         void parseThrowsWhenRequiredFieldIsMissing() {
             String body = """
                     {"returnValue": "success", "drwNoDate": "2024-01-06"}
@@ -65,21 +65,21 @@ class DhLotteryApiClientTest {
         }
 
         @Test
-    @DisplayName("parse throws on html response")
+        @DisplayName("HTML 응답이 오면 예외가 발생한다")
         void parseThrowsOnHtmlResponse() {
             assertThatThrownBy(() -> client.parse(1102, "<html>error</html>"))
                     .isInstanceOf(LottoApiClientException.class);
         }
 
         @Test
-    @DisplayName("parse throws on blank response")
+        @DisplayName("빈 응답이 오면 예외가 발생한다")
         void parseThrowsOnBlankResponse() {
             assertThatThrownBy(() -> client.parse(1102, " "))
                     .isInstanceOf(LottoApiClientException.class);
         }
 
         @Test
-    @DisplayName("parse throws on return value fail")
+        @DisplayName("returnValue가 fail이면 예외가 발생한다")
         void parseThrowsOnReturnValueFail() {
             String body = """
                     {"returnValue":"fail","drwNo":1102}
@@ -89,7 +89,7 @@ class DhLotteryApiClientTest {
         }
 
         @Test
-    @DisplayName("parse throws on round mismatch")
+        @DisplayName("회차가 일치하지 않으면 예외가 발생한다")
         void parseThrowsOnRoundMismatch() {
             String body = """
                     {
@@ -113,7 +113,7 @@ class DhLotteryApiClientTest {
         }
 
         @Test
-    @DisplayName("parse throws on int overflow")
+        @DisplayName("정수 범위를 초과하는 값이 오면 예외가 발생한다")
         void parseThrowsOnIntOverflow() {
             String body = """
                     {
@@ -138,11 +138,11 @@ class DhLotteryApiClientTest {
     }
 
     @Nested
-    @DisplayName("tests for FetchRetry")
+    @DisplayName("재시도 로직 테스트")
     class FetchRetry {
 
         @Test
-    @DisplayName("fetch retries on network failure")
+        @DisplayName("네트워크 오류 발생 시 재시도한다")
         void fetchRetriesOnNetworkFailure() {
             DhLotteryApiClient spyClient = spy(new DhLotteryApiClient(null, new ObjectMapper(), "http://localhost", 2, 0, null));
             String successBody = """
@@ -172,7 +172,7 @@ class DhLotteryApiClientTest {
         }
 
         @Test
-    @DisplayName("fetch throws when retry exhausted")
+        @DisplayName("재시도 횟수를 초과하면 예외가 발생한다")
         void fetchThrowsWhenRetryExhausted() {
             DhLotteryApiClient spyClient = spy(new DhLotteryApiClient(null, new ObjectMapper(), "http://localhost", 2, 0, null));
             doThrow(new LottoApiClientException("network")).when(spyClient).doFetch(1102);

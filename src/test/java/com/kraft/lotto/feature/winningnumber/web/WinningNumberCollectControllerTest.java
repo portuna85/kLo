@@ -36,7 +36,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @ExtendWith(MockitoExtension.class)
 @ExtendWith(RestDocumentationExtension.class)
-@DisplayName("tests for WinningNumberCollectControllerTest")
+@DisplayName("당첨 번호 수집 컨트롤러 테스트")
 class WinningNumberCollectControllerTest {
 
     @Mock
@@ -54,7 +54,7 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("post collect delegates null target round when body absent")
+    @DisplayName("본문이 없으면 최신 회차까지 수집을 위임한다")
     void postCollectDelegatesNullTargetRoundWhenBodyAbsent() throws Exception {
         Mockito.when(collectService.collect(isNull()))
                 .thenReturn(new CollectResponse(3, 0, 0, 1103, List.of(), true, 2000, false));
@@ -72,7 +72,7 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("post collect delegates specified target round")
+    @DisplayName("지정된 대상 회차까지 수집을 위임한다")
     void postCollectDelegatesSpecifiedTargetRound() throws Exception {
         Mockito.when(collectService.collect(1103))
                 .thenReturn(new CollectResponse(2, 1, 0, 1103, List.of(), false, null, false));
@@ -108,7 +108,7 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("post collect returns 502 on external api failure")
+    @DisplayName("외부 API 실패 시 502 Bad Gateway를 반환한다")
     void postCollectReturns502OnExternalApiFailure() throws Exception {
         Mockito.when(collectService.collect(isNull()))
                 .thenThrow(new BusinessException(ErrorCode.EXTERNAL_API_FAILURE));
@@ -119,7 +119,7 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("post collect returns 400 on invalid target round")
+    @DisplayName("잘못된 대상 회차인 경우 400 Bad Request를 반환한다")
     void postCollectReturns400OnInvalidTargetRound() throws Exception {
         mockMvc.perform(post("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
