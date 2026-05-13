@@ -9,6 +9,7 @@
 # ---- Build stage ----
 FROM eclipse-temurin:25-jdk AS build
 WORKDIR /workspace
+ARG GRADLE_BUILD_ARGS=""
 
 # 1) Gradle wrapper / 빌드 스크립트 복사하여 의존성 캐시를 활용
 COPY gradlew settings.gradle.kts build.gradle.kts ./
@@ -29,7 +30,7 @@ COPY src ./src
 RUN --mount=type=cache,target=/root/.gradle \
     ./gradlew --no-daemon clean -x test && \
     mkdir -p build/generated-snippets && \
-    ./gradlew --no-daemon bootJarWithDocs -x test
+    ./gradlew --no-daemon bootJarWithDocs $GRADLE_BUILD_ARGS
 
 # ---- Runtime stage ----
 FROM eclipse-temurin:25-jre

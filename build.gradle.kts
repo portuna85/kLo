@@ -19,6 +19,7 @@ repositories {
 }
 
 val snippetsDir = layout.buildDirectory.dir("generated-snippets")
+val useExternalSnippets = project.findProperty("useExternalSnippets") == "true"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -65,8 +66,10 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 tasks.named("asciidoctor") {
-    dependsOn(tasks.test)
-    dependsOn("integrationTest")
+    if (!useExternalSnippets) {
+        dependsOn(tasks.test)
+        dependsOn("integrationTest")
+    }
     // inputs.dir(snippetsDir) 제거:
     //   asciidoctor 플러그인이 이를 필수 입력($4 property)으로 등록하여
     //   -x test 시 디렉토리가 없으면 구성 시점 검증 실패가 발생함.

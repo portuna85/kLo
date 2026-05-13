@@ -7,6 +7,10 @@ on:
     types: [ completed ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: read
+
 concurrency:
   group: cd-production
   cancel-in-progress: false
@@ -113,6 +117,25 @@ jobs:
       - name: Validate Docker Compose file
         run: docker compose config -q
 
+      - name: Download snippets artifact from CI
+        if: ${{ github.event_name == 'workflow_run' }}
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+          pattern: restdocs-snippets-*
+          path: build/generated-snippets
+          merge-multiple: true
+
+      - name: Generate snippets for manual deploy
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: ./gradlew --no-daemon test
+
+      - name: Verify snippets for Docker build
+        run: |
+          test -d build/generated-snippets
+          test -n "$(find build/generated-snippets -type f | head -n 1)"
+
       - name: Prepare logs directory for bind mount
         run: |
           mkdir -p ./logs
@@ -132,6 +155,7 @@ jobs:
 
       - name: Build and restart services
         run: |
+          export GRADLE_BUILD_ARGS="-PuseExternalSnippets=true -x test -x integrationTest"
           docker compose up -d --build --remove-orphans
           docker compose ps
           docker image prune -f

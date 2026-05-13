@@ -37,6 +37,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        GRADLE_BUILD_ARGS: ${GRADLE_BUILD_ARGS:-}
     pull_policy: missing
     image: kraft-lotto-app:local
     container_name: kraft-lotto-app
