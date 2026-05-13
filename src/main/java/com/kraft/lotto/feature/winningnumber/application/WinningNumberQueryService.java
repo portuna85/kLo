@@ -13,7 +13,6 @@ import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.Comparator;
@@ -91,23 +90,17 @@ public class WinningNumberQueryService {
     public CombinationPrizeHistoryDto combinationPrizeHistory(List<Integer> numbers) {
         validateCombination(numbers);
         List<Integer> normalized = numbers.stream().sorted().toList();
-        Set<Integer> target = Set.copyOf(normalized);
+        boolean[] target = toPresenceMap(normalized);
         List<CombinationPrizeHitDto> firstPrizeHits = new ArrayList<>();
         List<CombinationPrizeHitDto> secondPrizeHits = new ArrayList<>();
 
         for (var row : repository.findAllForCombinationPrizeHistory()) {
-            Set<Integer> mains = Set.of(row.getN1(), row.getN2(), row.getN3(), row.getN4(), row.getN5(), row.getN6());
-            if (mains.equals(target)) {
+            int mainMatches = countMainMatches(target, row);
+            if (mainMatches == 6) {
                 firstPrizeHits.add(new CombinationPrizeHitDto(row.getRound(), row.getDrawDate()));
                 continue;
             }
-            int mainMatches = 0;
-            for (Integer n : target) {
-                if (mains.contains(n)) {
-                    mainMatches++;
-                }
-            }
-            if (mainMatches == 5 && target.contains(row.getBonusNumber())) {
+            if (mainMatches == 5 && target[row.getBonusNumber()]) {
                 secondPrizeHits.add(new CombinationPrizeHitDto(row.getRound(), row.getDrawDate()));
             }
         }
@@ -149,10 +142,32 @@ public class WinningNumberQueryService {
         if (numbers == null || numbers.size() != 6) {
             throw new BusinessException(ErrorCode.LOTTO_INVALID_TARGET_ROUND, "번호는 6개여야 합니다.");
         }
-        boolean validRange = numbers.stream().allMatch(n -> n >= 1 && n <= 45);
-        if (!validRange || numbers.stream().distinct().count() != 6) {
-            throw new BusinessException(ErrorCode.LOTTO_INVALID_TARGET_ROUND, "번호는 1~45 중복 없는 6개여야 합니다.");
+        boolean[] seen = new boolean[46];
+        for (Integer number : numbers) {
+            if (number == null || number < 1 || number > 45 || seen[number]) {
+                throw new BusinessException(ErrorCode.LOTTO_INVALID_TARGET_ROUND, "번호는 1~45 중복 없는 6개여야 합니다.");
+            }
+            seen[number] = true;
         }
+    }
+
+    private static boolean[] toPresenceMap(List<Integer> numbers) {
+        boolean[] presence = new boolean[46];
+        for (Integer number : numbers) {
+            presence[number] = true;
+        }
+        return presence;
+    }
+
+    private static int countMainMatches(boolean[] target, WinningNumberRepository.CombinationPrizeRow row) {
+        int matches = 0;
+        if (target[row.getN1()]) matches++;
+        if (target[row.getN2()]) matches++;
+        if (target[row.getN3()]) matches++;
+        if (target[row.getN4()]) matches++;
+        if (target[row.getN5()]) matches++;
+        if (target[row.getN6()]) matches++;
+        return matches;
     }
 
     public static String combinationHistoryCacheKey(List<Integer> numbers) {
