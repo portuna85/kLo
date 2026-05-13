@@ -67,9 +67,10 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.named("asciidoctor") {
     dependsOn(tasks.test)
     dependsOn("integrationTest")
-    // optional(true): -x test로 테스트를 건너뛰어 generated-snippets가 없어도
-    // Gradle 구성 시점 입력 검증에서 실패하지 않도록 선택적 입력으로 선언
-    inputs.dir(snippetsDir).optional(true)
+    // inputs.dir(snippetsDir) 제거:
+    //   asciidoctor 플러그인이 이를 필수 입력($4 property)으로 등록하여
+    //   -x test 시 디렉토리가 없으면 구성 시점 검증 실패가 발생함.
+    //   Dockerfile에서 mkdir -p로 디렉토리를 보장하므로 여기서는 등록 불필요.
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
