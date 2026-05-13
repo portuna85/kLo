@@ -91,13 +91,9 @@ tasks.register<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJarW
     group = "build"
     description = "Builds bootJar with REST Docs included."
     dependsOn("asciidoctor")
-    // SpringBootExtension을 통해 mainClass를 안정적으로 참조
-    // (flatMap lazy provider는 구성 시점에 값이 없어 실패할 수 있음)
-    mainClass.set(
-        project.extensions
-            .getByType<org.springframework.boot.gradle.dsl.SpringBootExtension>()
-            .mainClass
-    )
+    // mainClass를 직접 지정 (lazy provider / SpringBootExtension은 구성 시점에 값 없음)
+    // find src/main/java -name "*Application.java" 로 실제 경로 확인 후 수정
+    mainClass.set("com.kraft.lotto.KraftLottoApplication")
     targetJavaVersion.set(JavaVersion.VERSION_25)
     archiveFileName.set("app-with-docs.jar")
     from(layout.buildDirectory.dir("docs/asciidoc")) {
