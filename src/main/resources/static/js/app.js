@@ -136,9 +136,9 @@
     const dl = document.createElement('dl');
     dl.className = 'kraft-kv';
     const kv = [
-      ['1등 당첨금', `${fmtNum(wn.firstPrize)} 원`],
-      ['1등 당첨자', `${fmtNum(wn.firstWinners)} 명`],
-      ['총 판매금', `${fmtNum(wn.totalSales)} 원`]
+      ['1등 당첨금', `${fmtNum(wn.firstPrize)}원`],
+      ['1등 당첨자', `${fmtNum(wn.firstWinners)}명`],
+      ['총 판매금', `${fmtNum(wn.totalSales)}원`]
     ];
 
     kv.forEach(([k, v]) => {
@@ -250,7 +250,7 @@
     const prev = document.getElementById('list-prev');
     const next = document.getElementById('list-next');
     const cur = listState.totalPages === 0 ? 0 : listState.page + 1;
-    info.textContent = `${cur} / ${listState.totalPages} 페이지 · 총 ${fmtNum(listState.totalElements)}건`;
+    info.textContent = `${cur} / ${listState.totalPages}페이지 · 총 ${fmtNum(listState.totalElements)}건`;
     prev.disabled = listState.page <= 0;
     next.disabled = listState.totalPages === 0 || listState.page >= listState.totalPages - 1;
   };
@@ -333,7 +333,7 @@
       if (lowOut) setTextMessage(lowOut, err.message, 'text-danger small mb-0');
     }
   };
-`n
+
   document.addEventListener('DOMContentLoaded', () => {
     initTheme();
 
@@ -370,5 +370,3 @@
     loadList();
   });
 })();
-
-

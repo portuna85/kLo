@@ -1,5 +1,5 @@
 param(
-    [string]$JarPath = "build/libs/app.jar"
+    [string]$JarPath = "build/libs/app-with-docs.jar"
 )
 
 $ErrorActionPreference = "Stop"

@@ -33,8 +33,13 @@ import org.springframework.stereotype.Service;
  * 본 서비스는 전체 수집 루프에 트랜잭션을 걸지 않는다.
  * 저장은 WinningNumberPersister가 회차별로 담당한다.
  */
+/**
+ * @deprecated Replaced by {@link LottoCollectionService}.
+ *             Kept temporarily for backward-compatibility tests and will be removed
+ *             after migration verification is complete.
+ */
 @Service
-@Deprecated(forRemoval = false)
+@Deprecated(forRemoval = true, since = "0.2.0")
 public class WinningNumberCollectService {
 
     private static final Logger log = LoggerFactory.getLogger(WinningNumberCollectService.class);

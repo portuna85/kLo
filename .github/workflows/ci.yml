@@ -37,13 +37,22 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
+      - name: Check JavaScript syntax
+        run: node --check src/main/resources/static/js/app.js
+
       - name: Build and test
         run: ./gradlew --no-daemon clean build
 
+      - name: Build REST Docs
+        run: ./gradlew --no-daemon asciidoctor
+
+      - name: Build jar with REST Docs
+        run: ./gradlew --no-daemon bootJarWithDocs
+
       - name: Verify prod profile resources are packaged in jar
         run: |
-          ./gradlew --no-daemon bootJar -x test
-          pwsh ./scripts/verify-prod-profile-in-jar.ps1 -JarPath build/libs/app.jar
+          ./gradlew --no-daemon bootJarWithDocs -x test
+          pwsh ./scripts/verify-prod-profile-in-jar.ps1 -JarPath build/libs/app-with-docs.jar
 
       - name: Upload test report
         if: always()

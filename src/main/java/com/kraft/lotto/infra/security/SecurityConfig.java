@@ -65,7 +65,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/winning-numbers/refresh", "/api/v1/winning-numbers/refresh").authenticated()
                         .requestMatchers(HttpMethod.POST, "/admin/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/admin/**").authenticated()
-                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/docs", "/docs/", "/docs/**").permitAll()
                         .anyRequest().denyAll()

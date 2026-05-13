@@ -28,7 +28,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("com.github.ben-manes.caffeine:caffeine")
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13")
     implementation("io.github.resilience4j:resilience4j-circuitbreaker:2.3.0")
     implementation("net.javacrumbs.shedlock:shedlock-spring:6.10.0")
     implementation("net.javacrumbs.shedlock:shedlock-provider-jdbc-template:6.10.0")
@@ -61,8 +60,13 @@ tasks.withType<Test>().configureEach {
     outputs.dir(snippetsDir)
 }
 
+tasks.withType<JavaCompile>().configureEach {
+    options.encoding = "UTF-8"
+}
+
 tasks.named("asciidoctor") {
     dependsOn(tasks.test)
+    dependsOn("integrationTest")
     inputs.dir(snippetsDir)
 }
 
@@ -77,10 +81,16 @@ tasks.register<Test>("integrationTest") {
     shouldRunAfter("test")
 }
 
+tasks.named("check") {
+    dependsOn("integrationTest")
+}
+
 tasks.register<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJarWithDocs") {
     group = "build"
     description = "Builds bootJar with REST Docs included."
     dependsOn("asciidoctor")
+    mainClass.set(tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar").flatMap { it.mainClass })
+    targetJavaVersion.set(JavaVersion.VERSION_25)
     archiveFileName.set("app-with-docs.jar")
     from(layout.buildDirectory.dir("docs/asciidoc")) {
         into("BOOT-INF/classes/static/docs")

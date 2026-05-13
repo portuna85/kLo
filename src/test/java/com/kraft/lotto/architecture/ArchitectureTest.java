@@ -10,21 +10,21 @@ import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.DisplayName;
 
 /**
- * ?熬곥굤????고뱱 ?잙?裕?????裕??
+ * 아키텍처 경계 규칙을 검증한다.
  *
- * <p>???덉쓢 16.8 / 3 ?熬곥굤????고뱱 ???????띠룆踰???類ｋ펲:
+ * <p>검증 규칙:</p>
  * <ul>
- *     <li>domain ??ｌ뫒筌?? Spring/JPA/Web ??琉돠???띠럾?嶺뚯솘?嶺뚯솘? ???낅츎??</li>
- *     <li>domain ??ｌ뫒筌?? BusinessException(support ??ｌ뫒筌????깅뇶)??嶺뚯쉳???嶺뚣볦굣???? ???낅츎??</li>
- *     <li>Controller(web ??ｌ뫒筌???JPA Entity/Repository(infrastructure ??ｌ뫒筌???嶺뚯쉳???嶺뚣볦굣???? ???낅츎??</li>
- *     <li>{@code @Entity} ???????노츎 feature.*.infrastructure ????뺟춯?뼿 ???????異??브퀡????類ｋ펲.</li>
+ *     <li>domain 패키지는 Spring/JPA/Web/Hibernate 의존을 갖지 않는다.</li>
+ *     <li>domain 패키지는 support.BusinessException 의존을 갖지 않는다.</li>
+ *     <li>controller(web)는 infrastructure 패키지를 직접 참조하지 않는다.</li>
+ *     <li>{@code @Entity} 클래스는 feature.*.infrastructure 하위에 위치한다.</li>
  * </ul>
  */
 @AnalyzeClasses(
         packages = "com.kraft.lotto",
         importOptions = {ImportOption.DoNotIncludeTests.class}
 )
-    @DisplayName("tests for ArchitectureTest")
+@DisplayName("아키텍처 경계 테스트")
 class ArchitectureTest {
 
     @ArchTest
@@ -38,7 +38,7 @@ class ArchitectureTest {
                             "org.hibernate..",
                             "org.springframework.web.."
                     )
-                    .as("domain ??ｌ뫒筌?? Spring/JPA/Web/Hibernate????琉돠??怨댄맋??????類ｋ펲");
+                    .as("domain 패키지는 Spring/JPA/Web/Hibernate에 의존하면 안 된다");
 
     @ArchTest
     static final ArchRule domain_should_not_use_business_exception =
@@ -46,7 +46,7 @@ class ArchitectureTest {
                     .that().resideInAPackage("..feature..domain..")
                     .should().dependOnClassesThat()
                     .haveFullyQualifiedName("com.kraft.lotto.support.BusinessException")
-                    .as("domain ??ｌ뫒筌?? support.BusinessException??嶺뚯쉳???嶺뚣볦굣???怨댄맋??????類ｋ펲");
+                    .as("domain 패키지는 support.BusinessException에 의존하면 안 된다");
 
     @ArchTest
     static final ArchRule controllers_should_not_use_infrastructure =
@@ -54,12 +54,12 @@ class ArchitectureTest {
                     .that().resideInAPackage("..feature..web..")
                     .should().dependOnClassesThat()
                     .resideInAPackage("..feature..infrastructure..")
-                    .as("Controller(web ??ｌ뫒筌???JPA Entity/Repository(infrastructure ??ｌ뫒筌???嶺뚯쉳???嶺뚣볦굣???怨댄맋??????類ｋ펲");
+                    .as("controller는 infrastructure를 직접 참조하면 안 된다");
 
     @ArchTest
     static final ArchRule entities_should_reside_in_infrastructure_packages =
             classes()
                     .that().areAnnotatedWith(jakarta.persistence.Entity.class)
                     .should().resideInAPackage("..feature..infrastructure..")
-                    .as("@Entity ???????노츎 feature.*.infrastructure ????뺟춯?뼿 ???????異??熬곣뫚???怨룻뒍 ??類ｋ펲");
+                    .as("@Entity 클래스는 feature.*.infrastructure 하위에 위치해야 한다");
 }
