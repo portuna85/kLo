@@ -76,7 +76,7 @@ tasks.register<JavaExec>("asciidoctor") {
     group = "documentation"
     description = "Generates HTML docs from AsciiDoc sources."
     classpath = asciidoctorCli
-    mainClass.set("org.asciidoctor.cli.AsciidoctorInvoker")
+    mainClass.set("org.asciidoctor.cli.jruby.AsciidoctorInvoker")
     workingDir = projectDir
 
     if (!useExternalSnippets) {
