@@ -3,6 +3,7 @@ package com.kraft.lotto.feature.winningnumber.web;
 import com.kraft.lotto.feature.winningnumber.application.LottoCollectionService;
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectRequest;
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
+import com.kraft.lotto.infra.security.ApiPaths;
 import com.kraft.lotto.support.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping({"/api/winning-numbers", "/api/v1/winning-numbers"})
 public class WinningNumberCollectController {
 
-    private static final String ADMIN_REPLACEMENT_PATH = "/admin/lotto/draws/collect-next";
+    private static final String ADMIN_REPLACEMENT_PATH = ApiPaths.ADMIN_COLLECT_NEXT;
     private static final String SUNSET_DATE = "Thu, 31 Jul 2026 23:59:59 GMT";
 
     private final LottoCollectionService collectService;

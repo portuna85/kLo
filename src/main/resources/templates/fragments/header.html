@@ -5,6 +5,17 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
   <meta name="description" content="로또 6/45 추천 서비스" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('kraft-theme');
+        var theme = t || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-bs-theme', theme);
+      } catch (_) {
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+      }
+    })();
+  </script>
   <title th:text="${title} ?: '최고의번호'">최고의번호</title>
 
   <link rel="icon" type="image/svg+xml" th:href="@{/images/favicon.svg}" />

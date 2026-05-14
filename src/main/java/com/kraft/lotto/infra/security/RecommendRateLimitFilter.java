@@ -109,15 +109,10 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
 
         evictStaleIfNeeded(now, windowStart);
 
-        if (!requestHistory.containsKey(key) && requestHistory.size() >= MAX_TRACKED_IPS) {
-            meterRegistry.counter("kraft.api.rate_limit.requests", "endpoint", endpoint.id,
-                    "result", "blocked", "reason", "capacity_exceeded").increment();
-            log.warn("rate limit bucket capacity exceeded: endpoint={}, trackedBuckets={}",
-                    endpoint.id, requestHistory.size());
+        Deque<Long> timestamps = getOrCreateBucket(endpoint, key, limit.windowSeconds());
+        if (timestamps == null) {
             return new Decision(false, limit.windowSeconds());
         }
-
-        Deque<Long> timestamps = requestHistory.computeIfAbsent(key, __ -> new ArrayDeque<>());
         synchronized (timestamps) {
             while (!timestamps.isEmpty() && timestamps.peekFirst() < windowStart) {
                 timestamps.pollFirst();
@@ -128,6 +123,29 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
             }
             int retryAfter = retryAfterSeconds(timestamps.peekFirst(), windowMs, now);
             return new Decision(false, retryAfter);
+        }
+    }
+
+    private Deque<Long> getOrCreateBucket(Endpoint endpoint, String key, int windowSeconds) {
+        Deque<Long> existing = requestHistory.get(key);
+        if (existing != null) {
+            return existing;
+        }
+        synchronized (requestHistory) {
+            existing = requestHistory.get(key);
+            if (existing != null) {
+                return existing;
+            }
+            if (requestHistory.size() >= MAX_TRACKED_IPS) {
+                meterRegistry.counter("kraft.api.rate_limit.requests", "endpoint", endpoint.id,
+                        "result", "blocked", "reason", "capacity_exceeded").increment();
+                log.warn("rate limit bucket capacity exceeded: endpoint={}, trackedBuckets={}",
+                        endpoint.id, requestHistory.size());
+                return null;
+            }
+            Deque<Long> created = new ArrayDeque<>();
+            requestHistory.put(key, created);
+            return created;
         }
     }
 
@@ -200,11 +218,11 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
         if (path == null || path.isEmpty()) {
             path = request.getRequestURI();
         }
-        if ("/api/recommend".equals(path) || "/api/v1/recommend".equals(path)) {
+        if (ApiPaths.RECOMMEND_LEGACY.equals(path) || ApiPaths.RECOMMEND_V1.equals(path)) {
             return Endpoint.RECOMMEND;
         }
-        if ("/api/winning-numbers/refresh".equals(path)
-                || "/api/v1/winning-numbers/refresh".equals(path)
+        if (ApiPaths.COLLECT_REFRESH_LEGACY.equals(path)
+                || ApiPaths.COLLECT_REFRESH_V1.equals(path)
                 || isAdminCollectPath(path)) {
             return Endpoint.COLLECT;
         }
@@ -215,9 +233,9 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
         if (path == null) {
             return false;
         }
-        if ("/admin/lotto/draws/collect-next".equals(path)
-                || "/admin/lotto/draws/collect-missing".equals(path)
-                || "/admin/lotto/draws/backfill".equals(path)) {
+        if (ApiPaths.ADMIN_COLLECT_NEXT.equals(path)
+                || ApiPaths.ADMIN_COLLECT_MISSING.equals(path)
+                || ApiPaths.ADMIN_BACKFILL.equals(path)) {
             return true;
         }
         return path.matches("^/admin/lotto/draws/\\d+/refresh$");

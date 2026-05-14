@@ -33,7 +33,7 @@ class LottoCollectionServiceTest {
     private final WinningNumberPersister persister = mock(WinningNumberPersister.class);
     private final LottoFetchLogRepository fetchLogRepository = mock(LottoFetchLogRepository.class);
     private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
-    private final LottoCollectionService service = new LottoCollectionService(
+    private final LottoCollectionService service = LottoCollectionService.forTest(
             lottoApiClient, winningNumberRepository, persister, fetchLogRepository, eventPublisher, Clock.systemUTC(), 0);
 
     @Test

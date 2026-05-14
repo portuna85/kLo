@@ -84,8 +84,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
-        return ResponseEntity.status(ErrorCode.LOTTO_INVALID_NUMBER.getHttpStatus())
-                .body(ApiResponse.failure(ErrorCode.LOTTO_INVALID_NUMBER, ex.getMessage()));
+        return ResponseEntity.status(ErrorCode.REQUEST_VALIDATION_ERROR.getHttpStatus())
+                .body(ApiResponse.failure(ErrorCode.REQUEST_VALIDATION_ERROR, ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

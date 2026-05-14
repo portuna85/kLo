@@ -41,14 +41,14 @@ public class LottoCollectionService {
         );
     }
 
-    LottoCollectionService(LottoApiClient lottoApiClient,
-                           WinningNumberRepository winningNumberRepository,
-                           WinningNumberPersister persister,
-                           LottoFetchLogRepository fetchLogRepository,
-                           ApplicationEventPublisher eventPublisher,
-                           Clock clock,
-                           long backfillDelayMs) {
-        this(
+    static LottoCollectionService forTest(LottoApiClient lottoApiClient,
+                                          WinningNumberRepository winningNumberRepository,
+                                          WinningNumberPersister persister,
+                                          LottoFetchLogRepository fetchLogRepository,
+                                          ApplicationEventPublisher eventPublisher,
+                                          Clock clock,
+                                          long backfillDelayMs) {
+        return new LottoCollectionService(
                 winningNumberRepository,
                 new LottoSingleDrawCollector(lottoApiClient, winningNumberRepository, persister, fetchLogRepository, clock),
                 new LottoCollectionGate(eventPublisher),

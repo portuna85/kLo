@@ -11,6 +11,8 @@ class ConstraintAwareLottoNumberGenerator implements LottoNumberGenerator {
 
     private static final int MAX_NUMBER = 45;
     private static final int SIZE = 6;
+    private static final int MAX_INITIAL_PICK_ATTEMPTS = 10_000;
+    private static final int MAX_FIXUP_ATTEMPTS = 1_000;
 
     private final Random random;
     private final int birthdayThreshold;
@@ -29,8 +31,12 @@ class ConstraintAwareLottoNumberGenerator implements LottoNumberGenerator {
         Set<Integer> selected = new TreeSet<>();
         int birthdayAboveCount = 0;
         int[] decadeBuckets = new int[5];
+        int initialPickAttempts = 0;
 
         while (selected.size() < SIZE) {
+            if (++initialPickAttempts > MAX_INITIAL_PICK_ATTEMPTS) {
+                throw new RecommendGenerationTimeoutException("initial pick exceeded max attempts");
+            }
             int n = random.nextInt(MAX_NUMBER) + 1;
             if (selected.contains(n)) {
                 continue;
@@ -51,7 +57,11 @@ class ConstraintAwareLottoNumberGenerator implements LottoNumberGenerator {
         }
 
         List<Integer> numbers = new ArrayList<>(selected);
+        int fixupAttempts = 0;
         while (hasLongRun(numbers, longRunThreshold)) {
+            if (++fixupAttempts > MAX_FIXUP_ATTEMPTS) {
+                throw new RecommendGenerationTimeoutException("fixup exceeded max attempts");
+            }
             int replaceIndex = random.nextInt(SIZE);
             int old = numbers.get(replaceIndex);
             int newNumber = random.nextInt(MAX_NUMBER) + 1;

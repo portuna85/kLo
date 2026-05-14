@@ -1,8 +1,8 @@
-plugins {
+﻿plugins {
     java
     id("org.springframework.boot") version "4.0.5"
     id("io.spring.dependency-management") version "1.1.7"
-    id("org.asciidoctor.jvm.convert") version "4.0.4"
+    jacoco
 }
 
 group = "com.kraft"
@@ -20,6 +20,10 @@ repositories {
 
 val snippetsDir = layout.buildDirectory.dir("generated-snippets")
 val useExternalSnippets = project.findProperty("useExternalSnippets") == "true"
+val docsSourceDir = layout.projectDirectory.dir("src/docs/asciidoc")
+val docsOutputDir = layout.buildDirectory.dir("docs/asciidoc")
+
+val asciidoctorCli by configurations.creating
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -37,6 +41,7 @@ dependencies {
     implementation("io.opentelemetry:opentelemetry-exporter-otlp")
 
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
     implementation("org.webjars:webjars-locator-core")
     implementation("org.webjars:bootstrap:5.3.3")
     implementation("org.webjars.npm:bootstrap-icons:1.11.3")
@@ -54,6 +59,8 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter:1.21.4")
     testImplementation("org.testcontainers:mariadb:1.21.4")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
+
+    asciidoctorCli("org.asciidoctor:asciidoctorj-cli:3.0.0")
 }
 
 tasks.withType<Test>().configureEach {
@@ -65,15 +72,32 @@ tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
 }
 
-tasks.named("asciidoctor") {
+tasks.register<JavaExec>("asciidoctor") {
+    group = "documentation"
+    description = "Generates HTML docs from AsciiDoc sources."
+    classpath = asciidoctorCli
+    mainClass.set("org.asciidoctor.cli.AsciidoctorInvoker")
+    workingDir = projectDir
+
     if (!useExternalSnippets) {
         dependsOn(tasks.test)
         dependsOn("integrationTest")
     }
-    // inputs.dir(snippetsDir) 제거:
-    //   asciidoctor 플러그인이 이를 필수 입력($4 property)으로 등록하여
-    //   -x test 시 디렉토리가 없으면 구성 시점 검증 실패가 발생함.
-    //   Dockerfile에서 mkdir -p로 디렉토리를 보장하므로 여기서는 등록 불필요.
+
+    inputs.dir(docsSourceDir)
+    inputs.dir(snippetsDir)
+    outputs.dir(docsOutputDir)
+
+    doFirst {
+        docsOutputDir.get().asFile.mkdirs()
+    }
+
+    args(
+        "-b", "html5",
+        "-D", docsOutputDir.get().asFile.absolutePath,
+        "-a", "snippets=${snippetsDir.get().asFile.absolutePath}",
+        docsSourceDir.file("index.adoc").asFile.absolutePath
+    )
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
@@ -89,14 +113,23 @@ tasks.register<Test>("integrationTest") {
 
 tasks.named("check") {
     dependsOn("integrationTest")
+    dependsOn("jacocoTestCoverageVerification")
+}
+
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = "0.70".toBigDecimal()
+            }
+        }
+    }
 }
 
 tasks.register<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJarWithDocs") {
     group = "build"
     description = "Builds bootJar with REST Docs included."
     dependsOn("asciidoctor")
-    // mainClass를 직접 지정 (lazy provider / SpringBootExtension은 구성 시점에 값 없음)
-    // find src/main/java -name "*Application.java" 로 실제 경로 확인 후 수정
     mainClass.set("com.kraft.lotto.KraftLottoApplication")
     targetJavaVersion.set(JavaVersion.VERSION_25)
     archiveFileName.set("app-with-docs.jar")

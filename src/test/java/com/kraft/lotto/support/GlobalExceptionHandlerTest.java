@@ -50,4 +50,12 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getStatusCode().value()).isEqualTo(404);
         assertThat(response.getBody().error().code()).isEqualTo("RESOURCE_NOT_FOUND");
     }
+
+    @Test
+    @DisplayName("IllegalArgumentException은 일반 요청 검증 오류로 처리한다")
+    void handlesIllegalArgumentAsRequestValidationError() {
+        var response = handler.handleIllegalArgument(new IllegalArgumentException("bad input"));
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody().error().code()).isEqualTo("REQUEST_VALIDATION_ERROR");
+    }
 }

@@ -66,6 +66,11 @@ body {
 .kraft-ball.b5 { background: #b0d840; color: #22330a; }
 .kraft-ball.bonus { outline: 2px dashed var(--bs-primary); outline-offset: 2px; }
 .kraft-ball-plus { color: var(--kraft-muted); margin: 0 4px; user-select: none; }
+[data-bs-theme="dark"] .kraft-ball.b1 { background: #ffd54a; color: #2b2200; }
+[data-bs-theme="dark"] .kraft-ball.b2 { background: #8ad8ff; color: #062f3d; }
+[data-bs-theme="dark"] .kraft-ball.b3 { background: #ff8a8a; color: #2d0000; }
+[data-bs-theme="dark"] .kraft-ball.b4 { background: #c7c7c7; color: #121212; }
+[data-bs-theme="dark"] .kraft-ball.b5 { background: #c9ea63; color: #162400; }
 
 /* 조합 행 */
 .kraft-combo {

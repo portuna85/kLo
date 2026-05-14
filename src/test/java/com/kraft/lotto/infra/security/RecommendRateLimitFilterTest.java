@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -245,5 +246,47 @@ class RecommendRateLimitFilterTest {
 
         assertThat(allowed.get()).isEqualTo(MAX_REQUESTS);
         assertThat(blocked.get()).isEqualTo(threads - MAX_REQUESTS);
+    }
+
+    @Test
+    void concurrentNewIpsDoNotExceedTrackedBucketCapacity() throws Exception {
+        java.lang.reflect.Field field = RecommendRateLimitFilter.class.getDeclaredField("requestHistory");
+        field.setAccessible(true);
+        Map<String, Deque<Long>> history = (Map<String, Deque<Long>>) field.get(filter);
+        long now = System.currentTimeMillis();
+        for (int i = 0; i < RecommendRateLimitFilter.MAX_TRACKED_IPS - 1; i++) {
+            Deque<Long> bucket = new ArrayDeque<>();
+            bucket.addLast(now);
+            history.put("seed." + i, bucket);
+        }
+
+        AtomicInteger blocked = new AtomicInteger(0);
+        CountDownLatch start = new CountDownLatch(1);
+        CountDownLatch done = new CountDownLatch(2);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+
+        String[] ips = {"172.16.10.1", "172.16.10.2"};
+        for (String ip : ips) {
+            executor.submit(() -> {
+                try {
+                    start.await();
+                    int status = executeRequest(postRecommend(ip));
+                    if (status == 429) {
+                        blocked.incrementAndGet();
+                    }
+                } catch (Exception ignored) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    done.countDown();
+                }
+            });
+        }
+
+        start.countDown();
+        assertThat(done.await(5, TimeUnit.SECONDS)).isTrue();
+        executor.shutdown();
+
+        assertThat(history.size()).isEqualTo(RecommendRateLimitFilter.MAX_TRACKED_IPS);
+        assertThat(blocked.get()).isEqualTo(1);
     }
 }

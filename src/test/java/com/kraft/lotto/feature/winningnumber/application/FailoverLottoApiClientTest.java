@@ -79,6 +79,39 @@ class FailoverLottoApiClientTest {
         verify(fallback, times(2)).fetch(anyInt());
     }
 
+    @Test
+    @DisplayName("CLOSED -> OPEN -> HALF_OPEN -> CLOSED 전이를 따른다")
+    void followsCircuitBreakerStateTransitions() throws Exception {
+        CircuitBreakerConfig transitionConfig = CircuitBreakerConfig.custom()
+                .minimumNumberOfCalls(2)
+                .slidingWindowSize(4)
+                .failureRateThreshold(50.0f)
+                .waitDurationInOpenState(Duration.ofMillis(100))
+                .permittedNumberOfCallsInHalfOpenState(1)
+                .recordException(ex -> ex instanceof LottoApiClientException)
+                .build();
+        client = new FailoverLottoApiClient(primary, fallback, CircuitBreaker.of("transition", transitionConfig));
+
+        when(primary.fetch(1)).thenThrow(new LottoApiClientException("down-1"));
+        when(primary.fetch(2)).thenThrow(new LottoApiClientException("down-2"));
+        when(primary.fetch(4)).thenReturn(Optional.of(sample(4)));
+        when(primary.fetch(5)).thenReturn(Optional.of(sample(5)));
+        when(fallback.fetch(anyInt())).thenReturn(Optional.empty());
+
+        client.fetch(1);
+        client.fetch(2);
+        client.fetch(3);
+
+        verify(primary, times(2)).fetch(anyInt());
+        verify(fallback, times(3)).fetch(anyInt());
+
+        Thread.sleep(130);
+        assertThat(client.fetch(4)).isPresent();
+        assertThat(client.fetch(5)).isPresent();
+
+        verify(primary, times(4)).fetch(anyInt());
+    }
+
     private void verifyNoFallback() {
         verify(fallback, never()).fetch(anyInt());
     }

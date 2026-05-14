@@ -117,4 +117,30 @@ class RequiredConfigValidatorTest {
 
         assertThat(problems).anyMatch(it -> it.contains("kraft.api.client"));
     }
+
+    @Test
+    @DisplayName("컨테이너 환경에서는 prod 프로파일이 아니면 실패한다")
+    void failsWhenInContainerButNotProdProfile() {
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("local");
+        env.setProperty("KRAFT_IN_CONTAINER", "true");
+        List<String> problems = new ArrayList<>();
+
+        RequiredConfigValidator.addProfilePolicyProblems(env, problems);
+
+        assertThat(problems).anyMatch(p -> p.contains("requires prod profile"));
+    }
+
+    @Test
+    @DisplayName("컨테이너 외 환경에서는 local 프로파일이 아니면 실패한다")
+    void failsWhenOutsideContainerButNotLocalProfile() {
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("prod");
+        env.setProperty("KRAFT_IN_CONTAINER", "false");
+        List<String> problems = new ArrayList<>();
+
+        RequiredConfigValidator.addProfilePolicyProblems(env, problems);
+
+        assertThat(problems).anyMatch(p -> p.contains("requires local profile"));
+    }
 }

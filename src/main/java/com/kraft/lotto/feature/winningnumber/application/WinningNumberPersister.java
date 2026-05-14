@@ -8,6 +8,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -48,7 +49,11 @@ public class WinningNumberPersister {
         if (repository.existsByRound(round)) {
             return false;
         }
-        repository.save(WinningNumberMapper.toEntity(winningNumber, LocalDateTime.now(clock)));
+        try {
+            repository.save(WinningNumberMapper.toEntity(winningNumber, LocalDateTime.now(clock)));
+        } catch (DataIntegrityViolationException ex) {
+            return false;
+        }
         recordDbSaveLatency(started, "save_if_absent");
         return true;
     }
@@ -67,8 +72,12 @@ public class WinningNumberPersister {
                     return UpsertOutcome.UPDATED;
                 })
                 .orElseGet(() -> {
-                    repository.save(WinningNumberMapper.toEntity(winningNumber, now));
-                    return UpsertOutcome.INSERTED;
+                    try {
+                        repository.save(WinningNumberMapper.toEntity(winningNumber, now));
+                        return UpsertOutcome.INSERTED;
+                    } catch (DataIntegrityViolationException ex) {
+                        return UpsertOutcome.UNCHANGED;
+                    }
                 });
         recordDbSaveLatency(started, switch (outcome) {
             case INSERTED -> "insert";
