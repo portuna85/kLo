@@ -53,10 +53,10 @@ export async function loadFrequency() {
       summary.className = 'small';
 
       const strong = document.createElement('strong');
-      strong.textContent = `Á¶ÇÕ ${history.numbers.join(', ')}`;
-      const firstRounds = history.firstPrizeHits.map((h) => `${h.round}`).join(', ') || '¾øÀ½';
-      const secondRounds = history.secondPrizeHits.map((h) => `${h.round}`).join(', ') || '¾øÀ½';
-      summary.append(strong, ` ¡¤ 1µî ${history.firstPrizeCount}È¸(${firstRounds}) ¡¤ 2µî ${history.secondPrizeCount}È¸(${secondRounds})`);
+      strong.textContent = `ì¡°í•© ${history.numbers.join(', ')}`;
+      const firstRounds = history.firstPrizeHits.map((h) => `${h.round}`).join(', ') || 'ì—†ìŒ';
+      const secondRounds = history.secondPrizeHits.map((h) => `${h.round}`).join(', ') || 'ì—†ìŒ';
+      summary.append(strong, ` Â· 1ë“± ${history.firstPrizeCount}íšŒ(${firstRounds}) Â· 2ë“± ${history.secondPrizeCount}íšŒ(${secondRounds})`);
       lowOut.appendChild(summary);
       setBusy(lowOut, false);
     }

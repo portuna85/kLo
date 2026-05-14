@@ -1,4 +1,4 @@
-﻿name: kraft-lotto
+name: kraft-lotto
 
 services:
   mariadb:
