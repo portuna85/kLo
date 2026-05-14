@@ -1,5 +1,8 @@
+// @ts-check
+
 const numberFormatter = new Intl.NumberFormat('ko-KR');
 
+/** @param {number | string | null | undefined} n */
 export const fmtNum = (n) => numberFormatter.format(Number(n ?? 0));
 
 export function createSkeleton(widthClass = 'col-7') {
@@ -11,10 +14,12 @@ export function createSkeleton(widthClass = 'col-7') {
   return wrap;
 }
 
+/** @param {Element} container */
 export function showSkeleton(container, widthClass = 'col-7') {
   container.replaceChildren(createSkeleton(widthClass));
 }
 
+/** @param {Element} container */
 export function setTextMessage(container, text, className = 'small mb-0') {
   container.replaceChildren();
   const p = document.createElement('p');
@@ -23,22 +28,25 @@ export function setTextMessage(container, text, className = 'small mb-0') {
   container.appendChild(p);
 }
 
+/** @template T @param {Element | null} btn @param {() => Promise<T>} fn */
 export async function withLoading(btn, fn) {
-  if (!btn) return fn();
+  if (!(btn instanceof HTMLElement)) return fn();
   const prev = btn.innerHTML;
-  btn.disabled = true;
   btn.setAttribute('aria-busy', 'true');
+  btn.setAttribute('disabled', 'true');
   try {
     return await fn();
   } finally {
-    btn.disabled = false;
+    btn.removeAttribute('disabled');
     btn.removeAttribute('aria-busy');
     btn.innerHTML = prev;
   }
 }
 
+/** @param {number} n */
 const ballClass = (n) => (n <= 10 ? 'b1' : n <= 20 ? 'b2' : n <= 30 ? 'b3' : n <= 40 ? 'b4' : 'b5');
 
+/** @param {number} n */
 function ball(n, bonus = false) {
   const span = document.createElement('span');
   span.className = `kraft-ball ${ballClass(n)}${bonus ? ' bonus' : ''}`;
@@ -46,6 +54,7 @@ function ball(n, bonus = false) {
   return span;
 }
 
+/** @param {number[]} numbers */
 export function ballsRow(numbers, bonus) {
   const wrap = document.createElement('div');
   wrap.className = 'kraft-balls';
@@ -60,16 +69,18 @@ export function ballsRow(numbers, bonus) {
   return wrap;
 }
 
+/** @param {{round:number,drawDate:string,numbers:number[],bonusNumber:number,firstPrize:number,firstWinners:number,totalSales:number}} wn */
 export function renderWinning(wn, container) {
   container.replaceChildren();
   const head = document.createElement('div');
   head.className = 'd-flex justify-content-between align-items-center mb-2';
 
   const roundStrong = document.createElement('strong');
-  roundStrong.textContent = `${wn.round}회`;
+  roundStrong.textContent = `${wn.round}th`;
   const dateSpan = document.createElement('span');
   dateSpan.className = 'text-muted small';
   dateSpan.textContent = wn.drawDate;
+
   head.appendChild(roundStrong);
   head.appendChild(dateSpan);
   container.appendChild(head);
@@ -78,9 +89,9 @@ export function renderWinning(wn, container) {
   const dl = document.createElement('dl');
   dl.className = 'kraft-kv';
   const kv = [
-    ['1등 당첨금', `${fmtNum(wn.firstPrize)}원`],
-    ['1등 당첨자', `${fmtNum(wn.firstWinners)}명`],
-    ['총 판매금', `${fmtNum(wn.totalSales)}원`]
+    ['1st prize', `${fmtNum(wn.firstPrize)} KRW`],
+    ['1st winners', `${fmtNum(wn.firstWinners)} people`],
+    ['Total sales', `${fmtNum(wn.totalSales)} KRW`]
   ];
   kv.forEach(([k, v]) => {
     const dt = document.createElement('dt');

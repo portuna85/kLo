@@ -1,11 +1,16 @@
+// @ts-check
+
 import { api } from './api.js';
 import { setTextMessage, showSkeleton } from './ui.js';
 
 export async function loadFrequency() {
   const out = document.getElementById('freq-result');
   const lowOut = document.getElementById('freq-low6-result');
+  if (!out) return;
+
   showSkeleton(out, 'col-12');
   if (lowOut) showSkeleton(lowOut, 'col-8');
+
   try {
     const summaryData = await api('/api/winning-numbers/stats/frequency-summary');
     const data = summaryData.frequencies;
@@ -18,17 +23,21 @@ export async function loadFrequency() {
       const cell = document.createElement('div');
       cell.className = 'kraft-freq-cell';
       if (lowSix.has(number)) cell.classList.add('low-freq');
+
       const pct = Math.round((count / max) * 100);
       const n = document.createElement('span');
       n.className = 'n';
-      n.textContent = number;
+      n.textContent = String(number);
+
       const bar = document.createElement('div');
       bar.className = 'bar';
       const i = document.createElement('i');
       i.style.width = `${pct}%`;
       bar.appendChild(i);
+
       const small = document.createElement('small');
-      small.textContent = count;
+      small.textContent = String(count);
+
       cell.appendChild(n);
       cell.appendChild(bar);
       cell.appendChild(small);
@@ -41,15 +50,16 @@ export async function loadFrequency() {
       const history = summaryData.lowSixCombinationHistory;
       const summary = document.createElement('div');
       summary.className = 'small';
+
       const strong = document.createElement('strong');
-      strong.textContent = `조합 ${history.numbers.join(', ')}`;
-      const firstRounds = history.firstPrizeHits.map((h) => `${h.round}회`).join(', ') || '없음';
-      const secondRounds = history.secondPrizeHits.map((h) => `${h.round}회`).join(', ') || '없음';
-      summary.append(strong, ` · 1등 ${history.firstPrizeCount}회 (${firstRounds}) · 2등 ${history.secondPrizeCount}회 (${secondRounds})`);
+      strong.textContent = `Combination ${history.numbers.join(', ')}`;
+      const firstRounds = history.firstPrizeHits.map((h) => `${h.round}`).join(', ') || 'none';
+      const secondRounds = history.secondPrizeHits.map((h) => `${h.round}`).join(', ') || 'none';
+      summary.append(strong, ` | 1st: ${history.firstPrizeCount} (${firstRounds}) | 2nd: ${history.secondPrizeCount} (${secondRounds})`);
       lowOut.appendChild(summary);
     }
   } catch (err) {
-    setTextMessage(out, err.message, 'text-danger small mb-0');
-    if (lowOut) setTextMessage(lowOut, err.message, 'text-danger small mb-0');
+    setTextMessage(out, /** @type {Error} */ (err).message, 'text-danger small mb-0');
+    if (lowOut) setTextMessage(lowOut, /** @type {Error} */ (err).message, 'text-danger small mb-0');
   }
 }

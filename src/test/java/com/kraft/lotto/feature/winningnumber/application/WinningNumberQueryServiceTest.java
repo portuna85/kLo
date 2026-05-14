@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import com.kraft.lotto.feature.statistics.application.WinningStatisticsService;
 import com.kraft.lotto.feature.winningnumber.domain.LottoCombination;
 import com.kraft.lotto.feature.winningnumber.domain.WinningNumber;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberEntity;
@@ -38,7 +39,7 @@ class WinningNumberQueryServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new WinningNumberQueryService(repository);
+        service = new WinningNumberQueryService(repository, new WinningStatisticsService(repository));
     }
 
     private static WinningNumberEntity entity(int round) {
@@ -131,8 +132,8 @@ class WinningNumberQueryServiceTest {
     @Test
     @DisplayName("조합 이력 캐시 키는 순서에 상관없이 동일하다")
     void combinationHistoryCacheKeyIsOrderInsensitive() {
-        String key1 = WinningNumberQueryService.combinationHistoryCacheKey(List.of(1, 7, 13, 22, 34, 45));
-        String key2 = WinningNumberQueryService.combinationHistoryCacheKey(List.of(45, 22, 13, 7, 34, 1));
+        String key1 = WinningStatisticsService.combinationHistoryCacheKey(List.of(1, 7, 13, 22, 34, 45));
+        String key2 = WinningStatisticsService.combinationHistoryCacheKey(List.of(45, 22, 13, 7, 34, 1));
         Assertions.assertEquals(key1, key2);
     }
 }

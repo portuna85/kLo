@@ -137,11 +137,19 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
                 return existing;
             }
             if (requestHistory.size() >= MAX_TRACKED_IPS) {
+                if (properties.capacityExceededPolicy() == KraftRecommendRateLimitProperties.CapacityExceededPolicy.BLOCK) {
+                    meterRegistry.counter("kraft.api.rate_limit.requests", "endpoint", endpoint.id,
+                            "result", "blocked", "reason", "capacity_exceeded").increment();
+                    log.warn("rate limit bucket capacity exceeded and blocked: endpoint={}, trackedBuckets={}",
+                            endpoint.id, requestHistory.size());
+                    return null;
+                }
+                String evictedKey = requestHistory.keySet().iterator().next();
+                requestHistory.remove(evictedKey);
                 meterRegistry.counter("kraft.api.rate_limit.requests", "endpoint", endpoint.id,
-                        "result", "blocked", "reason", "capacity_exceeded").increment();
-                log.warn("rate limit bucket capacity exceeded: endpoint={}, trackedBuckets={}",
-                        endpoint.id, requestHistory.size());
-                return null;
+                        "result", "allowed", "reason", "capacity_evicted_oldest").increment();
+                log.warn("rate limit bucket capacity exceeded, evicted oldest bucket: endpoint={}, evictedKey={}",
+                        endpoint.id, evictedKey);
             }
             Deque<Long> created = new ArrayDeque<>();
             requestHistory.put(key, created);

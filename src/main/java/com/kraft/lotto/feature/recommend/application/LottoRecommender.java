@@ -89,5 +89,7 @@ public class LottoRecommender {
         }
         meterRegistry.summary("kraft.recommend.rejection.rate")
                 .record((double) rejected / attempts);
+        meterRegistry.counter("kraft.recommend.rejection.count").increment(rejected);
+        meterRegistry.counter("kraft.recommend.attempt.count").increment(attempts);
     }
 }

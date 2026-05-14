@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record KraftRecommendRateLimitProperties(
         int maxRequests,
         int windowSeconds,
+        CapacityExceededPolicy capacityExceededPolicy,
         boolean trustForwardedHeaders,
         java.util.List<String> trustedProxyIps,
         Endpoint recommend,
@@ -13,12 +14,13 @@ public record KraftRecommendRateLimitProperties(
 ) {
 
     public KraftRecommendRateLimitProperties(int maxRequests, int windowSeconds) {
-        this(maxRequests, windowSeconds, false, java.util.List.of(), null, null);
+        this(maxRequests, windowSeconds, CapacityExceededPolicy.EVICT_OLDEST, false, java.util.List.of(), null, null);
     }
 
     public KraftRecommendRateLimitProperties {
         validatePositive("kraft.recommend.rate-limit.max-requests", maxRequests);
         validatePositive("kraft.recommend.rate-limit.window-seconds", windowSeconds);
+        capacityExceededPolicy = capacityExceededPolicy == null ? CapacityExceededPolicy.EVICT_OLDEST : capacityExceededPolicy;
         trustedProxyIps = trustedProxyIps == null ? java.util.List.of()
                 : trustedProxyIps.stream().filter(it -> it != null && !it.isBlank()).map(String::trim).toList();
         recommend = Endpoint.withDefaults(recommend, maxRequests, windowSeconds);
@@ -26,7 +28,7 @@ public record KraftRecommendRateLimitProperties(
     }
 
     public KraftRecommendRateLimitProperties() {
-        this(30, 60, false, java.util.List.of(), null, null);
+        this(30, 60, CapacityExceededPolicy.EVICT_OLDEST, false, java.util.List.of(), null, null);
     }
 
     public Endpoint endpoint(String endpointName) {
@@ -52,5 +54,10 @@ public record KraftRecommendRateLimitProperties(
         static Endpoint withDefaults(Endpoint endpoint, int defaultMaxRequests, int defaultWindowSeconds) {
             return endpoint == null ? new Endpoint(defaultMaxRequests, defaultWindowSeconds) : endpoint;
         }
+    }
+
+    public enum CapacityExceededPolicy {
+        BLOCK,
+        EVICT_OLDEST
     }
 }

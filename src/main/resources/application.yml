@@ -40,6 +40,10 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  data:
+    redis:
+      repositories:
+        enabled: false
   cache:
     type: caffeine
     cache-names:
@@ -85,6 +89,10 @@ management:
           include: readinessState,db
 
 kraft:
+  db:
+    connectivity-check:
+      enabled: ${KRAFT_DB_CONNECTIVITY_CHECK_ENABLED:true}
+      timeout-ms: ${KRAFT_DB_CONNECTIVITY_CHECK_TIMEOUT_MS:1500}
   lotto:
     scheduler:
       enabled: ${KRAFT_LOTTO_SCHEDULER_ENABLED:true}
@@ -133,6 +141,7 @@ kraft:
     rate-limit:
       max-requests: ${KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS:30}
       window-seconds: ${KRAFT_RECOMMEND_RATE_LIMIT_WINDOW_SECONDS:60}
+      capacity-exceeded-policy: ${KRAFT_RECOMMEND_RATE_LIMIT_CAPACITY_EXCEEDED_POLICY:EVICT_OLDEST}
       trust-forwarded-headers: ${KRAFT_RECOMMEND_RATE_LIMIT_TRUST_FORWARDED_HEADERS:false}
       trusted-proxy-ips: ${KRAFT_RECOMMEND_RATE_LIMIT_TRUSTED_PROXY_IPS:127.0.0.1,::1}
       redis:

@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.kraft.lotto.feature.recommend.domain.BirthdayBiasRule;
 import com.kraft.lotto.feature.recommend.domain.ExclusionRule;
 import com.kraft.lotto.feature.winningnumber.domain.LottoCombination;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.DisplayName;
@@ -66,6 +67,24 @@ class LottoRecommenderTest {
                 .recommend(10);
 
         result.forEach(c -> assertThat(c.numbers().stream().anyMatch(n -> n > 31)).isTrue());
+    }
+
+    @Test
+    @DisplayName("추천 시 reject 메트릭을 기록한다")
+    void recordsRejectionMetrics() {
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        LottoRecommender recommender = new LottoRecommender(
+                List.of(),
+                new RandomLottoNumberGenerator(new Random(42L)),
+                LARGE_BUDGET,
+                registry
+        );
+
+        recommender.recommend(5);
+
+        assertThat(registry.find("kraft.recommend.rejection.rate").summary()).isNotNull();
+        assertThat(registry.find("kraft.recommend.rejection.count").counter()).isNotNull();
+        assertThat(registry.find("kraft.recommend.attempt.count").counter()).isNotNull();
     }
 }
 

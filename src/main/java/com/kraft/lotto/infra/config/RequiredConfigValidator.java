@@ -1,6 +1,8 @@
 package com.kraft.lotto.infra.config;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -38,6 +40,8 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
 
     private static final Pattern JDBC_URL_PATTERN =
             Pattern.compile("^jdbc:[a-zA-Z0-9]+://([A-Za-z0-9._-]+)");
+    private static final Pattern JDBC_ENDPOINT_PATTERN =
+            Pattern.compile("^jdbc:[a-zA-Z0-9]+://([A-Za-z0-9._-]+)(?::(\\d+))?");
 
     public static List<String> requiredDeployEnvVars() {
         return REQUIRED_DEPLOY_ENV_VARS;
@@ -75,6 +79,17 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
                         "  - [spring.datasource.url] DB host is not resolvable by DNS: '" + host + "'\n"
                                 + "      - For local runtime, set KRAFT_DB_LOCAL_HOST=localhost or adjust KRAFT_DB_URL\n"
                                 + "      - To skip host rewrite, set KRAFT_DB_HOST_REWRITE=false"
+                );
+            }
+            JdbcEndpoint endpoint = extractJdbcEndpoint(jdbcUrl);
+            boolean checkEnabled = Boolean.parseBoolean(env.getProperty("kraft.db.connectivity-check.enabled", "true"));
+            int timeoutMs = Integer.parseInt(env.getProperty("kraft.db.connectivity-check.timeout-ms", "1500"));
+            if (checkEnabled && endpoint != null && !isTcpReachable(endpoint.host(), endpoint.port(), timeoutMs)) {
+                problems.add(
+                        "  - [spring.datasource.url] DB endpoint is not reachable: " + endpoint.host() + ":" + endpoint.port() + "\n"
+                                + "      - Ensure DB is running and reachable from this host\n"
+                                + "      - For local docker-compose, start DB first: docker compose up -d\n"
+                                + "      - To skip this precheck, set kraft.db.connectivity-check.enabled=false"
                 );
             }
         }
@@ -193,6 +208,17 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
         return m.find() ? m.group(1) : null;
     }
 
+    static JdbcEndpoint extractJdbcEndpoint(String jdbcUrl) {
+        Matcher m = JDBC_ENDPOINT_PATTERN.matcher(jdbcUrl);
+        if (!m.find()) {
+            return null;
+        }
+        String host = m.group(1);
+        String portRaw = m.group(2);
+        int port = (portRaw == null || portRaw.isBlank()) ? 3306 : Integer.parseInt(portRaw);
+        return new JdbcEndpoint(host, port);
+    }
+
     private static boolean isHostResolvable(String host) {
         if ("localhost".equalsIgnoreCase(host) || host.startsWith("127.") || "::1".equals(host)) {
             return true;
@@ -205,9 +231,21 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
         }
     }
 
+    private static boolean isTcpReachable(String host, int port, int timeoutMs) {
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(host, port), Math.max(timeoutMs, 100));
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
     private static boolean isRunningUnderTest(ConfigurableEnvironment env) {
         return System.getProperty("org.gradle.test.worker") != null
                 || "true".equalsIgnoreCase(System.getProperty("kraft.skip.required-config-validator"))
                 || Boolean.parseBoolean(env.getProperty("kraft.skip.required-config-validator", "false"));
+    }
+
+    record JdbcEndpoint(String host, int port) {
     }
 }

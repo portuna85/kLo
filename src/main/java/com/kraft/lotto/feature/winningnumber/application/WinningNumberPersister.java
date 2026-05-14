@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Component
 public class WinningNumberPersister {
+    private static final int UPSERT_MAX_RETRIES_ON_OPTIMISTIC_LOCK = 2;
 
     private final WinningNumberRepository repository;
     private final Clock clock;
@@ -61,8 +63,28 @@ public class WinningNumberPersister {
     @Transactional
     public UpsertOutcome upsert(WinningNumber winningNumber) {
         long started = System.nanoTime();
+        UpsertOutcome outcome = UpsertOutcome.UNCHANGED;
+        for (int attempt = 1; attempt <= UPSERT_MAX_RETRIES_ON_OPTIMISTIC_LOCK; attempt++) {
+            try {
+                outcome = doUpsert(winningNumber);
+                break;
+            } catch (OptimisticLockingFailureException ex) {
+                if (attempt == UPSERT_MAX_RETRIES_ON_OPTIMISTIC_LOCK) {
+                    outcome = UpsertOutcome.UNCHANGED;
+                }
+            }
+        }
+        recordDbSaveLatency(started, switch (outcome) {
+            case INSERTED -> "insert";
+            case UPDATED -> "update";
+            case UNCHANGED -> "unchanged";
+        });
+        return outcome;
+    }
+
+    private UpsertOutcome doUpsert(WinningNumber winningNumber) {
         LocalDateTime now = LocalDateTime.now(clock);
-        UpsertOutcome outcome = repository.findById(winningNumber.round())
+        return repository.findById(winningNumber.round())
                 .map(existing -> {
                     var incoming = WinningNumberMapper.toEntity(winningNumber, now);
                     if (isSame(existing, incoming)) {
@@ -79,12 +101,6 @@ public class WinningNumberPersister {
                         return UpsertOutcome.UNCHANGED;
                     }
                 });
-        recordDbSaveLatency(started, switch (outcome) {
-            case INSERTED -> "insert";
-            case UPDATED -> "update";
-            case UNCHANGED -> "unchanged";
-        });
-        return outcome;
     }
 
     private static boolean isSame(com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberEntity existing,

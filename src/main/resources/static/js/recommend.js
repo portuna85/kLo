@@ -1,3 +1,5 @@
+// @ts-check
+
 import { api } from './api.js';
 import { ballsRow, setTextMessage, showSkeleton, withLoading } from './ui.js';
 
@@ -5,12 +7,15 @@ export function bindRecommendForm() {
   document.getElementById('form-recommend')?.addEventListener('submit', onRecommend);
 }
 
+/** @param {SubmitEvent} e */
 async function onRecommend(e) {
   e.preventDefault();
-  const fd = new FormData(e.currentTarget);
+  const form = /** @type {HTMLFormElement} */ (e.currentTarget);
+  const fd = new FormData(form);
   const count = Number(fd.get('count') || 5);
   const out = document.getElementById('recommend-result');
-  const btn = e.currentTarget.querySelector('[type="submit"]');
+  const btn = form.querySelector('[type="submit"]');
+  if (!out) return;
   showSkeleton(out);
 
   await withLoading(btn, async () => {
@@ -33,7 +38,7 @@ async function onRecommend(e) {
       });
       out.replaceChildren(fragment);
     } catch (err) {
-      setTextMessage(out, err.message, 'text-danger small mb-0');
+      setTextMessage(out, /** @type {Error} */ (err).message, 'text-danger small mb-0');
     }
   });
 }

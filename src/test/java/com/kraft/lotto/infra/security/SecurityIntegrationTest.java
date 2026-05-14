@@ -118,7 +118,7 @@ class SecurityIntegrationTest {
     void winningNumberRefreshIsAccessibleWithAdminToken() throws Exception {
         givenSecurityProperties();
         Mockito.when(collectService.collect(Mockito.nullable(Integer.class)))
-                .thenReturn(new CollectResponse(0, 0, 0, 0));
+                .thenReturn(CollectResponse.of(0, 0, 0, 0, List.of(), false, null, false));
 
         mockMvc.perform(post("/api/winning-numbers/refresh")
                         .header("X-Kraft-Admin-Token", "test-admin-token")
@@ -136,7 +136,7 @@ class SecurityIntegrationTest {
     void winningNumberRefreshIsRateLimitedByIp() throws Exception {
         givenSecurityProperties();
         Mockito.when(collectService.collect(Mockito.nullable(Integer.class)))
-                .thenReturn(new CollectResponse(0, 0, 0, 0));
+                .thenReturn(CollectResponse.of(0, 0, 0, 0, List.of(), false, null, false));
 
         for (int i = 0; i < 10; i++) {
             mockMvc.perform(post("/api/winning-numbers/refresh")

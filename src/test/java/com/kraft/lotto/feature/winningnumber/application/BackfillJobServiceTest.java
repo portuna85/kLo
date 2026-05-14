@@ -44,7 +44,7 @@ class BackfillJobServiceTest {
                 firstJobStarted.countDown();
                 assertThat(releaseFirstJob.await(1, TimeUnit.SECONDS)).isTrue();
             }
-            return new CollectResponse(1, 0, 0, invocation.getArgument(1, Integer.class), List.of());
+            return CollectResponse.of(1, 0, 0, invocation.getArgument(1, Integer.class), List.of(), false, null, false);
         });
         service = new BackfillJobService(
                 collectionService,
@@ -80,7 +80,7 @@ class BackfillJobServiceTest {
     void getCleansUpExpiredCompletedJobs() {
         LottoCollectionService collectionService = mock(LottoCollectionService.class);
         when(collectionService.backfill(anyInt(), anyInt()))
-                .thenReturn(new CollectResponse(1, 0, 0, 1, List.of()));
+                .thenReturn(CollectResponse.of(1, 0, 0, 1, List.of(), false, null, false));
         MutableClock clock = new MutableClock(Instant.parse("2026-05-12T00:00:00Z"));
         service = new BackfillJobService(
                 collectionService,

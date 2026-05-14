@@ -1,0 +1,17 @@
+{
+  "name": "klo-frontend-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "@playwright/test": "^1.53.0",
+    "jsdom": "^26.1.0",
+    "typescript": "^5.8.3",
+    "vitest": "^2.1.8"
+  }
+}

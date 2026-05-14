@@ -24,6 +24,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 
 @DisplayName("당첨번호 저장기 테스트")
 class WinningNumberPersisterTest {
@@ -129,6 +130,31 @@ class WinningNumberPersisterTest {
         UpsertOutcome outcome = persister.upsert(winningNumber);
 
         assertThat(outcome).isEqualTo(UpsertOutcome.UNCHANGED);
+    }
+
+    @Test
+    @DisplayName("upsert는 낙관적 락 충돌 시 재시도 후 성공하면 UPDATED를 반환한다")
+    void upsertRetriesOnOptimisticLockAndSucceeds() {
+        WinningNumber incoming = new WinningNumber(
+                1200,
+                LocalDate.of(2026, 5, 10),
+                new LottoCombination(List.of(1, 2, 3, 4, 5, 6)),
+                7,
+                3_000_000_000L,
+                9,
+                80_000_000_000L,
+                30_000_000_000L,
+                "{\"returnValue\":\"success\"}",
+                null
+        );
+        WinningNumberEntity existingEntity = entityFrom(sample(1200));
+        when(repository.findById(1200))
+                .thenThrow(new OptimisticLockingFailureException("conflict"))
+                .thenReturn(Optional.of(existingEntity));
+
+        UpsertOutcome outcome = persister.upsert(incoming);
+
+        assertThat(outcome).isEqualTo(UpsertOutcome.UPDATED);
     }
 
     private WinningNumber sample(int round) {

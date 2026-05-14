@@ -65,23 +65,4 @@ public record CollectResponse(
     public static CollectResponse ofFailed(List<Integer> failedRounds, int latestRound, boolean notDrawn) {
         return of(0, 0, 0, latestRound, failedRounds, false, null, notDrawn);
     }
-
-    public CollectResponse(int collected, int skipped, int failed, int latestRound) {
-        this(collected, 0, skipped, failed, latestRound, List.of(), false, null, false, collected > 0);
-    }
-
-    public CollectResponse(int collected, int skipped, int failed, int latestRound, List<Integer> failedRounds) {
-        this(collected, 0, skipped, failed, latestRound, failedRounds, false, null, false, collected > 0);
-    }
-
-    public CollectResponse(int collected,
-                           int skipped,
-                           int failed,
-                           int latestRound,
-                           List<Integer> failedRounds,
-                           boolean truncated,
-                           Integer nextRound,
-                           boolean notDrawn) {
-        this(collected, 0, skipped, failed, latestRound, failedRounds, truncated, nextRound, notDrawn, collected > 0);
-    }
 }

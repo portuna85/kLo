@@ -41,5 +41,6 @@ kraft:
     client: ${KRAFT_API_CLIENT:real}
   recommend:
     rate-limit:
+      capacity-exceeded-policy: ${KRAFT_RECOMMEND_RATE_LIMIT_CAPACITY_EXCEEDED_POLICY:EVICT_OLDEST}
       redis:
         enabled: ${KRAFT_RECOMMEND_RATE_LIMIT_REDIS_ENABLED:true}

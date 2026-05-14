@@ -30,7 +30,15 @@ class RecommendRateLimitFilterTest {
     @BeforeEach
     void setUp() {
         filter = new RecommendRateLimitFilter(
-                new KraftRecommendRateLimitProperties(MAX_REQUESTS, WINDOW_SECONDS),
+                new KraftRecommendRateLimitProperties(
+                        MAX_REQUESTS,
+                        WINDOW_SECONDS,
+                        KraftRecommendRateLimitProperties.CapacityExceededPolicy.BLOCK,
+                        false,
+                        java.util.List.of(),
+                        null,
+                        null
+                ),
                 new ObjectMapper(),
                 new SimpleMeterRegistry()
         );
@@ -122,6 +130,7 @@ class RecommendRateLimitFilterTest {
                 new KraftRecommendRateLimitProperties(
                         MAX_REQUESTS,
                         WINDOW_SECONDS,
+                        KraftRecommendRateLimitProperties.CapacityExceededPolicy.BLOCK,
                         true,
                         java.util.List.of("127.0.0.1"),
                         null,
@@ -180,6 +189,7 @@ class RecommendRateLimitFilterTest {
                 new KraftRecommendRateLimitProperties(
                         3,
                         60,
+                        KraftRecommendRateLimitProperties.CapacityExceededPolicy.BLOCK,
                         false,
                         java.util.List.of(),
                         new KraftRecommendRateLimitProperties.Endpoint(3, 60),

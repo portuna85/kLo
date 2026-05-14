@@ -1,3 +1,5 @@
+// @ts-check
+
 import { bindListControls, loadList } from './pagination.js';
 import { bindRecommendForm } from './recommend.js';
 import { bindThemeToggle, initTheme } from './theme.js';
