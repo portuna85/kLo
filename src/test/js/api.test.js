@@ -28,7 +28,7 @@ describe('api', () => {
       json: async () => ({ success: false, error: { code: 'LOTTO_INVALID_COUNT', message: 'x' } })
     });
 
-    await expect(api('/bad')).rejects.toThrow('between 1 and 10');
+    await expect(api('/bad')).rejects.toThrow('추천 개수는 1~10 사이여야 합니다.');
   });
 
   it('throws network message on TypeError', async () => {

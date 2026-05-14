@@ -1,7 +1,7 @@
 // @ts-check
 
 import { api } from './api.js';
-import { ballsRow, fmtNum, setTextMessage, showSkeleton } from './ui.js';
+import { ballsRow, fmtNum, setBusy, setTextMessage, showSkeleton } from './ui.js';
 
 /** @type {{ page: number, size: number, totalPages: number, totalElements: number, abortCtrl: AbortController | null }} */
 const listState = { page: 0, size: 20, totalPages: 0, totalElements: 0, abortCtrl: null };
@@ -11,7 +11,7 @@ function renderList(pageData) {
   const out = document.getElementById('list-result');
   if (!out) return;
   if (!pageData.content || pageData.content.length === 0) {
-    setTextMessage(out, 'No winning numbers found.', 'text-muted small mb-0');
+    setTextMessage(out, '당첨 번호가 없습니다.', 'text-muted small mb-0');
     return;
   }
   const fragment = document.createDocumentFragment();
@@ -21,7 +21,7 @@ function renderList(pageData) {
 
     const r = document.createElement('span');
     r.className = 'round';
-    r.textContent = `${wn.round}th`;
+    r.textContent = `${wn.round}회`;
 
     const d = document.createElement('span');
     d.className = 'date';
@@ -42,9 +42,11 @@ function updatePager() {
   if (!info || !prev || !next) return;
 
   const cur = listState.totalPages === 0 ? 0 : listState.page + 1;
-  info.textContent = `${cur} / ${listState.totalPages} pages, total ${fmtNum(listState.totalElements)}`;
+  info.textContent = `${cur} / ${listState.totalPages} 페이지, 총 ${fmtNum(listState.totalElements)}건`;
   prev.disabled = listState.page <= 0;
   next.disabled = listState.totalPages === 0 || listState.page >= listState.totalPages - 1;
+  prev.setAttribute('aria-disabled', prev.disabled ? 'true' : 'false');
+  next.setAttribute('aria-disabled', next.disabled ? 'true' : 'false');
 }
 
 export async function loadList() {
@@ -57,11 +59,12 @@ export async function loadList() {
   showSkeleton(out, 'col-12');
 
   try {
-    const data = await api(`/api/winning-numbers?page=${listState.page}&size=${listState.size}`, { signal });
+    const data = await api(`/api/v1/winning-numbers?page=${listState.page}&size=${listState.size}`, { signal });
     listState.abortCtrl = null;
     listState.totalPages = data.totalPages;
     listState.totalElements = data.totalElements;
     renderList(data);
+    setBusy(out, false);
     updatePager();
   } catch (err) {
     if (err && typeof err === 'object' && 'name' in err && err.name === 'AbortError') return;
@@ -70,23 +73,28 @@ export async function loadList() {
   }
 }
 
-export function bindListControls() {
-  document.getElementById('list-prev')?.addEventListener('click', () => {
+export function bindListControls(root = document) {
+  root.getElementById('list-prev')?.addEventListener('click', () => {
     if (listState.page > 0) {
       listState.page -= 1;
       loadList();
     }
   });
-  document.getElementById('list-next')?.addEventListener('click', () => {
+  root.getElementById('list-next')?.addEventListener('click', () => {
     if (listState.page < listState.totalPages - 1) {
       listState.page += 1;
       loadList();
     }
   });
-  document.getElementById('list-size')?.addEventListener('change', (e) => {
+  root.getElementById('list-size')?.addEventListener('change', (e) => {
     const target = /** @type {HTMLSelectElement} */ (e.target);
     listState.size = Number(target.value) || 20;
     listState.page = 0;
     loadList();
   });
+}
+
+export function mountPagination(root = document) {
+  bindListControls(root);
+  void loadList();
 }

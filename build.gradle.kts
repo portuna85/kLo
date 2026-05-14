@@ -2,6 +2,7 @@
     java
     id("org.springframework.boot") version "4.0.5"
     id("io.spring.dependency-management") version "1.1.7"
+    id("info.solidsoft.pitest") version "1.19.0-rc.2"
     jacoco
 }
 
@@ -68,6 +69,12 @@ tasks.withType<Test>().configureEach {
     outputs.dir(snippetsDir)
 }
 
+tasks.named<Test>("test") {
+    useJUnitPlatform {
+        excludeTags("it")
+    }
+}
+
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
 }
@@ -107,8 +114,49 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
 tasks.register<Test>("integrationTest") {
     group = "verification"
     description = "Runs integration tests tagged with @Tag(\"it\")"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
     useJUnitPlatform { includeTags("it") }
     shouldRunAfter("test")
+}
+
+tasks.register<Test>("performanceSmokeTest") {
+    group = "verification"
+    description = "Runs lightweight performance smoke tests tagged with @Tag(\"perf\")"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform { includeTags("perf") }
+    shouldRunAfter("integrationTest")
+}
+
+pitest {
+    junit5PluginVersion.set("1.2.1")
+    targetClasses.set(
+        setOf(
+            "com.kraft.lotto.feature.recommend.domain.*",
+            "com.kraft.lotto.feature.winningnumber.domain.*"
+        )
+    )
+    targetTests.set(
+        setOf(
+            "com.kraft.lotto.feature.recommend.domain.*",
+            "com.kraft.lotto.feature.winningnumber.domain.*"
+        )
+    )
+    excludedClasses.set(
+        setOf(
+            "com.kraft.lotto.feature.recommend.domain.ExclusionRule",
+            "com.kraft.lotto.feature.recommend.domain.PastWinningCache"
+        )
+    )
+    excludedMethods.set(setOf("reason"))
+    mutators.set(setOf("STRONGER"))
+    threads.set(2)
+    useClasspathFile.set(true)
+    outputFormats.set(setOf("HTML", "XML"))
+    timestampedReports.set(false)
+    failWhenNoMutations.set(false)
+    mutationThreshold.set(80)
 }
 
 tasks.named("check") {

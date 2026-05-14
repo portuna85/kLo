@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.kraft.lotto.feature.winningnumber.application.LottoCollectionService;
+import com.kraft.lotto.infra.web.LegacyApiDeprecationHeaderFilter;
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
 import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
@@ -49,6 +50,7 @@ class WinningNumberCollectControllerTest {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new WinningNumberCollectController(collectService))
                 .setControllerAdvice(new GlobalExceptionHandler())
+                .addFilters(new LegacyApiDeprecationHeaderFilter())
                 .apply(documentationConfiguration(restDocumentation))
                 .build();
     }
@@ -62,7 +64,7 @@ class WinningNumberCollectControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Deprecation", "true"))
                 .andExpect(header().string("Sunset", "Thu, 31 Jul 2026 23:59:59 GMT"))
-                .andExpect(header().string("Link", "</admin/lotto/draws/collect-next>; rel=\"successor-version\""))
+                .andExpect(header().string("Link", "</api/v1/winning-numbers/refresh>; rel=\"successor-version\""))
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.collected").value(3))
                 .andExpect(jsonPath("$.data.updated").value(0))

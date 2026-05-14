@@ -1,21 +1,27 @@
 // @ts-check
 
 import { api } from './api.js';
-import { renderWinning, setTextMessage, showSkeleton, withLoading } from './ui.js';
+import { renderWinning, setBusy, setTextMessage, showSkeleton, withLoading } from './ui.js';
 
 export async function loadLatest() {
   const out = document.getElementById('latest-result');
   if (!out) return;
+  setBusy(out, true);
   try {
-    const data = await api('/api/winning-numbers/latest');
+    const data = await api('/api/v1/winning-numbers/latest');
     renderWinning(data, out);
   } catch (err) {
     setTextMessage(out, /** @type {Error} */ (err).message, 'text-danger small mb-0');
   }
 }
 
-export function bindByRoundForm() {
-  document.getElementById('form-by-round')?.addEventListener('submit', onByRound);
+export function bindByRoundForm(root = document) {
+  root.getElementById('form-by-round')?.addEventListener('submit', onByRound);
+}
+
+export function mountWinning(root = document) {
+  bindByRoundForm(root);
+  void loadLatest();
 }
 
 /** @param {SubmitEvent} e */
@@ -28,7 +34,7 @@ async function onByRound(e) {
   if (!out) return;
 
   if (!Number.isInteger(round) || round < 1) {
-    setTextMessage(out, 'Please enter a valid round number (>= 1).', 'text-danger small mb-0');
+    setTextMessage(out, '유효한 회차 번호를 입력해 주세요. (1 이상)', 'text-danger small mb-0');
     return;
   }
 
@@ -37,8 +43,9 @@ async function onByRound(e) {
 
   await withLoading(btn, async () => {
     try {
-      const data = await api(`/api/winning-numbers/${round}`);
+      const data = await api(`/api/v1/winning-numbers/${round}`);
       renderWinning(data, out);
+      setBusy(out, false);
     } catch (err) {
       setTextMessage(out, /** @type {Error} */ (err).message, 'text-danger small mb-0');
     }

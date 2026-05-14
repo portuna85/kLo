@@ -1,9 +1,26 @@
-* text=auto
+* text=auto eol=lf
 
-*.sh text eol=lf
-gradlew text eol=lf
-Dockerfile text eol=lf
-*.yml text eol=lf
-*.yaml text eol=lf
+# Force UTF-8 text files that may contain Korean comments/content.
+*.md text working-tree-encoding=UTF-8
+*.adoc text working-tree-encoding=UTF-8
+*.txt text working-tree-encoding=UTF-8
+*.yml text working-tree-encoding=UTF-8
+*.yaml text working-tree-encoding=UTF-8
+*.json text working-tree-encoding=UTF-8
+*.properties text working-tree-encoding=UTF-8
+*.java text working-tree-encoding=UTF-8
+*.kt text working-tree-encoding=UTF-8
+*.kts text working-tree-encoding=UTF-8
+*.js text working-tree-encoding=UTF-8
+*.ts text working-tree-encoding=UTF-8
+*.css text working-tree-encoding=UTF-8
+*.html text working-tree-encoding=UTF-8
+*.xml text working-tree-encoding=UTF-8
+*.sql text working-tree-encoding=UTF-8
+*.env text working-tree-encoding=UTF-8
+*.example text working-tree-encoding=UTF-8
 
+*.sh text eol=lf working-tree-encoding=UTF-8
+gradlew text eol=lf working-tree-encoding=UTF-8
+Dockerfile text eol=lf working-tree-encoding=UTF-8
 *.bat text eol=crlf

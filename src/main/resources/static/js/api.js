@@ -1,24 +1,24 @@
 // @ts-check
 
 const ERROR_MESSAGES = {
-  REQUEST_VALIDATION_ERROR: 'Please check your request input.',
-  LOTTO_INVALID_COUNT: 'Recommendation count must be between 1 and 10.',
-  LOTTO_INVALID_TARGET_ROUND: 'Please check the target round input.',
-  UNAUTHORIZED_ADMIN_API: 'Admin token is invalid.',
-  WINNING_NUMBER_NOT_FOUND: 'Winning number not found.',
-  TOO_MANY_REQUESTS: 'Too many requests. Please try again later.',
-  EXTERNAL_API_FAILURE: 'External lotto API call failed.',
-  INTERNAL_SERVER_ERROR: 'Internal server error occurred.'
+  REQUEST_VALIDATION_ERROR: '요청 값을 확인해 주세요.',
+  LOTTO_INVALID_COUNT: '추천 개수는 1~10 사이여야 합니다.',
+  LOTTO_INVALID_TARGET_ROUND: '대상 회차 값을 확인해 주세요.',
+  UNAUTHORIZED_ADMIN_API: '관리자 토큰이 유효하지 않습니다.',
+  WINNING_NUMBER_NOT_FOUND: '당첨 번호를 찾을 수 없습니다.',
+  TOO_MANY_REQUESTS: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.',
+  EXTERNAL_API_FAILURE: '외부 로또 API 호출에 실패했습니다.',
+  INTERNAL_SERVER_ERROR: '내부 서버 오류가 발생했습니다.'
 };
 
 /** @param {number} status */
 function messageFromStatus(status) {
-  if (status === 400) return 'Please check your request input.';
-  if (status === 401) return 'Admin token is invalid.';
-  if (status === 404) return 'Winning number not found.';
-  if (status === 429) return 'Too many requests. Please try again later.';
-  if (status === 502) return 'External lotto API call failed.';
-  return `Request failed (HTTP ${status})`;
+  if (status === 400) return '요청 값을 확인해 주세요.';
+  if (status === 401) return '관리자 토큰이 유효하지 않습니다.';
+  if (status === 404) return '당첨 번호를 찾을 수 없습니다.';
+  if (status === 429) return '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
+  if (status === 502) return '외부 로또 API 호출에 실패했습니다.';
+  return `요청에 실패했습니다. (HTTP ${status})`;
 }
 
 /**
@@ -43,7 +43,7 @@ export async function api(url, init = {}) {
       body = null;
     }
     if (!body || typeof body.success !== 'boolean') {
-      throw new Error(`Invalid response body (HTTP ${res.status})`);
+      throw new Error(`응답 형식이 올바르지 않습니다. (HTTP ${res.status})`);
     }
     if (!body.success) {
       const err = body.error ?? { code: 'UNKNOWN', message: '' };
@@ -59,10 +59,10 @@ export async function api(url, init = {}) {
     return body.data;
   } catch (err) {
     if (err && typeof err === 'object' && 'name' in err && err.name === 'AbortError') {
-      throw new Error('Request timed out.');
+      throw new Error('요청 시간이 초과되었습니다.');
     }
     if (err instanceof TypeError) {
-      throw new Error('Please check your network connection.');
+      throw new Error('네트워크 연결을 확인해 주세요.');
     }
     throw err;
   } finally {

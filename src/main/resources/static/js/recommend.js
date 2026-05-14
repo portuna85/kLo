@@ -1,10 +1,14 @@
 // @ts-check
 
 import { api } from './api.js';
-import { ballsRow, setTextMessage, showSkeleton, withLoading } from './ui.js';
+import { ballsRow, setBusy, setTextMessage, showSkeleton, withLoading } from './ui.js';
 
-export function bindRecommendForm() {
-  document.getElementById('form-recommend')?.addEventListener('submit', onRecommend);
+export function bindRecommendForm(root = document) {
+  root.getElementById('form-recommend')?.addEventListener('submit', onRecommend);
+}
+
+export function mountRecommend(root = document) {
+  bindRecommendForm(root);
 }
 
 /** @param {SubmitEvent} e */
@@ -20,7 +24,7 @@ async function onRecommend(e) {
 
   await withLoading(btn, async () => {
     try {
-      const data = await api('/api/recommend', {
+      const data = await api('/api/v1/recommend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ count })
@@ -37,6 +41,7 @@ async function onRecommend(e) {
         fragment.appendChild(row);
       });
       out.replaceChildren(fragment);
+      setBusy(out, false);
     } catch (err) {
       setTextMessage(out, /** @type {Error} */ (err).message, 'text-danger small mb-0');
     }

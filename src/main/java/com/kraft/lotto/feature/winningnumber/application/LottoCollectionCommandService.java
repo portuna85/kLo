@@ -7,6 +7,10 @@ import com.kraft.lotto.support.ErrorCode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+@Transactional(propagation = Propagation.NOT_SUPPORTED)
 public class LottoCollectionCommandService {
 
     private final WinningNumberRepository winningNumberRepository;

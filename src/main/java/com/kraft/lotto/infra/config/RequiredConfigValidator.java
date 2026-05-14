@@ -35,7 +35,8 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
             "KRAFT_DB_USER",
             "KRAFT_DB_PASSWORD",
             "KRAFT_DB_ROOT_PASSWORD",
-            "KRAFT_ADMIN_API_TOKENS"
+            "KRAFT_ADMIN_API_TOKENS",
+            "KRAFT_ADMIN_API_TOKEN_HASHES"
     );
 
     private static final Pattern JDBC_URL_PATTERN =
@@ -139,12 +140,14 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
         }
         String token = safeGet(env, "kraft.admin.api-token");
         String tokens = safeGet(env, "kraft.admin.api-tokens");
+        String tokenHashes = safeGet(env, "kraft.admin.api-token-hashes");
         boolean hasToken = token != null && !token.isBlank();
         boolean hasTokens = tokens != null && !tokens.isBlank();
-        if (!hasToken && !hasTokens) {
+        boolean hasTokenHashes = tokenHashes != null && !tokenHashes.isBlank();
+        if (!hasToken && !hasTokens && !hasTokenHashes) {
             problems.add(format(
                     "kraft.admin.api-tokens",
-                    "Admin API token list (env: KRAFT_ADMIN_API_TOKENS, legacy: KRAFT_ADMIN_API_TOKEN)",
+                    "Admin API token list/hash (env: KRAFT_ADMIN_API_TOKENS, KRAFT_ADMIN_API_TOKEN_HASHES, legacy: KRAFT_ADMIN_API_TOKEN)",
                     "blank in prod profile"
             ));
         }

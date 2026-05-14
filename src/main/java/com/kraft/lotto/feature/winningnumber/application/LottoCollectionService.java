@@ -3,11 +3,7 @@ package com.kraft.lotto.feature.winningnumber.application;
 import com.kraft.lotto.feature.winningnumber.infrastructure.LottoFetchLogRepository;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberRepository;
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
-import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -16,27 +12,8 @@ public class LottoCollectionService {
 
     private final LottoCollectionCommandService commands;
 
-    @Autowired
-    public LottoCollectionService(LottoApiClient lottoApiClient,
-                                  WinningNumberRepository winningNumberRepository,
-                                  WinningNumberPersister persister,
-                                  LottoFetchLogRepository fetchLogRepository,
-                                  ApplicationEventPublisher eventPublisher,
-                                  ObjectProvider<MeterRegistry> meterRegistryProvider,
-                                  @Value("${kraft.lotto.api.backfill-delay-ms:${kraft.api.retry-backoff-ms:700}}") long backfillDelayMs) {
-        LottoSingleDrawCollector single = new LottoSingleDrawCollector(
-                lottoApiClient, winningNumberRepository, persister, fetchLogRepository, Clock.systemDefaultZone());
-        this.commands = new LottoCollectionCommandService(
-                winningNumberRepository,
-                single,
-                new LottoRangeCollector(
-                        single,
-                        winningNumberRepository,
-                        backfillDelayMs,
-                        meterRegistryProvider.getIfAvailable()
-                ),
-                new LottoCollectionGate(eventPublisher)
-        );
+    public LottoCollectionService(LottoCollectionCommandService commands) {
+        this.commands = commands;
     }
 
     static LottoCollectionService forTest(LottoApiClient lottoApiClient,
@@ -55,10 +32,6 @@ public class LottoCollectionService {
                 new LottoCollectionGate(eventPublisher)
         );
         return new LottoCollectionService(commandService);
-    }
-
-    private LottoCollectionService(LottoCollectionCommandService commands) {
-        this.commands = commands;
     }
 
     public CollectResponse collectDraw(int drwNo) { return commands.collectDraw(drwNo); }

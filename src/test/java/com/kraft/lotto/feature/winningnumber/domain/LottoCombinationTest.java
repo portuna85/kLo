@@ -8,32 +8,32 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("로또 번호 조합 테스트")
+@DisplayName("LottoCombination")
 class LottoCombinationTest {
 
     @Test
-    @DisplayName("정렬된 번호 조합을 생성한다")
+    @DisplayName("creates sorted combination")
     void createsSortedCombination() {
         LottoCombination combo = new LottoCombination(List.of(7, 1, 45, 13, 22, 34));
         assertThat(combo.numbers()).containsExactly(1, 7, 13, 22, 34, 45);
     }
 
     @Test
-    @DisplayName("정적 팩토리 메소드로 조합을 생성한다")
+    @DisplayName("factory of creates combination")
     void factoryOfCreatesCombination() {
         LottoCombination combo = LottoCombination.of(1, 2, 3, 4, 5, 6);
         assertThat(combo.numbers()).containsExactly(1, 2, 3, 4, 5, 6);
     }
 
     @Test
-    @DisplayName("null 리스트는 거부한다")
+    @DisplayName("rejects null list")
     void rejectsNullList() {
         assertThatThrownBy(() -> new LottoCombination(null))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    @DisplayName("번호 개수가 6개가 아니면 거부한다")
+    @DisplayName("rejects wrong size")
     void rejectsWrongSize() {
         assertThatThrownBy(() -> new LottoCombination(List.of(1, 2, 3, 4, 5)))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -42,7 +42,7 @@ class LottoCombinationTest {
     }
 
     @Test
-    @DisplayName("번호 범위를 벗어나면 거부한다")
+    @DisplayName("rejects out of range")
     void rejectsOutOfRange() {
         assertThatThrownBy(() -> new LottoCombination(List.of(0, 2, 3, 4, 5, 6)))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -51,14 +51,14 @@ class LottoCombinationTest {
     }
 
     @Test
-    @DisplayName("중복된 번호는 거부한다")
+    @DisplayName("rejects duplicates")
     void rejectsDuplicates() {
         assertThatThrownBy(() -> new LottoCombination(List.of(1, 1, 2, 3, 4, 5)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    @DisplayName("null 엘리먼트를 포함하면 거부한다")
+    @DisplayName("rejects null element")
     void rejectsNullElement() {
         List<Integer> withNull = new ArrayList<>();
         withNull.add(1);
@@ -72,7 +72,7 @@ class LottoCombinationTest {
     }
 
     @Test
-    @DisplayName("반환된 번호 리스트는 수정할 수 없다")
+    @DisplayName("numbers list is immutable")
     void numbersListIsImmutable() {
         LottoCombination combo = LottoCombination.of(1, 2, 3, 4, 5, 6);
         assertThatThrownBy(() -> combo.numbers().add(7))
@@ -80,7 +80,7 @@ class LottoCombinationTest {
     }
 
     @Test
-    @DisplayName("원본 리스트를 수정해도 조합은 영향을 받지 않는다")
+    @DisplayName("source list mutation does not affect combination")
     void mutationOfSourceListDoesNotAffectCombination() {
         List<Integer> source = new ArrayList<>(List.of(1, 2, 3, 4, 5, 6));
         LottoCombination combo = new LottoCombination(source);
@@ -89,7 +89,7 @@ class LottoCombinationTest {
     }
 
     @Test
-    @DisplayName("번호 포함 여부를 확인한다")
+    @DisplayName("contains returns true for present number")
     void containsReturnsTrueForPresentNumber() {
         LottoCombination combo = LottoCombination.of(1, 7, 13, 22, 34, 45);
         assertThat(combo.contains(13)).isTrue();
@@ -97,10 +97,32 @@ class LottoCombinationTest {
     }
 
     @Test
-    @DisplayName("경계값 번호를 허용한다")
+    @DisplayName("boundary values are allowed")
     void boundaryValuesAreAllowed() {
         LottoCombination combo = LottoCombination.of(1, 2, 3, 43, 44, 45);
         assertThat(combo.numbers()).containsExactly(1, 2, 3, 43, 44, 45);
     }
-}
 
+    @Test
+    @DisplayName("sameNumbers returns true for same numbers")
+    void sameNumbersReturnsTrueForSameNumbers() {
+        LottoCombination a = LottoCombination.of(1, 7, 13, 22, 34, 45);
+        LottoCombination b = LottoCombination.of(45, 34, 22, 13, 7, 1);
+        assertThat(a.sameNumbers(b)).isTrue();
+    }
+
+    @Test
+    @DisplayName("sameNumbers returns false for different numbers")
+    void sameNumbersReturnsFalseForDifferentNumbers() {
+        LottoCombination a = LottoCombination.of(1, 7, 13, 22, 34, 45);
+        LottoCombination b = LottoCombination.of(1, 7, 13, 22, 33, 44);
+        assertThat(a.sameNumbers(b)).isFalse();
+    }
+
+    @Test
+    @DisplayName("sameNumbers returns false for null")
+    void sameNumbersReturnsFalseForNull() {
+        LottoCombination a = LottoCombination.of(1, 7, 13, 22, 34, 45);
+        assertThat(a.sameNumbers(null)).isFalse();
+    }
+}

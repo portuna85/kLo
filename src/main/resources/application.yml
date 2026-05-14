@@ -131,6 +131,7 @@ kraft:
   admin:
     api-token: ${KRAFT_ADMIN_API_TOKEN:}
     api-tokens: ${KRAFT_ADMIN_API_TOKENS:}
+    api-token-hashes: ${KRAFT_ADMIN_API_TOKEN_HASHES:}
     token-header: ${KRAFT_ADMIN_TOKEN_HEADER:X-Kraft-Admin-Token}
   recommend:
     max-attempts: ${KRAFT_RECOMMEND_MAX_ATTEMPTS:5000}

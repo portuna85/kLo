@@ -43,6 +43,9 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Validate UTF-8 text files
+        run: python3 scripts/check_utf8.py
+
       - name: Install frontend dev dependencies
         run: npm ci
 

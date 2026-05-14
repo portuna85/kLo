@@ -16,16 +16,24 @@ export function createSkeleton(widthClass = 'col-7') {
 
 /** @param {Element} container */
 export function showSkeleton(container, widthClass = 'col-7') {
+  container.setAttribute('aria-busy', 'true');
   container.replaceChildren(createSkeleton(widthClass));
 }
 
 /** @param {Element} container */
 export function setTextMessage(container, text, className = 'small mb-0') {
+  container.setAttribute('aria-busy', 'false');
   container.replaceChildren();
   const p = document.createElement('p');
   p.className = className;
   p.textContent = text;
   container.appendChild(p);
+}
+
+/** @param {Element | null} container */
+export function setBusy(container, busy) {
+  if (!container) return;
+  container.setAttribute('aria-busy', busy ? 'true' : 'false');
 }
 
 /** @template T @param {Element | null} btn @param {() => Promise<T>} fn */
@@ -34,11 +42,13 @@ export async function withLoading(btn, fn) {
   const prev = btn.innerHTML;
   btn.setAttribute('aria-busy', 'true');
   btn.setAttribute('disabled', 'true');
+  btn.setAttribute('aria-disabled', 'true');
   try {
     return await fn();
   } finally {
     btn.removeAttribute('disabled');
     btn.removeAttribute('aria-busy');
+    btn.setAttribute('aria-disabled', 'false');
     btn.innerHTML = prev;
   }
 }
@@ -51,6 +61,7 @@ function ball(n, bonus = false) {
   const span = document.createElement('span');
   span.className = `kraft-ball ${ballClass(n)}${bonus ? ' bonus' : ''}`;
   span.textContent = String(n);
+  span.setAttribute('aria-label', bonus ? `보너스 번호 ${n}` : `번호 ${n}`);
   return span;
 }
 
@@ -58,6 +69,10 @@ function ball(n, bonus = false) {
 export function ballsRow(numbers, bonus) {
   const wrap = document.createElement('div');
   wrap.className = 'kraft-balls';
+  const label = bonus == null
+    ? `번호 조합 ${numbers.join(', ')}`
+    : `번호 조합 ${numbers.join(', ')}, 보너스 ${bonus}`;
+  wrap.setAttribute('aria-label', label);
   numbers.forEach((n) => wrap.appendChild(ball(n)));
   if (bonus != null) {
     const plus = document.createElement('span');
@@ -71,12 +86,13 @@ export function ballsRow(numbers, bonus) {
 
 /** @param {{round:number,drawDate:string,numbers:number[],bonusNumber:number,firstPrize:number,firstWinners:number,totalSales:number}} wn */
 export function renderWinning(wn, container) {
+  container.setAttribute('aria-busy', 'false');
   container.replaceChildren();
   const head = document.createElement('div');
   head.className = 'd-flex justify-content-between align-items-center mb-2';
 
   const roundStrong = document.createElement('strong');
-  roundStrong.textContent = `${wn.round}th`;
+  roundStrong.textContent = `${wn.round}회`;
   const dateSpan = document.createElement('span');
   dateSpan.className = 'text-muted small';
   dateSpan.textContent = wn.drawDate;
@@ -89,9 +105,9 @@ export function renderWinning(wn, container) {
   const dl = document.createElement('dl');
   dl.className = 'kraft-kv';
   const kv = [
-    ['1st prize', `${fmtNum(wn.firstPrize)} KRW`],
-    ['1st winners', `${fmtNum(wn.firstWinners)} people`],
-    ['Total sales', `${fmtNum(wn.totalSales)} KRW`]
+    ['1등 당첨금', `${fmtNum(wn.firstPrize)}원`],
+    ['1등 당첨자', `${fmtNum(wn.firstWinners)}명`],
+    ['총 판매금', `${fmtNum(wn.totalSales)}원`]
   ];
   kv.forEach(([k, v]) => {
     const dt = document.createElement('dt');

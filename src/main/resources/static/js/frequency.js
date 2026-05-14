@@ -1,7 +1,7 @@
 // @ts-check
 
 import { api } from './api.js';
-import { setTextMessage, showSkeleton } from './ui.js';
+import { setBusy, setTextMessage, showSkeleton } from './ui.js';
 
 export async function loadFrequency() {
   const out = document.getElementById('freq-result');
@@ -12,7 +12,7 @@ export async function loadFrequency() {
   if (lowOut) showSkeleton(lowOut, 'col-8');
 
   try {
-    const summaryData = await api('/api/winning-numbers/stats/frequency-summary');
+    const summaryData = await api('/api/v1/winning-numbers/stats/frequency-summary');
     const data = summaryData.frequencies;
     const max = data.reduce((m, d) => Math.max(m, d.count), 1);
     const lowSixList = [...data].sort((a, b) => a.count - b.count || a.number - b.number).slice(0, 6);
@@ -44,6 +44,7 @@ export async function loadFrequency() {
       fragment.appendChild(cell);
     });
     out.replaceChildren(fragment);
+    setBusy(out, false);
 
     if (lowOut) {
       lowOut.replaceChildren();
@@ -52,14 +53,19 @@ export async function loadFrequency() {
       summary.className = 'small';
 
       const strong = document.createElement('strong');
-      strong.textContent = `Combination ${history.numbers.join(', ')}`;
-      const firstRounds = history.firstPrizeHits.map((h) => `${h.round}`).join(', ') || 'none';
-      const secondRounds = history.secondPrizeHits.map((h) => `${h.round}`).join(', ') || 'none';
-      summary.append(strong, ` | 1st: ${history.firstPrizeCount} (${firstRounds}) | 2nd: ${history.secondPrizeCount} (${secondRounds})`);
+      strong.textContent = `조합 ${history.numbers.join(', ')}`;
+      const firstRounds = history.firstPrizeHits.map((h) => `${h.round}`).join(', ') || '없음';
+      const secondRounds = history.secondPrizeHits.map((h) => `${h.round}`).join(', ') || '없음';
+      summary.append(strong, ` · 1등 ${history.firstPrizeCount}회(${firstRounds}) · 2등 ${history.secondPrizeCount}회(${secondRounds})`);
       lowOut.appendChild(summary);
+      setBusy(lowOut, false);
     }
   } catch (err) {
     setTextMessage(out, /** @type {Error} */ (err).message, 'text-danger small mb-0');
     if (lowOut) setTextMessage(lowOut, /** @type {Error} */ (err).message, 'text-danger small mb-0');
   }
+}
+
+export function mountFrequency() {
+  void loadFrequency();
 }

@@ -5,6 +5,9 @@ public final class ApiPaths {
     private ApiPaths() {
     }
 
+    public static final String API_LEGACY_PREFIX = "/api";
+    public static final String API_V1_PREFIX = "/api/v1";
+
     public static final String RECOMMEND_LEGACY = "/api/recommend";
     public static final String RECOMMEND_V1 = "/api/v1/recommend";
 

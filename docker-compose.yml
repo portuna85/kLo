@@ -40,7 +40,7 @@ services:
       args:
         GRADLE_BUILD_ARGS: ${GRADLE_BUILD_ARGS:-}
     pull_policy: missing
-    image: kraft-lotto-app:local
+    image: ${KRAFT_APP_IMAGE_REF:-kraft-lotto-app}:${KRAFT_APP_IMAGE_TAG:-local}
     container_name: kraft-lotto-app
     restart: unless-stopped
     depends_on:

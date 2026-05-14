@@ -1,0 +1,57 @@
+name: Nightly Quality
+
+on:
+  schedule:
+    - cron: "0 17 * * *" # 02:00 Asia/Seoul
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-quality-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  quality-regression:
+    name: Integration + Mutation + Contract Drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 25 (Temurin)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Setup Gradle with cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Run integration tests
+        run: ./gradlew --no-daemon integrationTest
+
+      - name: Run API contract drift guard
+        run: ./gradlew --no-daemon test --tests "com.kraft.lotto.infra.contract.ApiContractDriftTest"
+
+      - name: Run mutation tests
+        run: ./gradlew --no-daemon pitest
+
+      - name: Run performance smoke tests
+        run: ./gradlew --no-daemon performanceSmokeTest
+
+      - name: Upload nightly reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-quality-report-${{ github.run_id }}
+          path: |
+            build/reports/
+            build/test-results/
+          retention-days: 14

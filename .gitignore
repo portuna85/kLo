@@ -40,6 +40,5 @@ logs/
 !.env.example
 
 IMPROVEMENTS.md
-kLo-analysis.md
 
 node_modules/

@@ -77,7 +77,11 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
         }
 
         String provided = request.getHeader(properties.resolvedTokenHeader());
-        Optional<String> tokenAlias = matchedAlias(provided, properties.resolvedApiTokens());
+        Optional<String> tokenAlias = matchedAlias(
+                provided,
+                properties.resolvedApiTokens(),
+                properties.resolvedApiTokenHashes()
+        );
         if (tokenAlias.isEmpty()) {
             meterRegistry.counter("kraft.api.admin_token.blocked", "reason", "invalid_token").increment();
             auditLog(request, "blocked", provided == null ? "missing_token" : "invalid_token", null);
@@ -120,34 +124,83 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
     }
 
     private static Optional<String> matchedAlias(String provided, List<String> expectedTokens) {
-        if (provided == null || expectedTokens == null || expectedTokens.isEmpty()) {
+        return matchedAlias(provided, expectedTokens, List.of());
+    }
+
+    private static Optional<String> matchedAlias(String provided,
+                                                 List<String> expectedTokens,
+                                                 List<KraftAdminProperties.AdminTokenHash> expectedTokenHashes) {
+        if (provided == null) {
             return Optional.empty();
         }
         byte[] providedBytes = provided.getBytes(StandardCharsets.UTF_8);
+
+        Optional<String> hashMatched = matchByHash(providedBytes, expectedTokenHashes);
+        if (hashMatched.isPresent()) {
+            return hashMatched;
+        }
+
+        if (expectedTokens == null || expectedTokens.isEmpty()) {
+            return Optional.empty();
+        }
+
         for (String expected : expectedTokens) {
             if (expected == null) {
                 continue;
             }
             byte[] expectedBytes = expected.getBytes(StandardCharsets.UTF_8);
-            if (MessageDigest.isEqual(providedBytes, expectedBytes)) {
+            if (constantTimeEquals(providedBytes, expectedBytes)) {
                 return Optional.of(aliasOf(expected));
             }
         }
         return Optional.empty();
     }
 
+    private static Optional<String> matchByHash(byte[] providedBytes,
+                                                List<KraftAdminProperties.AdminTokenHash> expectedTokenHashes) {
+        if (expectedTokenHashes == null || expectedTokenHashes.isEmpty()) {
+            return Optional.empty();
+        }
+        byte[] providedHash = sha256(providedBytes);
+        for (KraftAdminProperties.AdminTokenHash candidate : expectedTokenHashes) {
+            byte[] expectedHash = hexToBytes(candidate.hashHex());
+            if (constantTimeEquals(providedHash, expectedHash)) {
+                return Optional.of(candidate.id());
+            }
+        }
+        return Optional.empty();
+    }
+
+    static boolean constantTimeEquals(byte[] left, byte[] right) {
+        return MessageDigest.isEqual(left, right);
+    }
+
     private static String aliasOf(String token) {
+        byte[] digest = sha256(token.getBytes(StandardCharsets.UTF_8));
+        StringBuilder sb = new StringBuilder("tok-");
+        for (int i = 0; i < 4; i++) {
+            sb.append(String.format("%02x", digest[i]));
+        }
+        return sb.toString();
+    }
+
+    private static byte[] sha256(byte[] value) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] digest = md.digest(token.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder("tok-");
-            for (int i = 0; i < 4; i++) {
-                sb.append(String.format("%02x", digest[i]));
-            }
-            return sb.toString();
+            return md.digest(value);
         } catch (NoSuchAlgorithmException e) {
-            return "tok-unknown";
+            throw new IllegalStateException("SHA-256 is not available", e);
         }
+    }
+
+    private static byte[] hexToBytes(String hex) {
+        int len = hex.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
+                    + Character.digit(hex.charAt(i + 1), 16));
+        }
+        return data;
     }
 
     private static String pathWithinApplication(HttpServletRequest request) {

@@ -34,6 +34,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Make deploy scripts executable
+        run: chmod +x scripts/deploy/*.sh
+
       - name: Verify prod profile files exist in source
         run: |
           test -f src/main/resources/application.yml
@@ -43,22 +46,7 @@ jobs:
       - name: Validate required production secrets
         env:
           ALL_SECRETS_JSON: ${{ toJson(secrets) }}
-        run: |
-          set -eu
-          ./gradlew --no-daemon -q printRequiredEnvVars > .required-envs
-          while IFS= read -r name; do
-            [ -z "$name" ] && continue
-            value="$(printf '%s' "$ALL_SECRETS_JSON" | jq -r --arg key "$name" '.[$key] // ""')"
-            if [ -z "$value" ]; then
-              echo "::error::$name GitHub Secret is required for production deploy"
-              exit 1
-            fi
-          done < .required-envs
-          token_val="$(printf '%s' "$ALL_SECRETS_JSON" | jq -r '.KRAFT_ADMIN_API_TOKENS // ""')"
-          if [ ${#token_val} -lt 32 ]; then
-            echo "::error::KRAFT_ADMIN_API_TOKENS is too short (min 32 chars)"
-            exit 1
-          fi
+        run: ./scripts/deploy/validate-env.sh
 
       - name: Mask production secrets in logs
         env:
@@ -76,48 +64,7 @@ jobs:
         env:
           ALL_SECRETS_JSON: ${{ toJson(secrets) }}
           KRAFT_DB_NAME: ${{ secrets.KRAFT_DB_NAME }}
-        run: |
-          set -eu
-          umask 077
-          # printf를 사용해 heredoc 들여쓰기로 인한 앞공백 없이 .env 생성
-          {
-            printf 'SPRING_PROFILES_ACTIVE=prod\n'
-            printf 'KRAFT_APP_PORT=8080\n'
-            printf 'KRAFT_DB_URL=jdbc:mariadb://mariadb:3306/%s?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Seoul&connectTimeout=3000\n' "${KRAFT_DB_NAME}"
-            printf 'KRAFT_DB_LOCAL_HOST=localhost\n'
-            printf 'KRAFT_IN_CONTAINER=true\n'
-            printf 'KRAFT_API_CLIENT=real\n'
-            printf 'KRAFT_API_URL=https://www.dhlottery.co.kr/common.do\n'
-            printf 'KRAFT_API_CONNECT_TIMEOUT_MS=2000\n'
-            printf 'KRAFT_API_READ_TIMEOUT_MS=3000\n'
-            printf 'KRAFT_API_MAX_RETRIES=2\n'
-            printf 'KRAFT_API_RETRY_BACKOFF_MS=200\n'
-            printf 'KRAFT_ADMIN_TOKEN_HEADER=X-Kraft-Admin-Token\n'
-            printf 'KRAFT_RECOMMEND_MAX_ATTEMPTS=5000\n'
-            printf 'KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS=30\n'
-            printf 'KRAFT_RECOMMEND_RATE_LIMIT_WINDOW_SECONDS=60\n'
-            printf 'KRAFT_RECOMMEND_RATE_LIMIT_REDIS_ENABLED=false\n'
-            printf 'KRAFT_RECOMMEND_RATE_LIMIT_REDIS_KEY_PREFIX=kraft:rate-limit\n'
-            printf 'KRAFT_TRACING_ENABLED=false\n'
-            printf 'KRAFT_TRACING_SAMPLING_PROBABILITY=1.0\n'
-            printf 'KRAFT_OTLP_TRACING_ENDPOINT=http://localhost:4318/v1/traces\n'
-            printf 'KRAFT_COLLECT_LOG_RETENTION_ENABLED=true\n'
-            printf 'KRAFT_COLLECT_LOG_RETENTION_DAYS=90\n'
-            printf 'KRAFT_COLLECT_LOG_RETENTION_CRON=0 30 3 * * *\n'
-            printf 'KRAFT_LOTTO_SCHEDULER_LOCK_AT_MOST_FOR=PT10M\n'
-            printf 'KRAFT_LOTTO_SCHEDULER_LOCK_AT_LEAST_FOR=PT10S\n'
-            printf 'KRAFT_LOG_PATH=/app/logs\n'
-            printf 'KRAFT_HEALTHCHECK_URL=http://localhost:8080/actuator/health/readiness\n'
-            printf 'KRAFT_HEALTHCHECK_TIMEOUT_SECONDS=3\n'
-          } > .env
-          # RequiredConfigValidator에서 요구하는 Secrets 동적 주입
-          while IFS= read -r name; do
-            [ -z "$name" ] && continue
-            value="$(printf '%s' "$ALL_SECRETS_JSON" | jq -r --arg key "$name" '.[$key] // ""')"
-            [ -z "$value" ] && continue
-            printf '%s=%s\n' "$name" "$value" >> .env
-          done < .required-envs
-          docker compose --env-file .env config -q
+        run: ./scripts/deploy/render-env.sh
 
       - name: Validate Docker Compose file
         run: docker compose config -q
@@ -142,28 +89,10 @@ jobs:
           test -n "$(find build/generated-snippets -type f | head -n 1)"
 
       - name: Prepare logs directory for bind mount
-        run: |
-          mkdir -p ./logs
-          sudo chown -R $USER:$USER ./logs || true
-          sudo chmod -R 777 ./logs
-
-      - name: Stop existing services
-        run: |
-          sudo systemctl stop klo 2>/dev/null || true
-          sudo systemctl disable klo 2>/dev/null || true
-
-          docker compose down --remove-orphans || true
-          docker compose ps || true
-
-      - name: Preserve previous app image for rollback
-        run: docker tag kraft-lotto-app:local kraft-lotto-app:previous || true
+        run: ./scripts/deploy/prepare-logs.sh
 
       - name: Build and restart services
-        run: |
-          export GRADLE_BUILD_ARGS="-PuseExternalSnippets=true -x test -x integrationTest"
-          docker compose up -d --build --remove-orphans
-          docker compose ps
-          docker image prune -f
+        run: ./scripts/deploy/build-and-up.sh
 
       - name: Verify prod profile env in container
         run: |
@@ -172,81 +101,16 @@ jobs:
           test "$PROFILE" = "prod"
 
       - name: Wait for app readiness
-        run: |
-          set -u
+        run: ./scripts/deploy/wait-readiness.sh
 
-          CONTAINER_NAME="kraft-lotto-app"
-          HEALTH_URL="http://localhost:8080/actuator/health/readiness"
-          MAX_ATTEMPTS=60
-          SLEEP_SECONDS=5
-
-          echo "Waiting for app readiness: $HEALTH_URL"
-          for i in $(seq 1 "$MAX_ATTEMPTS"); do
-            STATUS=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' "$CONTAINER_NAME" 2>/dev/null || echo "missing")
-            RESPONSE=$(curl -sS --connect-timeout 3 --max-time 5 -w '\n%{http_code}' "$HEALTH_URL" 2>/dev/null || true)
-            HTTP_CODE=$(printf '%s' "$RESPONSE" | tail -n1)
-            if ! printf '%s' "$HTTP_CODE" | grep -Eq '^[0-9]{3}$'; then
-              HTTP_CODE="000"
-              BODY=""
-            else
-              BODY=$(printf '%s' "$RESPONSE" | sed '$d' | tr -d '\n')
-            fi
-            echo "[$i/$MAX_ATTEMPTS] docker-health=$STATUS http=$HTTP_CODE body=$BODY"
-
-            if [ "$HTTP_CODE" = "200" ] && printf '%s' "$BODY" | grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"'; then
-              if [ "$STATUS" != "healthy" ]; then
-                echo "::warning::HTTP readiness is UP but Docker health is '$STATUS'. Continuing with host-level readiness."
-              fi
-              echo "App is ready"
-              exit 0
-            fi
-
-            if [ $((i % 6)) -eq 0 ]; then
-              echo "---- Readiness debug ($i/$MAX_ATTEMPTS) ----"
-              docker inspect --format='state={{.State.Status}} running={{.State.Running}} restartCount={{.RestartCount}} exitCode={{.State.ExitCode}} error={{.State.Error}} startedAt={{.State.StartedAt}} finishedAt={{.State.FinishedAt}}' "$CONTAINER_NAME" || true
-              docker compose ps || true
-              docker logs --tail=120 "$CONTAINER_NAME" || true
-              docker logs --tail=80 kraft-lotto-mariadb || true
-              echo "---- End readiness debug ----"
-            fi
-
-            sleep "$SLEEP_SECONDS"
-          done
-
-          echo "Readiness check timed out"
-          echo "Container health detail:"
-          docker inspect --format='{{json .State.Health}}' "$CONTAINER_NAME" || true
-          echo "Docker compose status:"
-          docker compose ps || true
-          echo "App logs:"
-          docker logs --tail=300 "$CONTAINER_NAME" || true
-          echo "MariaDB logs:"
-          docker logs --tail=120 kraft-lotto-mariadb || true
-          echo "::warning::Readiness failed. Attempting rollback to previous app image."
-          if docker image inspect kraft-lotto-app:previous >/dev/null 2>&1; then
-            docker tag kraft-lotto-app:previous kraft-lotto-app:local
-            docker compose up -d --no-build --remove-orphans || true
-            docker compose ps || true
-          else
-            echo "::warning::No rollback image found (kraft-lotto-app:previous)."
-          fi
-          exit 1
+      - name: Rollback when readiness failed
+        if: failure()
+        run: ./scripts/deploy/rollback.sh
 
       - name: Smoke test
         env:
           KRAFT_ADMIN_API_TOKENS: ${{ secrets.KRAFT_ADMIN_API_TOKENS }}
-        run: |
-          BODY=$(curl -fsS http://localhost:8080/actuator/health/readiness)
-          printf '%s\n' "$BODY"
-          printf '%s' "$BODY" | grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"'
-          HTTP=$(curl -s -o /dev/null -w '%{http_code}' \
-            -X POST http://localhost:8080/admin/lotto/draws/collect-next \
-            -H "X-Kraft-Admin-Token: ${KRAFT_ADMIN_API_TOKENS%%,*}")
-          [ "$HTTP" = "200" ] || [ "$HTTP" = "409" ] || {
-            echo "::error::Admin token smoke test failed: HTTP $HTTP"
-            exit 1
-          }
-          echo "Smoke test passed"
+        run: ./scripts/deploy/smoke-test.sh
 
       - name: Cleanup .env
         if: always()

@@ -20,7 +20,8 @@ class RequiredConfigValidatorTest {
                         "KRAFT_DB_USER",
                         "KRAFT_DB_PASSWORD",
                         "KRAFT_DB_ROOT_PASSWORD",
-                        "KRAFT_ADMIN_API_TOKENS");
+                        "KRAFT_ADMIN_API_TOKENS",
+                        "KRAFT_ADMIN_API_TOKEN_HASHES");
     }
 
     @Test
@@ -99,6 +100,19 @@ class RequiredConfigValidatorTest {
         List<String> problems = new ArrayList<>();
 
         RequiredConfigValidator.addProdOperationalConfigProblems(env, problems);
+
+        assertThat(problems).isEmpty();
+    }
+
+    @Test
+    @DisplayName("hash list만 있어도 운영 토큰 검증을 통과한다")
+    void doesNotAddProblemWhenProdTokenHashesPresent() {
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("prod");
+        env.setProperty("kraft.admin.api-token-hashes", "ops:a3f5b4b8d12f5fce3074b63f3d3c63f2bbf3fa102f9ecfceb4f6f11db5c0b1ab");
+        List<String> problems = new ArrayList<>();
+
+        RequiredConfigValidator.addProdAdminTokenProblem(env, problems);
 
         assertThat(problems).isEmpty();
     }
