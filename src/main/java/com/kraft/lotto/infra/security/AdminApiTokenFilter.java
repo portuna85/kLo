@@ -13,8 +13,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,6 +33,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * {@code POST /api/winning-numbers/refresh} 와 {@code POST /admin/**} 이다.</p>
  */
 public class AdminApiTokenFilter extends OncePerRequestFilter {
+    private static final Logger log = LoggerFactory.getLogger(AdminApiTokenFilter.class);
 
     private static final String PROTECTED_METHOD = "POST";
     private static final String LEGACY_PROTECTED_PATH = "/api/winning-numbers/refresh";
@@ -64,18 +70,22 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         if (!properties.hasApiToken()) {
             meterRegistry.counter("kraft.api.admin_token.blocked", "reason", "not_configured").increment();
+            auditLog(request, "not_configured", "missing_config", null);
             writeUnauthorizedResponse(response);
             return;
         }
 
         String provided = request.getHeader(properties.resolvedTokenHeader());
-        if (!matchesAny(provided, properties.resolvedApiTokens())) {
+        Optional<String> tokenAlias = matchedAlias(provided, properties.resolvedApiTokens());
+        if (tokenAlias.isEmpty()) {
             meterRegistry.counter("kraft.api.admin_token.blocked", "reason", "invalid_token").increment();
+            auditLog(request, "blocked", provided == null ? "missing_token" : "invalid_token", null);
             writeUnauthorizedResponse(response);
             return;
         }
 
         meterRegistry.counter("kraft.api.admin_token.allowed").increment();
+        auditLog(request, "allowed", "ok", tokenAlias.get());
         var authentication = new UsernamePasswordAuthenticationToken(
                 "admin-api-token",
                 null,
@@ -96,9 +106,21 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
         response.getWriter().write(objectMapper.writeValueAsString(body));
     }
 
-    private static boolean matchesAny(String provided, List<String> expectedTokens) {
+    private void auditLog(HttpServletRequest request, String result, String reason, String tokenAlias) {
+        String path = pathWithinApplication(request);
+        String method = request.getMethod();
+        String ip = request.getRemoteAddr();
+        String from = request.getParameter("from");
+        String to = request.getParameter("to");
+        String drwNo = request.getParameter("drwNo");
+        log.info("admin_api_audit ts={} method={} path={} ip={} tokenAlias={} result={} reason={} from={} to={} drwNo={}",
+                Instant.now(), method, path, ip, tokenAlias == null ? "-" : tokenAlias, result, reason,
+                from == null ? "-" : from, to == null ? "-" : to, drwNo == null ? "-" : drwNo);
+    }
+
+    private static Optional<String> matchedAlias(String provided, List<String> expectedTokens) {
         if (provided == null || expectedTokens == null || expectedTokens.isEmpty()) {
-            return false;
+            return Optional.empty();
         }
         byte[] providedBytes = provided.getBytes(StandardCharsets.UTF_8);
         for (String expected : expectedTokens) {
@@ -107,10 +129,24 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
             }
             byte[] expectedBytes = expected.getBytes(StandardCharsets.UTF_8);
             if (MessageDigest.isEqual(providedBytes, expectedBytes)) {
-                return true;
+                return Optional.of(aliasOf(expected));
             }
         }
-        return false;
+        return Optional.empty();
+    }
+
+    private static String aliasOf(String token) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(token.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder("tok-");
+            for (int i = 0; i < 4; i++) {
+                sb.append(String.format("%02x", digest[i]));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            return "tok-unknown";
+        }
     }
 
     private static String pathWithinApplication(HttpServletRequest request) {

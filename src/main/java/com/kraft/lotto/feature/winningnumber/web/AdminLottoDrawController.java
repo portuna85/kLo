@@ -3,8 +3,11 @@ package com.kraft.lotto.feature.winningnumber.web;
 import com.kraft.lotto.feature.winningnumber.application.LottoCollectionService;
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
 import com.kraft.lotto.support.ApiResponse;
+import com.kraft.lotto.support.BusinessException;
+import com.kraft.lotto.support.ErrorCode;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,10 +20,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/admin/lotto/draws")
 public class AdminLottoDrawController {
 
+    private final int syncBackfillMaxRange;
     private final LottoCollectionService collectionService;
 
-    public AdminLottoDrawController(LottoCollectionService collectionService) {
+    public AdminLottoDrawController(LottoCollectionService collectionService,
+                                    @Value("${kraft.collect.backfill.sync-max-range:50}") int syncBackfillMaxRange) {
         this.collectionService = collectionService;
+        this.syncBackfillMaxRange = Math.max(1, syncBackfillMaxRange);
     }
 
     @PostMapping("/collect-next")
@@ -41,6 +47,14 @@ public class AdminLottoDrawController {
     @PostMapping("/backfill")
     public ApiResponse<CollectResponse> backfill(@RequestParam @Min(1) @Max(3000) int from,
                                                  @RequestParam @Min(1) @Max(3000) int to) {
+        int range = to - from + 1;
+        if (range > syncBackfillMaxRange) {
+            throw new BusinessException(
+                    ErrorCode.REQUEST_VALIDATION_ERROR,
+                    "sync backfill range exceeds limit (" + syncBackfillMaxRange + "). " +
+                            "Use /admin/lotto/jobs/backfill for large ranges."
+            );
+        }
         return ApiResponse.success(collectionService.backfill(from, to));
     }
 }

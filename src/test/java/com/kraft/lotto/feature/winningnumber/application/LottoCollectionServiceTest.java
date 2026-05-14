@@ -54,12 +54,13 @@ class LottoCollectionServiceTest {
     void refreshDrawUpsertsExistingRound() {
         WinningNumber winningNumber = sample(1102);
         when(lottoApiClient.fetch(1102)).thenReturn(Optional.of(winningNumber));
-        when(persister.upsert(winningNumber)).thenReturn(false);
+        when(persister.upsert(winningNumber)).thenReturn(UpsertOutcome.UPDATED);
         when(winningNumberRepository.findMaxRound()).thenReturn(Optional.of(1102));
 
         CollectResponse result = service.refreshDraw(1102);
 
-        assertThat(result.skipped()).isEqualTo(1);
+        assertThat(result.updated()).isEqualTo(1);
+        assertThat(result.skipped()).isEqualTo(0);
         verify(persister).upsert(winningNumber);
         verify(fetchLogRepository).save(any(LottoFetchLogEntity.class));
     }
@@ -71,7 +72,7 @@ class LottoCollectionServiceTest {
         when(winningNumberRepository.findMaxRound()).thenReturn(Optional.of(1102), Optional.of(1103));
         when(winningNumberRepository.existsByRound(1103)).thenReturn(false);
         when(lottoApiClient.fetch(1103)).thenReturn(Optional.of(winningNumber));
-        when(persister.upsert(winningNumber)).thenReturn(true);
+        when(persister.upsert(winningNumber)).thenReturn(UpsertOutcome.INSERTED);
 
         CollectResponse result = service.collectNextDraw();
 
@@ -86,7 +87,7 @@ class LottoCollectionServiceTest {
         when(winningNumberRepository.findMaxRound()).thenReturn(Optional.of(1102), Optional.of(1103));
         when(winningNumberRepository.existsByRound(1103)).thenReturn(false);
         when(lottoApiClient.fetch(1103)).thenReturn(Optional.of(winningNumber));
-        when(persister.upsert(winningNumber)).thenReturn(true);
+        when(persister.upsert(winningNumber)).thenReturn(UpsertOutcome.INSERTED);
 
         service.collectNextDraw();
 
@@ -103,7 +104,7 @@ class LottoCollectionServiceTest {
         when(winningNumberRepository.findRoundsBetween(1, 3)).thenReturn(Set.of(1, 3));
         when(winningNumberRepository.existsByRound(2)).thenReturn(false);
         when(lottoApiClient.fetch(2)).thenReturn(Optional.of(winningNumber));
-        when(persister.upsert(winningNumber)).thenReturn(true);
+        when(persister.upsert(winningNumber)).thenReturn(UpsertOutcome.INSERTED);
 
         CollectResponse result = service.collectMissingDraws();
 

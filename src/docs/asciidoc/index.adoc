@@ -62,6 +62,10 @@ include::{snippets}/winning-numbers-frequency/response-fields.adoc[]
 
 === POST /api/winning-numbers/refresh
 
+NOTE: This endpoint is deprecated and scheduled for removal after 2026-07-31.
+Use `POST /admin/lotto/draws/collect-next` for next draw collection.
+For explicit rounds/ranges, use `POST /admin/lotto/draws/backfill` or `POST /admin/lotto/jobs/backfill`.
+
 include::{snippets}/winning-numbers-refresh/http-request.adoc[]
 include::{snippets}/winning-numbers-refresh/request-fields.adoc[]
 include::{snippets}/winning-numbers-refresh/http-response.adoc[]

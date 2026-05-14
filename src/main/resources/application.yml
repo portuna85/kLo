@@ -92,6 +92,7 @@ kraft:
       lock-at-least-for: ${KRAFT_LOTTO_SCHEDULER_LOCK_AT_LEAST_FOR:PT10S}
   collect:
     backfill:
+      sync-max-range: ${KRAFT_COLLECT_BACKFILL_SYNC_MAX_RANGE:50}
       max-concurrent-jobs: ${KRAFT_COLLECT_BACKFILL_MAX_CONCURRENT_JOBS:2}
       queue-capacity: ${KRAFT_COLLECT_BACKFILL_QUEUE_CAPACITY:10}
       job-retention: ${KRAFT_COLLECT_BACKFILL_JOB_RETENTION:PT6H}
@@ -132,6 +133,8 @@ kraft:
     rate-limit:
       max-requests: ${KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS:30}
       window-seconds: ${KRAFT_RECOMMEND_RATE_LIMIT_WINDOW_SECONDS:60}
+      trust-forwarded-headers: ${KRAFT_RECOMMEND_RATE_LIMIT_TRUST_FORWARDED_HEADERS:false}
+      trusted-proxy-ips: ${KRAFT_RECOMMEND_RATE_LIMIT_TRUSTED_PROXY_IPS:127.0.0.1,::1}
       redis:
         enabled: ${KRAFT_RECOMMEND_RATE_LIMIT_REDIS_ENABLED:false}
         key-prefix: ${KRAFT_RECOMMEND_RATE_LIMIT_REDIS_KEY_PREFIX:kraft:rate-limit}

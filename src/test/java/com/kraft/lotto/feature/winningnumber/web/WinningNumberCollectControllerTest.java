@@ -36,7 +36,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @ExtendWith(MockitoExtension.class)
 @ExtendWith(RestDocumentationExtension.class)
-@DisplayName("당첨 번호 수집 컨트롤러 테스트")
+@DisplayName("WinningNumberCollectController")
 class WinningNumberCollectControllerTest {
 
     @Mock
@@ -54,10 +54,9 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("본문이 없으면 최신 회차까지 수집을 위임한다")
     void postCollectDelegatesNullTargetRoundWhenBodyAbsent() throws Exception {
         Mockito.when(collectService.collect(isNull()))
-                .thenReturn(new CollectResponse(3, 0, 0, 1103, List.of(), true, 2000, false));
+                .thenReturn(new CollectResponse(3, 0, 0, 0, 1103, List.of(), true, 2000, false, true));
 
         mockMvc.perform(post("/api/winning-numbers/refresh"))
                 .andExpect(status().isOk())
@@ -66,16 +65,16 @@ class WinningNumberCollectControllerTest {
                 .andExpect(header().string("Link", "</admin/lotto/draws/collect-next>; rel=\"successor-version\""))
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.collected").value(3))
+                .andExpect(jsonPath("$.data.updated").value(0))
                 .andExpect(jsonPath("$.data.latestRound").value(1103))
                 .andExpect(jsonPath("$.data.truncated").value(true))
                 .andExpect(jsonPath("$.data.nextRound").value(2000));
     }
 
     @Test
-    @DisplayName("지정된 대상 회차까지 수집을 위임한다")
     void postCollectDelegatesSpecifiedTargetRound() throws Exception {
         Mockito.when(collectService.collect(1103))
-                .thenReturn(new CollectResponse(2, 1, 0, 1103, List.of(), false, null, false));
+                .thenReturn(new CollectResponse(2, 1, 0, 0, 1103, List.of(), false, null, false, true));
 
         mockMvc.perform(post("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -84,31 +83,33 @@ class WinningNumberCollectControllerTest {
                         preprocessRequest(prettyPrint()),
                         preprocessResponse(prettyPrint()),
                         requestFields(
-                                fieldWithPath("targetRound").type(JsonFieldType.STRING).description("수집 종료 대상 회차(선택)")
+                                fieldWithPath("targetRound").type(JsonFieldType.STRING).description("Target round (optional)")
                         ),
                         responseFields(
-                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("요청 성공 여부"),
-                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("수집 결과"),
-                                fieldWithPath("data.collected").type(JsonFieldType.NUMBER).description("새로 저장된 회차 수"),
-                                fieldWithPath("data.skipped").type(JsonFieldType.NUMBER).description("건너뛴 회차 수"),
-                                fieldWithPath("data.failed").type(JsonFieldType.NUMBER).description("수집 실패 회차 수"),
-                                fieldWithPath("data.latestRound").type(JsonFieldType.NUMBER).description("수집 완료 후 최신 회차"),
-                                fieldWithPath("data.failedRounds").type(JsonFieldType.ARRAY).description("실패한 회차 목록"),
-                                fieldWithPath("data.truncated").type(JsonFieldType.BOOLEAN).description("호출당 최대 수집 한도 도달 여부"),
-                                fieldWithPath("data.nextRound").type(JsonFieldType.NULL).optional().description("다음 호출 시작 회차"),
-                                fieldWithPath("data.notDrawn").type(JsonFieldType.BOOLEAN).description("추첨 미완료 회차로 중단 여부"),
-                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("오류 정보")
+                                fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("Success"),
+                                fieldWithPath("data").type(JsonFieldType.OBJECT).description("Collect result"),
+                                fieldWithPath("data.collected").type(JsonFieldType.NUMBER).description("Inserted rounds"),
+                                fieldWithPath("data.updated").type(JsonFieldType.NUMBER).description("Updated rounds"),
+                                fieldWithPath("data.skipped").type(JsonFieldType.NUMBER).description("Skipped rounds"),
+                                fieldWithPath("data.failed").type(JsonFieldType.NUMBER).description("Failed rounds"),
+                                fieldWithPath("data.latestRound").type(JsonFieldType.NUMBER).description("Latest round"),
+                                fieldWithPath("data.failedRounds").type(JsonFieldType.ARRAY).description("Failed round list"),
+                                fieldWithPath("data.truncated").type(JsonFieldType.BOOLEAN).description("Truncated by limit"),
+                                fieldWithPath("data.nextRound").type(JsonFieldType.NULL).optional().description("Next round for follow-up"),
+                                fieldWithPath("data.notDrawn").type(JsonFieldType.BOOLEAN).description("Not drawn flag"),
+                                fieldWithPath("data.dataChanged").type(JsonFieldType.BOOLEAN).description("Data changed flag"),
+                                fieldWithPath("error").type(JsonFieldType.NULL).optional().description("Error")
                         )))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Deprecation", "true"))
                 .andExpect(jsonPath("$.data.collected").value(2))
-                .andExpect(jsonPath("$.data.skipped").value(1))
+                .andExpect(jsonPath("$.data.updated").value(1))
+                .andExpect(jsonPath("$.data.skipped").value(0))
                 .andExpect(jsonPath("$.data.truncated").value(false))
                 .andExpect(jsonPath("$.data.nextRound").doesNotExist());
     }
 
     @Test
-    @DisplayName("외부 API 실패 시 502 Bad Gateway를 반환한다")
     void postCollectReturns502OnExternalApiFailure() throws Exception {
         Mockito.when(collectService.collect(isNull()))
                 .thenThrow(new BusinessException(ErrorCode.EXTERNAL_API_FAILURE));
@@ -119,7 +120,6 @@ class WinningNumberCollectControllerTest {
     }
 
     @Test
-    @DisplayName("잘못된 대상 회차인 경우 400 Bad Request를 반환한다")
     void postCollectReturns400OnInvalidTargetRound() throws Exception {
         mockMvc.perform(post("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)

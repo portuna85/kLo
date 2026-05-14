@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @ConditionalOnProperty(prefix = "kraft.lotto.scheduler", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "kraft.collect.auto", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class WinningNumberAutoCollectScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(WinningNumberAutoCollectScheduler.class);

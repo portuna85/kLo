@@ -31,6 +31,9 @@ class DhLotteryResponseParser {
         }
         String returnValue = requiredText(node, "returnValue", round);
         if (!"success".equalsIgnoreCase(returnValue)) {
+            if ("fail".equalsIgnoreCase(returnValue)) {
+                return Optional.empty();
+            }
             throw new LottoApiClientException("unexpected returnValue (round=" + round + ", returnValue=" + returnValue + ")");
         }
         try {

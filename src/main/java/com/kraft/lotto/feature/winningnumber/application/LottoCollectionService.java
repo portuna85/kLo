@@ -1,10 +1,10 @@
 package com.kraft.lotto.feature.winningnumber.application;
 
 import com.kraft.lotto.feature.winningnumber.domain.WinningNumber;
+import com.kraft.lotto.feature.winningnumber.event.WinningNumbersCollectedEvent;
 import com.kraft.lotto.feature.winningnumber.infrastructure.LottoFetchLogEntity;
 import com.kraft.lotto.feature.winningnumber.infrastructure.LottoFetchLogRepository;
 import com.kraft.lotto.feature.winningnumber.infrastructure.LottoFetchStatus;
-import com.kraft.lotto.feature.winningnumber.event.WinningNumbersCollectedEvent;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberRepository;
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
 import com.kraft.lotto.support.BusinessException;
@@ -77,7 +77,7 @@ public class LottoCollectionService {
         return guarded(() -> {
             int latestRound = winningNumberRepository.findMaxRound().orElse(0);
             if (targetRound <= latestRound) {
-                return new CollectResponse(0, 1, 0, latestRound, List.of(), false, null, false);
+                return new CollectResponse(0, 0, 1, 0, latestRound, List.of(), false, null, false, false);
             }
             List<Integer> rounds = new ArrayList<>();
             for (int round = latestRound + 1; round <= targetRound; round++) {
@@ -98,7 +98,7 @@ public class LottoCollectionService {
         return guarded(() -> {
             int maxRound = winningNumberRepository.findMaxRound().orElse(0);
             if (maxRound <= 0) {
-                return response(0, 0, List.of(), false, null, false);
+                return response(0, 0, 0, List.of(), false, null, false);
             }
             Set<Integer> existingRounds = winningNumberRepository.findRoundsBetween(1, maxRound);
             List<Integer> missingRounds = new ArrayList<>();
@@ -128,7 +128,8 @@ public class LottoCollectionService {
     }
 
     private CollectResponse collectRange(List<Integer> rounds, boolean refresh, boolean delayBetweenCalls) {
-        int collected = 0;
+        int inserted = 0;
+        int updated = 0;
         int skipped = 0;
         List<Integer> failedRounds = new ArrayList<>();
         boolean firstCall = true;
@@ -138,47 +139,61 @@ public class LottoCollectionService {
             }
             firstCall = false;
             CollectResponse one = collectOne(round, refresh);
-            collected += one.collected();
+            inserted += one.collected();
+            updated += one.updated();
             skipped += one.skipped();
             failedRounds.addAll(one.failedRounds());
         }
-        return response(collected, skipped, failedRounds, false, null, false);
+        return response(inserted, updated, skipped, failedRounds, false, null, false);
     }
 
     private CollectResponse collectOne(int drwNo, boolean refresh) {
         if (!refresh && winningNumberRepository.existsByRound(drwNo)) {
-            saveLog(drwNo, LottoFetchStatus.SKIPPED, "이미 저장된 회차입니다.", null, null);
-            return response(0, 1, List.of(), false, null, false);
+            saveLog(drwNo, LottoFetchStatus.SKIPPED, "already collected round", null, null);
+            return response(0, 0, 1, List.of(), false, null, false);
         }
         try {
             Optional<WinningNumber> fetched = lottoApiClient.fetch(drwNo);
             if (fetched.isEmpty()) {
-                saveLog(drwNo, LottoFetchStatus.FAILED, "API가 정상 회차 데이터를 반환하지 않았습니다.", null, null);
-                return response(0, 0, List.of(drwNo), false, null, true);
+                saveLog(drwNo, LottoFetchStatus.FAILED, "round not drawn yet", null, null);
+                return response(0, 0, 0, List.of(drwNo), false, null, true);
             }
-            boolean inserted = persister.upsert(fetched.get());
-            saveLog(drwNo, LottoFetchStatus.SUCCESS, inserted ? "수집 저장 완료" : "수집 갱신 완료", null, fetched.get().rawJson());
-            return response(inserted ? 1 : 0, inserted ? 0 : 1, List.of(), false, null, false);
+            UpsertOutcome outcome = persister.upsert(fetched.get());
+            String message = switch (outcome) {
+                case INSERTED -> "inserted";
+                case UPDATED -> "updated";
+                case UNCHANGED -> "unchanged";
+            };
+            saveLog(drwNo, LottoFetchStatus.SUCCESS, message, null, fetched.get().rawJson());
+            return switch (outcome) {
+                case INSERTED -> response(1, 0, 0, List.of(), false, null, false);
+                case UPDATED -> response(0, 1, 0, List.of(), false, null, false);
+                case UNCHANGED -> response(0, 0, 1, List.of(), false, null, false);
+            };
         } catch (LottoApiClientException ex) {
-            log.warn("로또 회차 수집 실패: drwNo={}", drwNo, ex);
+            log.warn("lotto draw collect failed: drwNo={}", drwNo, ex);
             saveLog(drwNo, LottoFetchStatus.FAILED, ex.getMessage(), ex.getResponseCode(), ex.getRawResponse());
-            return response(0, 0, List.of(drwNo), false, null, false);
+            return response(0, 0, 0, List.of(drwNo), false, null, false);
         } catch (RuntimeException ex) {
-            log.warn("로또 회차 수집 실패: drwNo={}", drwNo, ex);
+            log.warn("lotto draw collect failed: drwNo={}", drwNo, ex);
             saveLog(drwNo, LottoFetchStatus.FAILED, ex.getMessage(), null, null);
-            return response(0, 0, List.of(drwNo), false, null, false);
+            return response(0, 0, 0, List.of(drwNo), false, null, false);
         }
     }
 
     private CollectResponse guarded(CollectionTask task) {
         if (!running.compareAndSet(false, true)) {
-            throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS, "로또 회차 수집이 이미 실행 중입니다.");
+            throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS, "lotto collect job is already running");
         }
         try {
             CollectResponse response = task.run();
-            if (response.collected() > 0) {
+            if (response.dataChanged()) {
                 eventPublisher.publishEvent(
-                        WinningNumbersCollectedEvent.of(response.collected(), response.skipped(), response.failed())
+                        WinningNumbersCollectedEvent.of(
+                                response.collected(),
+                                response.updated(),
+                                response.skipped(),
+                                response.failed())
                 );
             }
             return response;
@@ -188,21 +203,23 @@ public class LottoCollectionService {
     }
 
     private CollectResponse response(int collected,
+                                     int updated,
                                      int skipped,
                                      List<Integer> failedRounds,
                                      boolean truncated,
                                      Integer nextRound,
                                      boolean notDrawn) {
         int latestRound = winningNumberRepository.findMaxRound().orElse(0);
-        return new CollectResponse(collected, skipped, failedRounds.size(), latestRound,
-                failedRounds, truncated, nextRound, notDrawn);
+        return new CollectResponse(collected, updated, skipped, failedRounds.size(), latestRound,
+                failedRounds, truncated, nextRound, notDrawn, (collected + updated) > 0);
     }
 
     private void validateRange(int from, int to) {
         validateRound(from);
         validateRound(to);
         if (from > to) {
-            throw new BusinessException(ErrorCode.LOTTO_INVALID_TARGET_ROUND, "백필 시작 회차는 종료 회차보다 클 수 없습니다.");
+            throw new BusinessException(ErrorCode.LOTTO_INVALID_TARGET_ROUND,
+                    "backfill start round must be less than or equal to end round");
         }
     }
 
@@ -220,7 +237,7 @@ public class LottoCollectionService {
             Thread.sleep(backfillDelayMs);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new BusinessException(ErrorCode.EXTERNAL_API_FAILURE, "백필 호출 간격 대기 중 인터럽트가 발생했습니다.", ex);
+            throw new BusinessException(ErrorCode.EXTERNAL_API_FAILURE, "backfill delay interrupted", ex);
         }
     }
 

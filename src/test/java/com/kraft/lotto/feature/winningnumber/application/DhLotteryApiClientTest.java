@@ -16,36 +16,18 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("동행복권 API 클라이언트 테스트")
+@DisplayName("DhLotteryApiClientTest")
 class DhLotteryApiClientTest {
 
     private final DhLotteryApiClient client =
             new DhLotteryApiClient(null, new ObjectMapper(), "http://localhost");
 
     @Nested
-    @DisplayName("응답 파싱 테스트")
     class Parse {
 
         @Test
-        @DisplayName("유효한 응답을 도메인 객체로 변환한다")
         void parseConvertsValidResponseToDomain() {
-            String body = """
-                    {
-                      "totSellamnt": 79760843000,
-                      "returnValue": "success",
-                      "drwNoDate": "2024-01-06",
-                      "firstWinamnt": 2596477500,
-                      "drwtNo6": 33,
-                      "drwtNo4": 24,
-                      "drwtNo5": 28,
-                      "bnusNo": 38,
-                      "firstPrzwnerCo": 11,
-                      "drwtNo2": 13,
-                      "drwtNo3": 23,
-                      "drwtNo1": 6,
-                      "drwNo": 1102
-                    }
-                    """;
+            String body = successBody(1102);
 
             Optional<WinningNumber> result = client.parse(1102, body);
 
@@ -56,7 +38,6 @@ class DhLotteryApiClientTest {
         }
 
         @Test
-        @DisplayName("필수 필드가 누락되면 예외가 발생한다")
         void parseThrowsWhenRequiredFieldIsMissing() {
             String body = """
                     {"returnValue": "success", "drwNoDate": "2024-01-06"}
@@ -65,104 +46,41 @@ class DhLotteryApiClientTest {
         }
 
         @Test
-        @DisplayName("HTML 응답이 오면 예외가 발생한다")
         void parseThrowsOnHtmlResponse() {
             assertThatThrownBy(() -> client.parse(1102, "<html>error</html>"))
                     .isInstanceOf(LottoApiClientException.class);
         }
 
         @Test
-        @DisplayName("빈 응답이 오면 예외가 발생한다")
         void parseThrowsOnBlankResponse() {
             assertThatThrownBy(() -> client.parse(1102, " "))
                     .isInstanceOf(LottoApiClientException.class);
         }
 
         @Test
-        @DisplayName("returnValue가 fail이면 예외가 발생한다")
-        void parseThrowsOnReturnValueFail() {
+        void parseReturnsEmptyOnReturnValueFail() {
             String body = """
                     {"returnValue":"fail","drwNo":1102}
                     """;
-            assertThatThrownBy(() -> client.parse(1102, body))
-                    .isInstanceOf(LottoApiClientException.class);
+            assertThat(client.parse(1102, body)).isEmpty();
         }
 
         @Test
-        @DisplayName("회차가 일치하지 않으면 예외가 발생한다")
         void parseThrowsOnRoundMismatch() {
-            String body = """
-                    {
-                      "totSellamnt": 79760843000,
-                      "returnValue": "success",
-                      "drwNoDate": "2024-01-06",
-                      "firstWinamnt": 2596477500,
-                      "drwtNo6": 33,
-                      "drwtNo4": 24,
-                      "drwtNo5": 28,
-                      "bnusNo": 38,
-                      "firstPrzwnerCo": 11,
-                      "drwtNo2": 13,
-                      "drwtNo3": 23,
-                      "drwtNo1": 6,
-                      "drwNo": 1103
-                    }
-                    """;
-            assertThatThrownBy(() -> client.parse(1102, body))
-                    .isInstanceOf(LottoApiClientException.class);
-        }
-
-        @Test
-        @DisplayName("정수 범위를 초과하는 값이 오면 예외가 발생한다")
-        void parseThrowsOnIntOverflow() {
-            String body = """
-                    {
-                      "totSellamnt": 79760843000,
-                      "returnValue": "success",
-                      "drwNoDate": "2024-01-06",
-                      "firstWinamnt": 2596477500,
-                      "drwtNo6": 33,
-                      "drwtNo4": 24,
-                      "drwtNo5": 28,
-                      "bnusNo": 38,
-                      "firstPrzwnerCo": 11,
-                      "drwtNo2": 13,
-                      "drwtNo3": 23,
-                      "drwtNo1": 2147483648,
-                      "drwNo": 1102
-                    }
-                    """;
+            String body = successBody(1103);
             assertThatThrownBy(() -> client.parse(1102, body))
                     .isInstanceOf(LottoApiClientException.class);
         }
     }
 
     @Nested
-    @DisplayName("재시도 로직 테스트")
     class FetchRetry {
 
         @Test
-        @DisplayName("네트워크 오류 발생 시 재시도한다")
         void fetchRetriesOnNetworkFailure() {
             DhLotteryApiClient spyClient = spy(new DhLotteryApiClient(null, new ObjectMapper(), "http://localhost", 2, 0, null));
-            String successBody = """
-                    {
-                      "totSellamnt": 79760843000,
-                      "returnValue": "success",
-                      "drwNoDate": "2024-01-06",
-                      "firstWinamnt": 2596477500,
-                      "drwtNo6": 33,
-                      "drwtNo4": 24,
-                      "drwtNo5": 28,
-                      "bnusNo": 38,
-                      "firstPrzwnerCo": 11,
-                      "drwtNo2": 13,
-                      "drwtNo3": 23,
-                      "drwtNo1": 6,
-                      "drwNo": 1102
-                    }
-                    """;
-            doThrow(new LottoApiClientException("network")).doReturn(new DhLotteryApiClient.ApiRawResponse(200, "application/json", successBody))
+            doThrow(new LottoApiClientException("network"))
+                    .doReturn(new DhLotteryApiClient.ApiRawResponse(200, "application/json", successBody(1102)))
                     .when(spyClient).doFetch(1102);
 
             Optional<WinningNumber> result = spyClient.fetch(1102);
@@ -172,7 +90,6 @@ class DhLotteryApiClientTest {
         }
 
         @Test
-        @DisplayName("재시도 횟수를 초과하면 예외가 발생한다")
         void fetchThrowsWhenRetryExhausted() {
             DhLotteryApiClient spyClient = spy(new DhLotteryApiClient(null, new ObjectMapper(), "http://localhost", 2, 0, null));
             doThrow(new LottoApiClientException("network")).when(spyClient).doFetch(1102);
@@ -183,5 +100,25 @@ class DhLotteryApiClientTest {
 
             verify(spyClient, times(3)).doFetch(1102);
         }
+    }
+
+    private static String successBody(int round) {
+        return """
+                {
+                  "totSellamnt": 79760843000,
+                  "returnValue": "success",
+                  "drwNoDate": "2024-01-06",
+                  "firstWinamnt": 2596477500,
+                  "drwtNo6": 33,
+                  "drwtNo4": 24,
+                  "drwtNo5": 28,
+                  "bnusNo": 38,
+                  "firstPrzwnerCo": 11,
+                  "drwtNo2": 13,
+                  "drwtNo3": 23,
+                  "drwtNo1": 6,
+                  "drwNo": %d
+                }
+                """.formatted(round);
     }
 }

@@ -61,5 +61,7 @@ class KraftPropertiesBindingTest {
         assertThat(rateLimit.endpoint("recommend").windowSeconds()).isEqualTo(60);
         assertThat(rateLimit.endpoint("collect").maxRequests()).isEqualTo(30);
         assertThat(rateLimit.endpoint("collect").windowSeconds()).isEqualTo(60);
+        assertThat(rateLimit.trustForwardedHeaders()).isFalse();
+        assertThat(rateLimit.trustedProxyIps()).isNotNull();
     }
 }

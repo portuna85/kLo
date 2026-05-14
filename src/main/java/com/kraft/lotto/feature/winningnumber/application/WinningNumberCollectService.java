@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
 
 /**
  * 외부 API에서 당첨번호를 끌어와 DB에 저장하는 application 서비스.
@@ -38,7 +37,6 @@ import org.springframework.stereotype.Service;
  *             Kept temporarily for backward-compatibility tests and will be removed
  *             after migration verification is complete.
  */
-@Service
 @Deprecated(forRemoval = true, since = "0.2.0")
 public class WinningNumberCollectService {
 

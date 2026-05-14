@@ -111,3 +111,22 @@ docker compose up -d --build
 ## 📄 라이선스
 Copyright © 2026 Kraft Lotto Project.  
 This project is licensed under the [MIT License](LICENSE).
+
+## Legacy Refresh API Deprecation
+- `POST /api/winning-numbers/refresh` is deprecated.
+- Sunset date: `2026-07-31` (UTC).
+- Successors:
+  - Next draw: `POST /admin/lotto/draws/collect-next`
+  - Sync range backfill: `POST /admin/lotto/draws/backfill?from=&to=`
+  - Async range backfill: `POST /admin/lotto/jobs/backfill?from=&to=`
+
+## Admin/Backfill Operations Policy
+- Sync backfill endpoint `/admin/lotto/draws/backfill` has a range guard (`KRAFT_COLLECT_BACKFILL_SYNC_MAX_RANGE`, default `50`).
+- For larger ranges, use async endpoint `/admin/lotto/jobs/backfill`.
+- Admin API calls are audit-logged with token alias, endpoint, client IP, and request range.
+
+## Rate Limit Proxy Policy
+- By default, rate limit uses `remoteAddr`.
+- To trust proxy headers, set:
+  - `KRAFT_RECOMMEND_RATE_LIMIT_TRUST_FORWARDED_HEADERS=true`
+  - `KRAFT_RECOMMEND_RATE_LIMIT_TRUSTED_PROXY_IPS=<comma-separated proxy IPs>`

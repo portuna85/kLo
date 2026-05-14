@@ -53,20 +53,44 @@ public class WinningNumberPersister {
     }
 
     @Transactional
-    public boolean upsert(WinningNumber winningNumber) {
+    public UpsertOutcome upsert(WinningNumber winningNumber) {
         long started = System.nanoTime();
         LocalDateTime now = LocalDateTime.now(clock);
-        boolean inserted = repository.findById(winningNumber.round())
+        UpsertOutcome outcome = repository.findById(winningNumber.round())
                 .map(existing -> {
-                    existing.updateFrom(WinningNumberMapper.toEntity(winningNumber, now), now);
-                    return false;
+                    var incoming = WinningNumberMapper.toEntity(winningNumber, now);
+                    if (isSame(existing, incoming)) {
+                        return UpsertOutcome.UNCHANGED;
+                    }
+                    existing.updateFrom(incoming, now);
+                    return UpsertOutcome.UPDATED;
                 })
                 .orElseGet(() -> {
                     repository.save(WinningNumberMapper.toEntity(winningNumber, now));
-                    return true;
+                    return UpsertOutcome.INSERTED;
                 });
-        recordDbSaveLatency(started, inserted ? "insert" : "update");
-        return inserted;
+        recordDbSaveLatency(started, switch (outcome) {
+            case INSERTED -> "insert";
+            case UPDATED -> "update";
+            case UNCHANGED -> "unchanged";
+        });
+        return outcome;
+    }
+
+    private static boolean isSame(com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberEntity existing,
+                                  com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberEntity incoming) {
+        return existing.getDrawDate().equals(incoming.getDrawDate())
+                && existing.getN1() == incoming.getN1()
+                && existing.getN2() == incoming.getN2()
+                && existing.getN3() == incoming.getN3()
+                && existing.getN4() == incoming.getN4()
+                && existing.getN5() == incoming.getN5()
+                && existing.getN6() == incoming.getN6()
+                && existing.getBonusNumber() == incoming.getBonusNumber()
+                && existing.getFirstPrize().equals(incoming.getFirstPrize())
+                && existing.getFirstWinners().equals(incoming.getFirstWinners())
+                && existing.getTotalSales().equals(incoming.getTotalSales())
+                && existing.getFirstAccumAmount() == incoming.getFirstAccumAmount();
     }
 
     private void recordDbSaveLatency(long started, String mode) {

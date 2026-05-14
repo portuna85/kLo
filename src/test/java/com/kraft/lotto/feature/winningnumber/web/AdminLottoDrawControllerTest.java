@@ -51,4 +51,17 @@ class AdminLottoDrawControllerTest {
 
         verify(collectionService, never()).backfill(org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt());
     }
+
+    @Test
+    @DisplayName("동기 backfill 최대 범위를 초과하면 요청을 거절한다")
+    void backfillRejectsTooLargeSyncRange() throws Exception {
+        mockMvc.perform(post("/admin/lotto/draws/backfill")
+                        .param("from", "1")
+                        .param("to", "60"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("REQUEST_VALIDATION_ERROR"));
+
+        verify(collectionService, never()).backfill(org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt());
+    }
 }

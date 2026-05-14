@@ -85,9 +85,10 @@ class RequiredConfigValidatorTest {
 
         RequiredConfigValidator.addProdOperationalConfigProblems(env, problems);
 
-        assertThat(problems).hasSize(2);
+        assertThat(problems).hasSize(3);
         assertThat(problems.get(0)).contains("kraft.api.url");
         assertThat(problems.get(1)).contains("kraft.recommend.max-attempts");
+        assertThat(problems.get(2)).contains("kraft.api.client");
     }
 
     @Test
@@ -100,5 +101,20 @@ class RequiredConfigValidatorTest {
         RequiredConfigValidator.addProdOperationalConfigProblems(env, problems);
 
         assertThat(problems).isEmpty();
+    }
+
+    @Test
+    @DisplayName("prod profile requires kraft.api.client=real")
+    void addsProblemWhenProdClientIsNotReal() {
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("prod");
+        env.setProperty("kraft.api.url", "https://example.com");
+        env.setProperty("kraft.recommend.max-attempts", "5000");
+        env.setProperty("kraft.api.client", "mock");
+        List<String> problems = new ArrayList<>();
+
+        RequiredConfigValidator.addProdOperationalConfigProblems(env, problems);
+
+        assertThat(problems).anyMatch(it -> it.contains("kraft.api.client"));
     }
 }

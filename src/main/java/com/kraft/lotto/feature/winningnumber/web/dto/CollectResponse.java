@@ -14,23 +14,36 @@ import java.util.List;
  */
 public record CollectResponse(
         int collected,
+        int updated,
         int skipped,
         int failed,
         int latestRound,
         List<Integer> failedRounds,
         boolean truncated,
         Integer nextRound,
-        boolean notDrawn
+        boolean notDrawn,
+        boolean dataChanged
 ) {
     public CollectResponse {
         failedRounds = List.copyOf(failedRounds);
     }
 
     public CollectResponse(int collected, int skipped, int failed, int latestRound) {
-        this(collected, skipped, failed, latestRound, List.of(), false, null, false);
+        this(collected, 0, skipped, failed, latestRound, List.of(), false, null, false, collected > 0);
     }
 
     public CollectResponse(int collected, int skipped, int failed, int latestRound, List<Integer> failedRounds) {
-        this(collected, skipped, failed, latestRound, failedRounds, false, null, false);
+        this(collected, 0, skipped, failed, latestRound, failedRounds, false, null, false, collected > 0);
+    }
+
+    public CollectResponse(int collected,
+                           int skipped,
+                           int failed,
+                           int latestRound,
+                           List<Integer> failedRounds,
+                           boolean truncated,
+                           Integer nextRound,
+                           boolean notDrawn) {
+        this(collected, 0, skipped, failed, latestRound, failedRounds, truncated, nextRound, notDrawn, collected > 0);
     }
 }
