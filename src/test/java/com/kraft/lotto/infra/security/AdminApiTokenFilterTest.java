@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kraft.lotto.infra.config.KraftAdminProperties;
+import com.kraft.lotto.infra.config.KraftRecommendRateLimitProperties;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +20,7 @@ class AdminApiTokenFilterTest {
 
     private final AdminApiTokenFilter filter = new AdminApiTokenFilter(
             new KraftAdminProperties("secret-token", "", "X-Kraft-Admin-Token"),
+            new KraftRecommendRateLimitProperties(),
             new ObjectMapper(),
             new SimpleMeterRegistry()
     );
@@ -126,6 +128,7 @@ class AdminApiTokenFilterTest {
     void blocksWhenServerTokenIsNotConfigured() throws Exception {
         AdminApiTokenFilter missingConfigFilter = new AdminApiTokenFilter(
                 new KraftAdminProperties("", "", "X-Kraft-Admin-Token"),
+                new KraftRecommendRateLimitProperties(),
                 new ObjectMapper(),
                 new SimpleMeterRegistry()
         );
@@ -145,6 +148,7 @@ class AdminApiTokenFilterTest {
     void allowsOneOfRotatedCsvTokens() throws Exception {
         AdminApiTokenFilter rotatedFilter = new AdminApiTokenFilter(
                 new KraftAdminProperties("", "token-a, token-b", "X-Kraft-Admin-Token"),
+                new KraftRecommendRateLimitProperties(),
                 new ObjectMapper(),
                 new SimpleMeterRegistry()
         );

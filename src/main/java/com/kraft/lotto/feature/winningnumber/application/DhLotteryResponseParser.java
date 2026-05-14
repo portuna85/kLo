@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kraft.lotto.feature.winningnumber.domain.LottoCombination;
 import com.kraft.lotto.feature.winningnumber.domain.WinningNumber;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
@@ -13,9 +14,11 @@ import java.util.Optional;
 class DhLotteryResponseParser {
 
     private final ObjectMapper objectMapper;
+    private final Clock clock;
 
-    DhLotteryResponseParser(ObjectMapper objectMapper) {
+    DhLotteryResponseParser(ObjectMapper objectMapper, Clock clock) {
         this.objectMapper = objectMapper;
+        this.clock = clock;
     }
 
     Optional<WinningNumber> parse(int round, String body) {
@@ -56,7 +59,7 @@ class DhLotteryResponseParser {
             long firstAccumAmount = optionalLong(node, "firstAccumamnt", round, 0L);
             return Optional.of(new WinningNumber(
                     drwNo, drawDate, new LottoCombination(mains), bonus, firstPrize, firstWinners,
-                    totalSales, firstAccumAmount, body, LocalDateTime.now()
+                    totalSales, firstAccumAmount, body, LocalDateTime.now(clock)
             ));
         } catch (DateTimeParseException | IllegalArgumentException | NullPointerException ex) {
             throw new LottoApiClientException("response transform failed (round=" + round + "): " + ex.getMessage(), ex);

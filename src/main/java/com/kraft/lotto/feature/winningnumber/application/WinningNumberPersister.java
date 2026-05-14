@@ -6,6 +6,7 @@ import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberReposit
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,18 +80,18 @@ public class WinningNumberPersister {
 
     private static boolean isSame(com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberEntity existing,
                                   com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberEntity incoming) {
-        return existing.getDrawDate().equals(incoming.getDrawDate())
-                && existing.getN1() == incoming.getN1()
-                && existing.getN2() == incoming.getN2()
-                && existing.getN3() == incoming.getN3()
-                && existing.getN4() == incoming.getN4()
-                && existing.getN5() == incoming.getN5()
-                && existing.getN6() == incoming.getN6()
-                && existing.getBonusNumber() == incoming.getBonusNumber()
-                && existing.getFirstPrize().equals(incoming.getFirstPrize())
-                && existing.getFirstWinners().equals(incoming.getFirstWinners())
-                && existing.getTotalSales().equals(incoming.getTotalSales())
-                && existing.getFirstAccumAmount() == incoming.getFirstAccumAmount();
+        return Objects.equals(existing.getDrawDate(), incoming.getDrawDate())
+                && Objects.equals(existing.getN1(), incoming.getN1())
+                && Objects.equals(existing.getN2(), incoming.getN2())
+                && Objects.equals(existing.getN3(), incoming.getN3())
+                && Objects.equals(existing.getN4(), incoming.getN4())
+                && Objects.equals(existing.getN5(), incoming.getN5())
+                && Objects.equals(existing.getN6(), incoming.getN6())
+                && Objects.equals(existing.getBonusNumber(), incoming.getBonusNumber())
+                && Objects.equals(existing.getFirstPrize(), incoming.getFirstPrize())
+                && Objects.equals(existing.getFirstWinners(), incoming.getFirstWinners())
+                && Objects.equals(existing.getTotalSales(), incoming.getTotalSales())
+                && Objects.equals(existing.getFirstAccumAmount(), incoming.getFirstAccumAmount());
     }
 
     private void recordDbSaveLatency(long started, String mode) {

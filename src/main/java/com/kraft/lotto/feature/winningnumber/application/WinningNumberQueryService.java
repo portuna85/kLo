@@ -11,11 +11,13 @@ import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberPageDto;
 import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.Comparator;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.event.EventListener;
@@ -31,11 +33,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class WinningNumberQueryService {
 
-    static final int MAX_ROUND = 3000;
+    public static final int MAX_ROUND = 3000;
     static final int DEFAULT_PAGE_SIZE = 20;
     static final int MAX_PAGE_SIZE = 100;
 
     private final WinningNumberRepository repository;
+
+    @Lazy
+    @Autowired
+    private WinningNumberQueryService self;
 
     public WinningNumberQueryService(WinningNumberRepository repository) {
         this.repository = repository;
@@ -90,18 +96,18 @@ public class WinningNumberQueryService {
     public CombinationPrizeHistoryDto combinationPrizeHistory(List<Integer> numbers) {
         validateCombination(numbers);
         List<Integer> normalized = numbers.stream().sorted().toList();
-        boolean[] target = toPresenceMap(normalized);
+        List<WinningNumberRepository.PrizeHitWithRankRow> hits = repository.findPrizeHitsByNumbers(
+                normalized.get(0), normalized.get(1), normalized.get(2),
+                normalized.get(3), normalized.get(4), normalized.get(5)
+        );
         List<CombinationPrizeHitDto> firstPrizeHits = new ArrayList<>();
         List<CombinationPrizeHitDto> secondPrizeHits = new ArrayList<>();
-
-        for (var row : repository.findAllForCombinationPrizeHistory()) {
-            int mainMatches = countMainMatches(target, row);
-            if (mainMatches == 6) {
-                firstPrizeHits.add(new CombinationPrizeHitDto(row.getRound(), row.getDrawDate()));
-                continue;
-            }
-            if (mainMatches == 5 && target[row.getBonusNumber()]) {
-                secondPrizeHits.add(new CombinationPrizeHitDto(row.getRound(), row.getDrawDate()));
+        for (WinningNumberRepository.PrizeHitWithRankRow hit : hits) {
+            CombinationPrizeHitDto dto = new CombinationPrizeHitDto(hit.getRound(), hit.getDrawDate());
+            if (hit.getPrizeRank() != null && hit.getPrizeRank() == 1) {
+                firstPrizeHits.add(dto);
+            } else {
+                secondPrizeHits.add(dto);
             }
         }
 
@@ -115,14 +121,14 @@ public class WinningNumberQueryService {
     }
 
     public FrequencySummaryDto frequencySummary() {
-        List<NumberFrequencyDto> frequencies = frequency();
+        List<NumberFrequencyDto> frequencies = self.frequency();
         List<Integer> lowSixNumbers = frequencies.stream()
                 .sorted(Comparator.comparingLong(NumberFrequencyDto::count).thenComparingInt(NumberFrequencyDto::number))
                 .limit(6)
                 .map(NumberFrequencyDto::number)
                 .sorted()
                 .toList();
-        CombinationPrizeHistoryDto lowSixHistory = combinationPrizeHistory(lowSixNumbers);
+        CombinationPrizeHistoryDto lowSixHistory = self.combinationPrizeHistory(lowSixNumbers);
         return new FrequencySummaryDto(frequencies, lowSixHistory);
     }
 
@@ -149,25 +155,6 @@ public class WinningNumberQueryService {
             }
             seen[number] = true;
         }
-    }
-
-    private static boolean[] toPresenceMap(List<Integer> numbers) {
-        boolean[] presence = new boolean[46];
-        for (Integer number : numbers) {
-            presence[number] = true;
-        }
-        return presence;
-    }
-
-    private static int countMainMatches(boolean[] target, WinningNumberRepository.CombinationPrizeRow row) {
-        int matches = 0;
-        if (target[row.getN1()]) matches++;
-        if (target[row.getN2()]) matches++;
-        if (target[row.getN3()]) matches++;
-        if (target[row.getN4()]) matches++;
-        if (target[row.getN5()]) matches++;
-        if (target[row.getN6()]) matches++;
-        return matches;
     }
 
     public static String combinationHistoryCacheKey(List<Integer> numbers) {

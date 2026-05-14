@@ -74,9 +74,10 @@ public class SecurityConfig {
 
     @Bean
     public AdminApiTokenFilter adminApiTokenFilter(KraftAdminProperties properties,
+                                                   KraftRecommendRateLimitProperties rateLimitProperties,
                                                    MeterRegistry meterRegistry,
                                                    ObjectMapper objectMapper) {
-        return new AdminApiTokenFilter(properties, objectMapper, meterRegistry);
+        return new AdminApiTokenFilter(properties, rateLimitProperties, objectMapper, meterRegistry);
     }
 
     @Bean

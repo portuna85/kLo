@@ -1,6 +1,7 @@
 package com.kraft.lotto.feature.winningnumber.web;
 
 import com.kraft.lotto.feature.winningnumber.application.LottoCollectionService;
+import com.kraft.lotto.feature.winningnumber.application.WinningNumberQueryService;
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
 import com.kraft.lotto.support.ApiResponse;
 import com.kraft.lotto.support.BusinessException;
@@ -40,13 +41,13 @@ public class AdminLottoDrawController {
     }
 
     @PostMapping("/{drwNo}/refresh")
-    public ApiResponse<CollectResponse> refresh(@PathVariable @Min(1) @Max(3000) int drwNo) {
+    public ApiResponse<CollectResponse> refresh(@PathVariable @Min(1) @Max(WinningNumberQueryService.MAX_ROUND) int drwNo) {
         return ApiResponse.success(collectionService.refreshDraw(drwNo));
     }
 
     @PostMapping("/backfill")
-    public ApiResponse<CollectResponse> backfill(@RequestParam @Min(1) @Max(3000) int from,
-                                                 @RequestParam @Min(1) @Max(3000) int to) {
+    public ApiResponse<CollectResponse> backfill(@RequestParam @Min(1) @Max(WinningNumberQueryService.MAX_ROUND) int from,
+                                                 @RequestParam @Min(1) @Max(WinningNumberQueryService.MAX_ROUND) int to) {
         int range = to - from + 1;
         if (range > syncBackfillMaxRange) {
             throw new BusinessException(

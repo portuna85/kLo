@@ -5,13 +5,12 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConditionalOnProperty(prefix = "kraft.lotto.scheduler", name = "enabled", havingValue = "true", matchIfMissing = true)
-@ConditionalOnProperty(prefix = "kraft.collect.auto", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnExpression("${kraft.lotto.scheduler.enabled:true} and ${kraft.collect.auto.enabled:true}")
 public class WinningNumberAutoCollectScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(WinningNumberAutoCollectScheduler.class);

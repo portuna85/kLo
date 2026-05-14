@@ -64,13 +64,13 @@ class ArchitectureTest {
 
     @ArchTest
     static final ArchRule deprecated_for_removal_should_not_be_service =
-            noClasses().that(DEPRECATED_FOR_REMOVAL).should().beAnnotatedWith(Service.class);
+            noClasses().that(DEPRECATED_FOR_REMOVAL).should().beAnnotatedWith(Service.class).allowEmptyShould(true);
 
     @ArchTest
     static final ArchRule deprecated_for_removal_should_not_be_component =
-            noClasses().that(DEPRECATED_FOR_REMOVAL).should().beAnnotatedWith(Component.class);
+            noClasses().that(DEPRECATED_FOR_REMOVAL).should().beAnnotatedWith(Component.class).allowEmptyShould(true);
 
     @ArchTest
     static final ArchRule deprecated_for_removal_should_not_be_controller =
-            noClasses().that(DEPRECATED_FOR_REMOVAL).should().beAnnotatedWith(Controller.class);
+            noClasses().that(DEPRECATED_FOR_REMOVAL).should().beAnnotatedWith(Controller.class).allowEmptyShould(true);
 }

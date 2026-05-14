@@ -1,6 +1,7 @@
 package com.kraft.lotto.feature.winningnumber.web;
 
 import com.kraft.lotto.feature.winningnumber.application.BackfillJobService;
+import com.kraft.lotto.feature.winningnumber.application.WinningNumberQueryService;
 import com.kraft.lotto.feature.winningnumber.web.dto.BackfillJobStatusResponse;
 import com.kraft.lotto.support.ApiResponse;
 import com.kraft.lotto.support.BusinessException;
@@ -28,8 +29,8 @@ public class AdminLottoJobController {
 
     @PostMapping("/backfill")
     public ApiResponse<BackfillJobStatusResponse> startBackfill(
-            @RequestParam @Min(1) @Max(3000) int from,
-            @RequestParam @Min(1) @Max(3000) int to) {
+            @RequestParam @Min(1) @Max(WinningNumberQueryService.MAX_ROUND) int from,
+            @RequestParam @Min(1) @Max(WinningNumberQueryService.MAX_ROUND) int to) {
         return ApiResponse.success(backfillJobService.start(from, to));
     }
 

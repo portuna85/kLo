@@ -28,6 +28,44 @@ public record CollectResponse(
         failedRounds = List.copyOf(failedRounds);
     }
 
+    public static CollectResponse of(int collected,
+                                     int updated,
+                                     int skipped,
+                                     int latestRound,
+                                     List<Integer> failedRounds,
+                                     boolean truncated,
+                                     Integer nextRound,
+                                     boolean notDrawn) {
+        return new CollectResponse(
+                collected,
+                updated,
+                skipped,
+                failedRounds.size(),
+                latestRound,
+                failedRounds,
+                truncated,
+                nextRound,
+                notDrawn,
+                (collected + updated) > 0
+        );
+    }
+
+    public static CollectResponse ofInserted(int count, int latestRound) {
+        return of(count, 0, 0, latestRound, List.of(), false, null, false);
+    }
+
+    public static CollectResponse ofUpdated(int count, int latestRound) {
+        return of(0, count, 0, latestRound, List.of(), false, null, false);
+    }
+
+    public static CollectResponse ofSkipped(int count, int latestRound) {
+        return of(0, 0, count, latestRound, List.of(), false, null, false);
+    }
+
+    public static CollectResponse ofFailed(List<Integer> failedRounds, int latestRound, boolean notDrawn) {
+        return of(0, 0, 0, latestRound, failedRounds, false, null, notDrawn);
+    }
+
     public CollectResponse(int collected, int skipped, int failed, int latestRound) {
         this(collected, 0, skipped, failed, latestRound, List.of(), false, null, false, collected > 0);
     }

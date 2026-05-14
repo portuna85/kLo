@@ -7,7 +7,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    database-platform: org.hibernate.dialect.H2Dialect
     open-in-view: false
   flyway:
     enabled: true
@@ -47,3 +46,12 @@ kraft:
       collect:
         max-requests: 30
         window-seconds: 60
+
+logging:
+  level:
+    org.hibernate.orm.deprecation: ERROR
+    org.flywaydb.core.internal.database.base.Database: ERROR
+    org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor: ERROR
+    org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration: ERROR
+    org.mariadb.jdbc.message.server.ErrorPacket: ERROR
+    org.hibernate.orm.jdbc.error: ERROR

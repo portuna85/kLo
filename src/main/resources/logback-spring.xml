@@ -199,6 +199,12 @@
 
     <springProfile name="!local">
         <logger name="com.kraft.lotto" level="INFO"/>
+        <logger name="org.hibernate.orm.deprecation" level="ERROR"/>
+        <logger name="org.hibernate.orm.jdbc.error" level="ERROR"/>
+        <logger name="org.flywaydb.core.internal.database.base.Database" level="WARN"/>
+        <logger name="org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor" level="WARN"/>
+        <logger name="org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration" level="ERROR"/>
+        <logger name="org.mariadb.jdbc.message.server.ErrorPacket" level="ERROR"/>
         <!-- 운영에서도 ERROR/WARN 파일은 정상 작동.
              DEBUG 파일을 채우고 싶다면 위 logger 레벨을 DEBUG 로 변경한다. -->
         <root level="INFO">

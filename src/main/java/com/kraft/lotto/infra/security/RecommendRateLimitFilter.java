@@ -5,6 +5,7 @@ import com.kraft.lotto.infra.config.KraftRateLimitRedisProperties;
 import com.kraft.lotto.infra.config.KraftRecommendRateLimitProperties;
 import com.kraft.lotto.support.ApiError;
 import com.kraft.lotto.support.ApiResponse;
+import com.kraft.lotto.support.ClientIpResolver;
 import com.kraft.lotto.support.ErrorCode;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.servlet.FilterChain;
@@ -15,9 +16,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
@@ -34,8 +33,6 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
 
     static final int MAX_TRACKED_IPS = 50_000;
     private static final long CLEANUP_INTERVAL_MS = 60_000L;
-    private static final String UNKNOWN_CLIENT_IP = "unknown";
-
     private final KraftRecommendRateLimitProperties properties;
     private final KraftRateLimitRedisProperties redisProperties;
     private final ObjectMapper objectMapper;
@@ -77,8 +74,8 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
             return;
         }
 
-        String clientIp = resolveClientIp(request, properties);
-        if (UNKNOWN_CLIENT_IP.equals(clientIp)) {
+        String clientIp = ClientIpResolver.resolve(request, properties);
+        if (ClientIpResolver.UNKNOWN_CLIENT_IP.equals(clientIp)) {
             log.warn("rate limit client IP could not be resolved: method={}, uri={}",
                     request.getMethod(), request.getRequestURI());
         }
@@ -224,47 +221,6 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
             return true;
         }
         return path.matches("^/admin/lotto/draws/\\d+/refresh$");
-    }
-
-    private static String resolveClientIp(HttpServletRequest request, KraftRecommendRateLimitProperties properties) {
-        String remoteAddr = normalizeIp(request.getRemoteAddr());
-        if (properties.trustForwardedHeaders() && isTrustedProxy(remoteAddr, properties.trustedProxyIps())) {
-            String forwarded = firstForwardedIp(request.getHeader("X-Forwarded-For"));
-            if (forwarded != null) {
-                return forwarded;
-            }
-            String realIp = normalizeIp(request.getHeader("X-Real-IP"));
-            if (realIp != null) {
-                return realIp;
-            }
-        }
-        return remoteAddr == null ? UNKNOWN_CLIENT_IP : remoteAddr;
-    }
-
-    private static boolean isTrustedProxy(String remoteAddr, List<String> trustedProxyIps) {
-        if (remoteAddr == null) {
-            return false;
-        }
-        Set<String> defaults = Set.of("127.0.0.1", "::1");
-        if (defaults.contains(remoteAddr)) {
-            return true;
-        }
-        return trustedProxyIps.contains(remoteAddr);
-    }
-
-    private static String firstForwardedIp(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        String first = value.split(",")[0].trim();
-        return normalizeIp(first);
-    }
-
-    private static String normalizeIp(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return value.trim();
     }
 
     private enum Endpoint {

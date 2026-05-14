@@ -2,8 +2,10 @@ package com.kraft.lotto.infra.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kraft.lotto.infra.config.KraftAdminProperties;
+import com.kraft.lotto.infra.config.KraftRecommendRateLimitProperties;
 import com.kraft.lotto.support.ApiError;
 import com.kraft.lotto.support.ApiResponse;
+import com.kraft.lotto.support.ClientIpResolver;
 import com.kraft.lotto.support.ErrorCode;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.servlet.FilterChain;
@@ -41,13 +43,16 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
     private static final String ADMIN_PATH_PREFIX = "/admin/";
 
     private final KraftAdminProperties properties;
+    private final KraftRecommendRateLimitProperties rateLimitProperties;
     private final ObjectMapper objectMapper;
     private final MeterRegistry meterRegistry;
 
     public AdminApiTokenFilter(KraftAdminProperties properties,
+                               KraftRecommendRateLimitProperties rateLimitProperties,
                                ObjectMapper objectMapper,
                                MeterRegistry meterRegistry) {
         this.properties = properties;
+        this.rateLimitProperties = rateLimitProperties;
         this.objectMapper = objectMapper;
         this.meterRegistry = meterRegistry;
     }
@@ -109,7 +114,7 @@ public class AdminApiTokenFilter extends OncePerRequestFilter {
     private void auditLog(HttpServletRequest request, String result, String reason, String tokenAlias) {
         String path = pathWithinApplication(request);
         String method = request.getMethod();
-        String ip = request.getRemoteAddr();
+        String ip = ClientIpResolver.resolve(request, rateLimitProperties);
         String from = request.getParameter("from");
         String to = request.getParameter("to");
         String drwNo = request.getParameter("drwNo");

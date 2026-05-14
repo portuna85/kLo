@@ -54,6 +54,11 @@ jobs:
               exit 1
             fi
           done < .required-envs
+          token_val="$(printf '%s' "$ALL_SECRETS_JSON" | jq -r '.KRAFT_ADMIN_API_TOKENS // ""')"
+          if [ ${#token_val} -lt 32 ]; then
+            echo "::error::KRAFT_ADMIN_API_TOKENS is too short (min 32 chars)"
+            exit 1
+          fi
 
       - name: Mask production secrets in logs
         env:
@@ -228,10 +233,19 @@ jobs:
           exit 1
 
       - name: Smoke test
+        env:
+          KRAFT_ADMIN_API_TOKENS: ${{ secrets.KRAFT_ADMIN_API_TOKENS }}
         run: |
           BODY=$(curl -fsS http://localhost:8080/actuator/health/readiness)
           printf '%s\n' "$BODY"
           printf '%s' "$BODY" | grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"'
+          HTTP=$(curl -s -o /dev/null -w '%{http_code}' \
+            -X POST http://localhost:8080/admin/lotto/draws/collect-next \
+            -H "X-Kraft-Admin-Token: ${KRAFT_ADMIN_API_TOKENS%%,*}")
+          [ "$HTTP" = "200" ] || [ "$HTTP" = "409" ] || {
+            echo "::error::Admin token smoke test failed: HTTP $HTTP"
+            exit 1
+          }
           echo "Smoke test passed"
 
       - name: Cleanup .env

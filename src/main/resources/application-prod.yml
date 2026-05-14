@@ -39,3 +39,7 @@ logging:
 kraft:
   api:
     client: ${KRAFT_API_CLIENT:real}
+  recommend:
+    rate-limit:
+      redis:
+        enabled: ${KRAFT_RECOMMEND_RATE_LIMIT_REDIS_ENABLED:true}

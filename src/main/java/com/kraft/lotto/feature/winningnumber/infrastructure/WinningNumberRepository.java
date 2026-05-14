@@ -26,30 +26,58 @@ public interface WinningNumberRepository extends JpaRepository<WinningNumberEnti
     @Query("select w from WinningNumberEntity w order by w.round asc")
     List<WinningNumberEntity> findAllOrderByRoundAsc();
 
-    @Query("select w.n1, w.n2, w.n3, w.n4, w.n5, w.n6 from WinningNumberEntity w order by w.round asc")
-    List<Object[]> findAllCombinationsOrderByRoundAsc();
+    @Query("""
+            select w.n1 as n1, w.n2 as n2, w.n3 as n3,
+                   w.n4 as n4, w.n5 as n5, w.n6 as n6
+            from WinningNumberEntity w
+            order by w.round asc
+            """)
+    List<CombinationRow> findAllCombinationsOrderByRoundAsc();
 
     @Query("select w.n1, w.n2, w.n3, w.n4, w.n5, w.n6 from WinningNumberEntity w")
     List<Object[]> findAllNumbersForFrequency();
 
-    @Query("""
-            select w.round as round, w.drawDate as drawDate,
-                   w.n1 as n1, w.n2 as n2, w.n3 as n3, w.n4 as n4, w.n5 as n5, w.n6 as n6,
-                   w.bonusNumber as bonusNumber
-            from WinningNumberEntity w
-            order by w.round desc
-            """)
-    List<CombinationPrizeRow> findAllForCombinationPrizeHistory();
+    @Query(value = """
+            select sub.round as round, sub.draw_date as drawDate, sub.prize_rank as prizeRank
+            from (
+                select w.round, w.draw_date, 1 as prize_rank
+                from winning_numbers w
+                where w.n1 in (:n1, :n2, :n3, :n4, :n5, :n6)
+                  and w.n2 in (:n1, :n2, :n3, :n4, :n5, :n6)
+                  and w.n3 in (:n1, :n2, :n3, :n4, :n5, :n6)
+                  and w.n4 in (:n1, :n2, :n3, :n4, :n5, :n6)
+                  and w.n5 in (:n1, :n2, :n3, :n4, :n5, :n6)
+                  and w.n6 in (:n1, :n2, :n3, :n4, :n5, :n6)
+                union all
+                select w.round, w.draw_date, 2 as prize_rank
+                from winning_numbers w
+                where (
+                    (case when w.n1 in (:n1, :n2, :n3, :n4, :n5, :n6) then 1 else 0 end)
+                  + (case when w.n2 in (:n1, :n2, :n3, :n4, :n5, :n6) then 1 else 0 end)
+                  + (case when w.n3 in (:n1, :n2, :n3, :n4, :n5, :n6) then 1 else 0 end)
+                  + (case when w.n4 in (:n1, :n2, :n3, :n4, :n5, :n6) then 1 else 0 end)
+                  + (case when w.n5 in (:n1, :n2, :n3, :n4, :n5, :n6) then 1 else 0 end)
+                  + (case when w.n6 in (:n1, :n2, :n3, :n4, :n5, :n6) then 1 else 0 end)
+                ) = 5
+                  and w.bonus_number in (:n1, :n2, :n3, :n4, :n5, :n6)
+            ) sub
+            order by sub.round desc
+            """, nativeQuery = true)
+    List<PrizeHitWithRankRow> findPrizeHitsByNumbers(
+            Integer n1, Integer n2, Integer n3, Integer n4, Integer n5, Integer n6);
 
-    interface CombinationPrizeRow {
-        Integer getRound();
-        LocalDate getDrawDate();
+    interface CombinationRow {
         Integer getN1();
         Integer getN2();
         Integer getN3();
         Integer getN4();
         Integer getN5();
         Integer getN6();
-        Integer getBonusNumber();
+    }
+
+    interface PrizeHitWithRankRow {
+        Integer getRound();
+        LocalDate getDrawDate();
+        Integer getPrizeRank();
     }
 }

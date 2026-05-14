@@ -37,7 +37,7 @@ public class WinningNumberController {
     }
 
     @GetMapping("/{round}")
-    public ApiResponse<WinningNumberDto> byRound(@PathVariable("round") @Min(1) @Max(3000) int round) {
+    public ApiResponse<WinningNumberDto> byRound(@PathVariable("round") @Min(1) @Max(WinningNumberQueryService.MAX_ROUND) int round) {
         return ApiResponse.success(queryService.getByRound(round));
     }
 

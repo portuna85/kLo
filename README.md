@@ -1,132 +1,88 @@
-# 🎰 Kraft Lotto (kLo)
+﻿# kLo (Kraft Lotto)
 
-> **Spring Boot 4 기반의 고성능 로또 데이터 관리 및 추천 엔진**  
-> 정교한 패턴 분석을 통한 번호 추천, 동행복권 API 연동 수집, 그리고 엄격한 아키텍처 검증을 지향하는 프로젝트입니다.
+Spring Boot 기반의 로또 데이터 수집/조회/추천 서비스입니다.
 
----
+## 핵심 기능
+- 당첨번호 수집
+  - 최신 회차 수집, 누락 회차 수집, 범위 백필, 특정 회차 새로고침
+- 당첨번호 조회
+  - 최신/회차별 조회, 페이징 조회
+- 통계
+  - 번호 빈도, 조합 1·2등 당첨 이력
+- 추천
+  - 규칙 기반 제외 + 조합 생성
+- 운영 기능
+  - 관리자 토큰 보호, 요청 속도 제한, 스케줄 수집, 백필 잡 관리
 
-## 📌 목차
-- [✨ 주요 기능](#-주요-기능)
-- [🛠️ 기술 스택](#-기술-스택)
-- [🏗️ 아키텍처 및 설계 원칙](#-아키텍처-및-설계-원칙)
-- [🚀 빠른 시작](#-빠른-시작)
-- [📡 API 레퍼런스](#-api-레퍼런스)
-- [🧪 테스트 및 품질 관리](#-테스트-및-품질-관리)
-- [📄 라이선스](#-라이선스)
+## 기술 스택
+- Java 25
+- Spring Boot 4.0.5
+- Spring Data JPA / Hibernate
+- MariaDB 11.8.2
+- Flyway
+- Caffeine Cache
+- Resilience4j Circuit Breaker
+- Micrometer / Actuator
+- JUnit5 / Mockito / Testcontainers / ArchUnit
 
----
-
-## ✨ 주요 기능
-
-| 기능 | 설명 | 주요 엔드포인트 |
-| :--- | :--- | :--- |
-| 🎯 **번호 추천** | 편향된 패턴(생일, 연대, 과거 당첨 등) 회피 로직 기반 추천 | `POST /api/recommend` |
-| 🔄 **자동 수집** | 스케줄러를 통한 매주 토요일 최신 당첨 번호 자동 동기화 | - |
-| 📊 **통계 분석** | 번호별 출현 빈도 및 요약 통계 제공 | `/api/winning-numbers/stats/**` |
-| 🔧 **관리 도구** | 특정 회차 수동 수집, 범위 백필(Backfill) 및 작업 모니터링 | `/admin/lotto/**` |
-| 📖 **문서화** | Spring REST Docs를 이용한 타입 세이프한 API 명세 제공 | `/docs/index.html` |
-
----
-
-## 🛠️ 기술 스택
-
-| 분류 | 기술 |
-| :--- | :--- |
-| **Core** | Java 25, Spring Boot 4.0.5 |
-| **Data** | Spring Data JPA, Hibernate, MariaDB 11.8, Flyway |
-| **Cache** | Caffeine Cache (Local), Redis (Rate Limit) |
-| **Security** | Spring Security (Token based Admin API), Rate Limiting |
-| **Observability** | Spring Boot Actuator, Micrometer, OTLP Tracing |
-| **Testing** | JUnit 5, AssertJ, Testcontainers, ArchUnit, Mockito |
-
----
-
-## 🏗️ 아키텍처 및 설계 원칙
-
-본 프로젝트는 서비스의 안정성과 확장성을 위해 다음과 같은 설계 원칙을 준수합니다.
-
-1.  **계층형 아키텍처 (Layered Architecture)**: Web, Application, Domain, Infrastructure 계층을 엄격히 분리합니다.
-2.  **도메인 중심 설계 (Domain-Driven Design)**: 비즈니스 핵심 로직은 프레임워크 의존성이 없는 순수 도메인 객체에 위치합니다.
-3.  **데이터 무결성**: DB 수준의 `CHECK` 제약 조건을 통해 잘못된 데이터(정렬되지 않은 번호, 범위 초과 등)의 유입을 원천 차단합니다.
-4.  **자동화된 구조 검증**: `ArchUnit`을 사용하여 아키텍처 위반 사항을 테스트 단계에서 검증합니다.
-
----
-
-## 🚀 빠른 시작
-
-### 1️⃣ 환경 변수 설정
-`.env.example` 파일을 복사하여 `.env` 파일을 생성하고 필수 값을 입력합니다.
+## 실행 방법
+### 1) 환경 파일 준비
+`.env.example`을 복사해 `.env`를 만듭니다.
 
 ```bash
 cp .env.example .env
 ```
 
-### 2️⃣ 필수 환경 변수 입력
-운영(`prod`) 프로파일 기동을 위해 아래 값들을 설정해야 합니다.
-- `KRAFT_DB_PASSWORD`: 데이터베이스 암호
-- `KRAFT_ADMIN_API_TOKENS`: 관리자 API 접근을 위한 토큰 목록 (쉼표 구분)
+### 2) 필수 값 설정
+최소 다음 값은 반드시 설정해야 합니다.
+- `KRAFT_DB_NAME`
+- `KRAFT_DB_USER`
+- `KRAFT_DB_PASSWORD`
+- `KRAFT_DB_ROOT_PASSWORD`
+- `KRAFT_ADMIN_API_TOKENS`
 
-### 3️⃣ Docker를 이용한 실행
+### 3) 실행
 ```bash
 docker compose up -d --build
 ```
 
-### 4️⃣ 서비스 접속
-- **애플리케이션**: [http://localhost:8080/](http://localhost:8080/)
-- **API 문서**: [http://localhost:8080/docs/index.html](http://localhost:8080/docs/index.html)
-- **헬스 체크**: [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)
+### 4) 확인
+- App: `http://localhost:8080`
+- Health: `http://localhost:8080/actuator/health/readiness`
+- Docs: `http://localhost:8080/docs/index.html`
 
----
+## 주요 엔드포인트
+### Public
+- `POST /api/recommend`
+- `GET /api/winning-numbers/latest`
+- `GET /api/winning-numbers/{round}`
+- `GET /api/winning-numbers`
+- `GET /api/winning-numbers/stats/frequency`
+- `GET /api/winning-numbers/stats/frequency-summary`
+- `GET /api/winning-numbers/stats/combination-prize-history`
 
-## 📡 API 레퍼런스
+### Admin (토큰 필요)
+헤더: `X-Kraft-Admin-Token`
 
-### 🔓 Public API (사용자용)
-- `POST /api/recommend`: 맞춤형 로또 번호 추천 조합 생성
-- `GET /api/winning-numbers/latest`: 최신 회차 당첨 정보 조회
-- `GET /api/winning-numbers/stats/frequency`: 번호별 출현 빈도 통계
+- `POST /admin/lotto/draws/collect-next`
+- `POST /admin/lotto/draws/collect-missing`
+- `POST /admin/lotto/draws/{drwNo}/refresh`
+- `POST /admin/lotto/draws/backfill?from=&to=`
+- `POST /admin/lotto/jobs/backfill?from=&to=`
+- `GET /admin/lotto/jobs/{jobId}`
 
-### 🔒 Admin API (관리자용)
-> `X-Kraft-Admin-Token` 헤더가 필요합니다.
-- `POST /admin/lotto/draws/collect-next`: 다음 회차 즉시 수집
-- `POST /admin/lotto/jobs/backfill?from=1&to=1000`: 비동기 대량 데이터 백필
-
----
-
-## 🧪 테스트 및 품질 관리
-
-다각도의 테스트 전략을 통해 소프트웨어 결함을 최소화합니다.
-
-- **단위 테스트**: 비즈니스 로직 및 도메인 규칙 검증
-- **통합 테스트 (IT)**: `Testcontainers`와 실제 `MariaDB`를 이용한 레포지토리 및 DB 제약 조건 검증
-- **아키텍처 테스트**: `ArchUnit`을 이용한 패키지 의존성 및 명명 규칙 검증
-- **API 테스트**: REST Docs 조각 생성을 겸한 컨트롤러 유효성 검증
-
+## 테스트
 ```bash
-# 전체 테스트 실행 (Docker 실행 중인 경우 IT 포함)
 ./gradlew test
 ```
 
----
+## 로깅
+기본 로그 경로: `./logs`
+- `kraft.log`
+- `kraft-warn.log`
+- `kraft-error.log`
+- `kraft-debug.log`
+- `kraft-json.log`
 
-## 📄 라이선스
-Copyright © 2026 Kraft Lotto Project.  
-This project is licensed under the [MIT License](LICENSE).
-
-## Legacy Refresh API Deprecation
-- `POST /api/winning-numbers/refresh` is deprecated.
-- Sunset date: `2026-07-31` (UTC).
-- Successors:
-  - Next draw: `POST /admin/lotto/draws/collect-next`
-  - Sync range backfill: `POST /admin/lotto/draws/backfill?from=&to=`
-  - Async range backfill: `POST /admin/lotto/jobs/backfill?from=&to=`
-
-## Admin/Backfill Operations Policy
-- Sync backfill endpoint `/admin/lotto/draws/backfill` has a range guard (`KRAFT_COLLECT_BACKFILL_SYNC_MAX_RANGE`, default `50`).
-- For larger ranges, use async endpoint `/admin/lotto/jobs/backfill`.
-- Admin API calls are audit-logged with token alias, endpoint, client IP, and request range.
-
-## Rate Limit Proxy Policy
-- By default, rate limit uses `remoteAddr`.
-- To trust proxy headers, set:
-  - `KRAFT_RECOMMEND_RATE_LIMIT_TRUST_FORWARDED_HEADERS=true`
-  - `KRAFT_RECOMMEND_RATE_LIMIT_TRUSTED_PROXY_IPS=<comma-separated proxy IPs>`
+## 라이선스
+MIT

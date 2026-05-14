@@ -9,6 +9,7 @@ import com.kraft.lotto.support.ErrorCode;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,11 +32,13 @@ public class RecommendService {
     private final MeterRegistry meterRegistry;
 
     @Autowired
-    public RecommendService(List<ExclusionRule> rules, LottoRecommender recommender) {
-        this(rules, recommender, null);
+    public RecommendService(List<ExclusionRule> rules,
+                            LottoRecommender recommender,
+                            ObjectProvider<MeterRegistry> meterRegistryProvider) {
+        this(rules, recommender, meterRegistryProvider.getIfAvailable());
     }
 
-    public RecommendService(List<ExclusionRule> rules, LottoRecommender recommender, MeterRegistry meterRegistry) {
+    RecommendService(List<ExclusionRule> rules, LottoRecommender recommender, MeterRegistry meterRegistry) {
         this.rules = List.copyOf(rules);
         this.recommender = recommender;
         this.meterRegistry = meterRegistry;

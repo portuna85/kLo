@@ -42,10 +42,12 @@ public class FailoverLottoApiClient implements LottoApiClient {
             return response;
         } catch (CallNotPermittedException ex) {
             log.warn("primary lotto api call not permitted, using fallback: round={}", round);
+            log.debug("primary lotto api call-not-permitted detail: round={}", round, ex);
             return fallback.fetch(round);
         } catch (LottoApiClientException ex) {
             circuitBreaker.onError(0, TimeUnit.NANOSECONDS, ex);
-            log.warn("primary lotto api failed, using fallback: round={}", round, ex);
+            log.warn("primary lotto api failed, using fallback: round={}, reason={}", round, ex.getMessage());
+            log.debug("primary lotto api fallback detail: round={}", round, ex);
             return fallback.fetch(round);
         }
     }

@@ -52,7 +52,9 @@ jobs:
       - name: Verify prod profile resources are packaged in jar
         run: |
           ./gradlew --no-daemon bootJarWithDocs -x test
-          pwsh ./scripts/verify-prod-profile-in-jar.ps1 -JarPath build/libs/app-with-docs.jar
+          unzip -l build/libs/app-with-docs.jar \
+            | grep -E 'BOOT-INF/classes/application-(prod|local)\.yml' \
+            | wc -l | xargs test 2 -eq
 
       - name: Upload test report
         if: always()

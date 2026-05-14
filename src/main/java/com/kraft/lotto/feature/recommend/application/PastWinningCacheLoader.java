@@ -9,8 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * PastWinningCache를 Repository로부터 적재/갱신하는 어댑터.
@@ -34,7 +36,8 @@ public class PastWinningCacheLoader {
         reload();
     }
 
-    @EventListener
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onCollected(WinningNumbersCollectedEvent event) {
         log.info("PastWinningCache reload triggered: collected={}, skipped={}, failed={}",
                 event.collected(), event.skipped(), event.failed());
@@ -43,13 +46,29 @@ public class PastWinningCacheLoader {
 
     public void reload() {
         List<LottoCombination> combinations = new ArrayList<>();
-        repository.findAllCombinationsOrderByRoundAsc().forEach(row ->
+        int[] invalidRows = {0};
+        repository.findAllCombinationsOrderByRoundAsc().forEach(row -> {
+            try {
+                if (row.getN1() == null || row.getN2() == null || row.getN3() == null
+                        || row.getN4() == null || row.getN5() == null || row.getN6() == null) {
+                    invalidRows[0]++;
+                    return;
+                }
                 combinations.add(new LottoCombination(List.of(
-                        (Integer) row[0], (Integer) row[1], (Integer) row[2],
-                        (Integer) row[3], (Integer) row[4], (Integer) row[5]
-                )))
-        );
+                        row.getN1(), row.getN2(), row.getN3(),
+                        row.getN4(), row.getN5(), row.getN6()
+                )));
+            } catch (RuntimeException ex) {
+                invalidRows[0]++;
+                log.warn("Skipping invalid winning number combination row while loading cache", ex);
+            }
+        });
         cache.replace(combinations);
-        log.debug("PastWinningCache loaded size={}", cache.size());
+        if (invalidRows[0] > 0) {
+            log.warn("PastWinningCache loaded with invalid rows skipped: skipped={}, loaded={}",
+                    invalidRows[0], cache.size());
+        } else {
+            log.debug("PastWinningCache loaded size={}", cache.size());
+        }
     }
 }

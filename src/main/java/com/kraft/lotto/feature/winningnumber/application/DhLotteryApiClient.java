@@ -5,6 +5,7 @@ import com.kraft.lotto.feature.winningnumber.domain.WinningNumber;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +33,7 @@ public class DhLotteryApiClient implements LottoApiClient {
     );
 
     public DhLotteryApiClient(RestClient restClient, ObjectMapper objectMapper, String baseUrl) {
-        this(restClient, objectMapper, baseUrl, 0, 0, null);
+        this(restClient, objectMapper, baseUrl, 0, 0, null, Clock.systemDefaultZone());
     }
 
     public DhLotteryApiClient(RestClient restClient,
@@ -41,8 +42,18 @@ public class DhLotteryApiClient implements LottoApiClient {
                               int maxRetries,
                               int retryBackoffMs,
                               MeterRegistry meterRegistry) {
+        this(restClient, objectMapper, baseUrl, maxRetries, retryBackoffMs, meterRegistry, Clock.systemDefaultZone());
+    }
+
+    DhLotteryApiClient(RestClient restClient,
+                       ObjectMapper objectMapper,
+                       String baseUrl,
+                       int maxRetries,
+                       int retryBackoffMs,
+                       MeterRegistry meterRegistry,
+                       Clock clock) {
         this.restClient = restClient;
-        this.responseParser = new DhLotteryResponseParser(objectMapper);
+        this.responseParser = new DhLotteryResponseParser(objectMapper, clock);
         this.baseUrl = baseUrl;
         this.maxRetries = Math.max(0, maxRetries);
         this.retryBackoffMs = Math.max(0, retryBackoffMs);
@@ -86,7 +97,9 @@ public class DhLotteryApiClient implements LottoApiClient {
                                 "external API call failed (round=" + round + ", attempts=" + attempts + ")", ex);
                     }
                     count("kraft.api.dhlottery.call.retry");
-                    log.warn("dhlottery call failed, retrying: round={}, attempt={}/{}", round, attempt, attempts, ex);
+                    log.warn("dhlottery call failed, retrying: round={}, attempt={}/{}, reason={}",
+                            round, attempt, attempts, ex.getMessage());
+                    log.debug("dhlottery retry detail: round={}, attempt={}/{}", round, attempt, attempts, ex);
                     sleepBackoff();
                 } catch (LottoApiClientException ex) {
                     if (attempt >= attempts) {
@@ -94,7 +107,9 @@ public class DhLotteryApiClient implements LottoApiClient {
                                 "external API call failed (round=" + round + ", attempts=" + attempts + ")", ex);
                     }
                     count("kraft.api.dhlottery.call.retry");
-                    log.warn("dhlottery call failed, retrying: round={}, attempt={}/{}", round, attempt, attempts, ex);
+                    log.warn("dhlottery call failed, retrying: round={}, attempt={}/{}, reason={}",
+                            round, attempt, attempts, ex.getMessage());
+                    log.debug("dhlottery retry detail: round={}, attempt={}/{}", round, attempt, attempts, ex);
                     sleepBackoff();
                 }
             }

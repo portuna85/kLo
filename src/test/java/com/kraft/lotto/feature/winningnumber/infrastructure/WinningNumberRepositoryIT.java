@@ -54,7 +54,6 @@ class WinningNumberRepositoryIT {
         registry.add("spring.flyway.enabled", () -> "true");
         registry.add("spring.flyway.locations", () -> "classpath:db/migration");
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
-        registry.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.MariaDBDialect");
     }
 
     @Autowired
