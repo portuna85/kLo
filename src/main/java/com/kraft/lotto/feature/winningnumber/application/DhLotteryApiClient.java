@@ -29,7 +29,7 @@ public class DhLotteryApiClient implements LottoApiClient {
     private final MeterRegistry meterRegistry;
 
     private static final List<String> ALLOWED_FAILURE_REASONS = List.of(
-            "blank_body", "network", "json_parse", "validation", "transform", "unexpected_return_value"
+            "http_error", "blank_body", "non_json", "network", "json_parse", "validation", "transform", "unexpected_return_value"
     );
 
     public DhLotteryApiClient(RestClient restClient, ObjectMapper objectMapper, String baseUrl) {
@@ -73,7 +73,7 @@ public class DhLotteryApiClient implements LottoApiClient {
                     ApiRawResponse response = doFetch(round);
                     if (response.statusCode() >= 400) {
                         String responseBody = response.body() == null ? "" : response.body();
-                        count("kraft.api.dhlottery.call.failure", "reason", "network");
+                        count("kraft.api.dhlottery.call.failure", "reason", "http_error");
                         throw new LottoApiClientException("external API HTTP error (round=" + round + ", status=" + response.statusCode()
                                 + ", preview=" + preview(responseBody) + ")", response.statusCode(), response.body());
                     }

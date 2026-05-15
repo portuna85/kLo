@@ -1,16 +1,11 @@
 package com.kraft.lotto.feature.winningnumber.application;
 
-import com.kraft.lotto.feature.statistics.application.WinningStatisticsService;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberMapper;
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberRepository;
-import com.kraft.lotto.feature.winningnumber.web.dto.CombinationPrizeHistoryDto;
-import com.kraft.lotto.feature.winningnumber.web.dto.FrequencySummaryDto;
-import com.kraft.lotto.feature.winningnumber.web.dto.NumberFrequencyDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberDto;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberPageDto;
 import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
-import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,12 +19,9 @@ public class WinningNumberQueryService {
     static final int MAX_PAGE_SIZE = 100;
 
     private final WinningNumberRepository repository;
-    private final WinningStatisticsService statisticsService;
 
-    public WinningNumberQueryService(WinningNumberRepository repository,
-                                     WinningStatisticsService statisticsService) {
+    public WinningNumberQueryService(WinningNumberRepository repository) {
         this.repository = repository;
-        this.statisticsService = statisticsService;
     }
 
     public WinningNumberDto getLatest() {
@@ -57,17 +49,5 @@ public class WinningNumberQueryService {
                 .map(WinningNumberMapper::toDomain)
                 .map(WinningNumberDto::from);
         return WinningNumberPageDto.from(mapped);
-    }
-
-    public List<NumberFrequencyDto> frequency() {
-        return statisticsService.frequency();
-    }
-
-    public CombinationPrizeHistoryDto combinationPrizeHistory(List<Integer> numbers) {
-        return statisticsService.combinationPrizeHistory(numbers);
-    }
-
-    public FrequencySummaryDto frequencySummary() {
-        return statisticsService.frequencySummary();
     }
 }

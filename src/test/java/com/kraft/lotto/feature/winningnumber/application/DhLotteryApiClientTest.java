@@ -100,6 +100,30 @@ class DhLotteryApiClientTest {
 
             verify(spyClient, times(3)).doFetch(1102);
         }
+
+        @Test
+        void fetchThrowsOnHttpErrorWithoutRetryFor4xx() {
+            DhLotteryApiClient spyClient = spy(new DhLotteryApiClient(null, new ObjectMapper(), "http://localhost", 2, 0, null));
+            doReturn(new DhLotteryApiClient.ApiRawResponse(404, "text/html", "<html>not found</html>"))
+                    .when(spyClient).doFetch(1102);
+
+            assertThatThrownBy(() -> spyClient.fetch(1102))
+                    .isInstanceOf(LottoApiClientException.class);
+
+            verify(spyClient, times(1)).doFetch(1102);
+        }
+
+        @Test
+        void fetchThrowsOnNonJsonBody() {
+            DhLotteryApiClient spyClient = spy(new DhLotteryApiClient(null, new ObjectMapper(), "http://localhost", 2, 0, null));
+            doReturn(new DhLotteryApiClient.ApiRawResponse(200, "text/html", "<html>oops</html>"))
+                    .when(spyClient).doFetch(1102);
+
+            assertThatThrownBy(() -> spyClient.fetch(1102))
+                    .isInstanceOf(LottoApiClientException.class);
+
+            verify(spyClient, times(1)).doFetch(1102);
+        }
     }
 
     private static String successBody(int round) {

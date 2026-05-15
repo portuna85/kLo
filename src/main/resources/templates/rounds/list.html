@@ -1,0 +1,22 @@
+﻿<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout('회차목록', ~{::section})}">
+<section>
+  <h1>회차 목록</h1>
+  <table>
+    <thead><tr><th>회차</th><th>추첨일</th><th>번호</th><th>보너스</th></tr></thead>
+    <tbody>
+      <tr th:each="r : ${rounds.content}">
+        <td th:text="${r.round}">0</td>
+        <td th:text="${r.drawDate}">-</td>
+        <td th:text="${r.numbers}">[]</td>
+        <td th:text="${r.bonusNumber}">0</td>
+      </tr>
+    </tbody>
+  </table>
+  <div>
+    <a th:if="${rounds.page > 0}" th:href="@{/rounds(page=${page-1},size=${size})}">이전</a>
+    <span th:text="${rounds.page + 1}">1</span> / <span th:text="${rounds.totalPages}">1</span>
+    <a th:if="${rounds.page + 1 < rounds.totalPages}" th:href="@{/rounds(page=${page+1},size=${size})}">다음</a>
+  </div>
+</section>
+</html>

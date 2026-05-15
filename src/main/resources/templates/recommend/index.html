@@ -1,0 +1,18 @@
+﻿<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout('추천조합', ~{::section})}">
+<section>
+  <h1>추천 조합</h1>
+  <form method="get" action="/recommend">
+    <label>개수 <input type="number" name="count" min="1" max="10" th:value="${count}"></label>
+    <button type="submit">생성</button>
+  </form>
+  <p>추천조합은 당첨을 보장하지 않는 참고용 번호입니다.</p>
+  <ul>
+    <li th:each="c : ${combinations}" th:text="${c.numbers}">[]</li>
+  </ul>
+  <h2>추천 규칙</h2>
+  <ul>
+    <li th:each="r : ${rules}" th:text="${r.name + ' - ' + r.reason}">rule</li>
+  </ul>
+</section>
+</html>

@@ -1,129 +1,58 @@
-spring:
+﻿spring:
   application:
     name: kraft-lotto
   profiles:
     default: local
-  threads:
-    virtual:
-      enabled: true
   thymeleaf:
-    prefix: classpath:/templates/
-    suffix: .html
-    encoding: UTF-8
     cache: true
   web:
     resources:
-      static-locations: classpath:/static/, classpath:/META-INF/resources/webjars/
-      cache:
-        cachecontrol:
-          max-age: 7d
-          cache-public: true
+      static-locations: classpath:/static/
   datasource:
     url: ${KRAFT_DB_URL}
     username: ${KRAFT_DB_USER}
     password: ${KRAFT_DB_PASSWORD}
     driver-class-name: org.mariadb.jdbc.Driver
-    hikari:
-      pool-name: kraft-lotto-pool
-      maximum-pool-size: 10
-      minimum-idle: 2
-      connection-timeout: 3000
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
-        format_sql: false
         jdbc:
           time_zone: Asia/Seoul
   flyway:
     enabled: true
     locations: classpath:db/migration
-    baseline-on-migrate: false
-    baseline-version: 1
-  data:
-    redis:
-      repositories:
-        enabled: false
-  cache:
-    type: caffeine
-    cache-names:
-      - winningNumberFrequency
-      - combinationPrizeHistory
-    caffeine:
-      spec: maximumSize=2000,expireAfterAccess=24h,recordStats
 
 server:
-  shutdown: graceful
-  compression:
-    enabled: true
-    mime-types: text/html,text/css,application/javascript,application/json
-  http2:
-    enabled: true
-  forward-headers-strategy: NATIVE
-  tomcat:
-    remoteip:
-      remote-ip-header: X-Forwarded-For
-      internal-proxies: ${KRAFT_INTERNAL_PROXIES:127\\.0\\.0\\.1|::1|172\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}}
+  port: 8080
+  forward-headers-strategy: native
+
+logging:
+  file:
+    path: ${KRAFT_LOG_PATH:./logs}
 
 management:
-  tracing:
-    enabled: ${KRAFT_TRACING_ENABLED:false}
-    sampling:
-      probability: ${KRAFT_TRACING_SAMPLING_PROBABILITY:1.0}
-  otlp:
-    tracing:
-      endpoint: ${KRAFT_OTLP_TRACING_ENDPOINT:http://localhost:4318/v1/traces}
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info
   endpoint:
     health:
-      show-details: never
       probes:
         enabled: true
-      group:
-        liveness:
-          include: livenessState,ping
-        readiness:
-          include: readinessState,db
+      show-details: never
 
 kraft:
-  security:
-    monitoring:
-      public-prometheus: ${KRAFT_SECURITY_PUBLIC_PROMETHEUS:false}
-  db:
-    connectivity-check:
-      enabled: ${KRAFT_DB_CONNECTIVITY_CHECK_ENABLED:true}
-      timeout-ms: ${KRAFT_DB_CONNECTIVITY_CHECK_TIMEOUT_MS:1500}
-  lotto:
-    scheduler:
-      enabled: ${KRAFT_LOTTO_SCHEDULER_ENABLED:true}
-      lock-at-most-for: ${KRAFT_LOTTO_SCHEDULER_LOCK_AT_MOST_FOR:PT10M}
-      lock-at-least-for: ${KRAFT_LOTTO_SCHEDULER_LOCK_AT_LEAST_FOR:PT10S}
   collect:
-    backfill:
-      sync-max-range: ${KRAFT_COLLECT_BACKFILL_SYNC_MAX_RANGE:50}
-      max-concurrent-jobs: ${KRAFT_COLLECT_BACKFILL_MAX_CONCURRENT_JOBS:2}
-      queue-capacity: ${KRAFT_COLLECT_BACKFILL_QUEUE_CAPACITY:10}
-      job-retention: ${KRAFT_COLLECT_BACKFILL_JOB_RETENTION:PT6H}
-      cleanup-interval: ${KRAFT_COLLECT_BACKFILL_CLEANUP_INTERVAL:PT10M}
-      thread-name-prefix: ${KRAFT_COLLECT_BACKFILL_THREAD_NAME_PREFIX:backfill-job-}
     auto:
       enabled: ${KRAFT_COLLECT_AUTO_ENABLED:true}
       zone: ${KRAFT_COLLECT_AUTO_ZONE:Asia/Seoul}
       cron:
         saturday-21-10: ${KRAFT_COLLECT_AUTO_CRON_SATURDAY_21_10:0 10 21 ? * SAT}
-        saturday-21-retry: ${KRAFT_COLLECT_AUTO_CRON_SATURDAY_21_RETRY:0 20,40 21 ? * SAT}
         saturday-22-10: ${KRAFT_COLLECT_AUTO_CRON_SATURDAY_22_10:0 10 22 ? * SAT}
         sunday-06-10: ${KRAFT_COLLECT_AUTO_CRON_SUNDAY_06_10:0 10 6 ? * SUN}
-        daily-09-00: ${KRAFT_COLLECT_AUTO_CRON_DAILY_09_00:0 0 9 * * *}
-    log-retention:
-      enabled: ${KRAFT_COLLECT_LOG_RETENTION_ENABLED:true}
-      days: ${KRAFT_COLLECT_LOG_RETENTION_DAYS:90}
-      cron: ${KRAFT_COLLECT_LOG_RETENTION_CRON:0 30 3 * * *}
   api:
     client: ${KRAFT_API_CLIENT:mock}
     url: ${KRAFT_API_URL:https://www.dhlottery.co.kr/common.do}
@@ -131,19 +60,7 @@ kraft:
     read-timeout-ms: ${KRAFT_API_READ_TIMEOUT_MS:5000}
     max-retries: ${KRAFT_API_MAX_RETRIES:2}
     retry-backoff-ms: ${KRAFT_API_RETRY_BACKOFF_MS:700}
-    fallback-to-mock-on-failure: ${KRAFT_API_FALLBACK_TO_MOCK_ON_FAILURE:false}
     mock-latest-round: ${KRAFT_API_MOCK_LATEST_ROUND:0}
-    legacy:
-      deprecation:
-        value: ${KRAFT_API_LEGACY_DEPRECATION_VALUE:@1785542399}
-      sunset:
-        value: ${KRAFT_API_LEGACY_SUNSET_VALUE:Fri, 31 Jul 2026 23:59:59 GMT}
-      emit-after-sunset: ${KRAFT_API_LEGACY_EMIT_AFTER_SUNSET:true}
-  admin:
-    api-token: ${KRAFT_ADMIN_API_TOKEN:}
-    api-tokens: ${KRAFT_ADMIN_API_TOKENS:}
-    api-token-hashes: ${KRAFT_ADMIN_API_TOKEN_HASHES:}
-    token-header: ${KRAFT_ADMIN_TOKEN_HEADER:X-Kraft-Admin-Token}
   recommend:
     max-attempts: ${KRAFT_RECOMMEND_MAX_ATTEMPTS:5000}
     initial-pick-max-attempts: ${KRAFT_RECOMMEND_INITIAL_PICK_MAX_ATTEMPTS:10000}
@@ -152,22 +69,3 @@ kraft:
       birthday-threshold: ${KRAFT_RECOMMEND_RULE_BIRTHDAY_THRESHOLD:31}
       long-run-threshold: ${KRAFT_RECOMMEND_RULE_LONG_RUN_THRESHOLD:5}
       decade-threshold: ${KRAFT_RECOMMEND_RULE_DECADE_THRESHOLD:5}
-    rate-limit:
-      max-requests: ${KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS:30}
-      window-seconds: ${KRAFT_RECOMMEND_RATE_LIMIT_WINDOW_SECONDS:60}
-      capacity-exceeded-policy: ${KRAFT_RECOMMEND_RATE_LIMIT_CAPACITY_EXCEEDED_POLICY:EVICT_OLDEST}
-      trust-forwarded-headers: ${KRAFT_RECOMMEND_RATE_LIMIT_TRUST_FORWARDED_HEADERS:false}
-      trusted-proxy-ips: ${KRAFT_RECOMMEND_RATE_LIMIT_TRUSTED_PROXY_IPS:127.0.0.1,::1}
-      redis:
-        enabled: ${KRAFT_RECOMMEND_RATE_LIMIT_REDIS_ENABLED:false}
-        key-prefix: ${KRAFT_RECOMMEND_RATE_LIMIT_REDIS_KEY_PREFIX:kraft:rate-limit}
-      recommend:
-        max-requests: ${KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS:30}
-        window-seconds: ${KRAFT_RECOMMEND_RATE_LIMIT_WINDOW_SECONDS:60}
-      collect:
-        max-requests: ${KRAFT_COLLECT_RATE_LIMIT_MAX_REQUESTS:10}
-        window-seconds: ${KRAFT_COLLECT_RATE_LIMIT_WINDOW_SECONDS:300}
-  logging:
-    path: ${KRAFT_LOG_PATH:./logs}
-    root-level-local: ${KRAFT_LOG_ROOT_LEVEL_LOCAL:INFO}
-    root-level-prod: ${KRAFT_LOG_ROOT_LEVEL_PROD:INFO}

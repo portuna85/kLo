@@ -1,50 +1,16 @@
-# Production profile overrides.
-# Secrets must be injected from environment variables and never hard-coded.
-
-spring:
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: false
-    baseline-version: 1
-    clean-disabled: true
-    out-of-order: false
-    validate-on-migrate: true
-  jpa:
-    properties:
-      hibernate:
-        format_sql: false
-        use_sql_comments: false
+﻿spring:
   thymeleaf:
     cache: true
-  web:
-    resources:
-      cache:
-        cachecontrol:
-          max-age: 30d
-          cache-public: true
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info
   endpoint:
     health:
-      show-details: when-authorized
-
-logging:
-  file:
-    path: ${KRAFT_LOG_PATH:./logs}
+      show-details: never
 
 kraft:
-  security:
-    monitoring:
-      public-prometheus: ${KRAFT_SECURITY_PUBLIC_PROMETHEUS:true}
   api:
     client: ${KRAFT_API_CLIENT:real}
-  recommend:
-    rate-limit:
-      capacity-exceeded-policy: ${KRAFT_RECOMMEND_RATE_LIMIT_CAPACITY_EXCEEDED_POLICY:EVICT_OLDEST}
-      redis:
-        enabled: ${KRAFT_RECOMMEND_RATE_LIMIT_REDIS_ENABLED:true}

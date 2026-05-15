@@ -4,7 +4,6 @@ import com.kraft.lotto.feature.winningnumber.infrastructure.LottoFetchLogReposit
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
-import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -47,7 +46,6 @@ public class LottoFetchLogRetentionScheduler {
             cron = "${kraft.collect.log-retention.cron:0 30 3 * * *}",
             zone = "${kraft.collect.auto.zone:Asia/Seoul}"
     )
-    @SchedulerLock(name = "lotto_fetch_log_retention_purge")
     @Transactional
     public void purgeExpiredLogs() {
         LocalDateTime cutoff = LocalDateTime.now(clock).minusDays(retentionDays);

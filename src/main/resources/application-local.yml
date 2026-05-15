@@ -1,33 +1,17 @@
-spring:
+﻿spring:
+  thymeleaf:
+    cache: false
   jpa:
     properties:
       hibernate:
         format_sql: true
-        use_sql_comments: true
-  thymeleaf:
-    cache: false
-  web:
-    resources:
-      cache:
-        cachecontrol:
-          max-age: 0
-          no-cache: true
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,env,beans,mappings
   endpoint:
     health:
       show-details: always
 
-logging:
-  file:
-    path: ${KRAFT_LOG_PATH:./logs}
-
 kraft:
   api:
     client: ${KRAFT_API_CLIENT:mock}
-    fallback-to-mock-on-failure: ${KRAFT_API_FALLBACK_TO_MOCK_ON_FAILURE:true}
     mock-latest-round: ${KRAFT_API_MOCK_LATEST_ROUND:0}

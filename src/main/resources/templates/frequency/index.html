@@ -1,0 +1,16 @@
+﻿<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout('출현빈도', ~{::section})}">
+<section>
+  <h1>번호별 출현 빈도</h1>
+  <table>
+    <thead><tr><th>번호</th><th>출현횟수</th><th>출현비율(%)</th></tr></thead>
+    <tbody>
+      <tr th:each="f : ${frequency}">
+        <td th:text="${f.number}">1</td>
+        <td th:text="${f.count}">0</td>
+        <td th:text="${#numbers.formatDecimal(f.rate,1,2)}">0.00</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+</html>

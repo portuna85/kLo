@@ -12,16 +12,10 @@ services:
       MARIADB_PASSWORD: ${KRAFT_DB_PASSWORD:?KRAFT_DB_PASSWORD is required}
       MARIADB_ROOT_PASSWORD: ${KRAFT_DB_ROOT_PASSWORD:?KRAFT_DB_ROOT_PASSWORD is required}
       TZ: Asia/Seoul
-    ports:
-      - "${KRAFT_DB_PORT:-3306}:3306"
     networks:
       - kraft-net
     volumes:
       - kraft-lotto-db:/var/lib/mysql
-    logging:
-      options:
-        max-size: "10m"
-        max-file: "3"
     healthcheck:
       test:
         - CMD
@@ -49,22 +43,19 @@ services:
     env_file:
       - .env
     environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:?SPRING_PROFILES_ACTIVE is required (e.g. local|prod)}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:?SPRING_PROFILES_ACTIVE is required}
       KRAFT_IN_CONTAINER: "true"
-      KRAFT_DB_URL: jdbc:mariadb://mariadb:3306/${KRAFT_DB_NAME:?KRAFT_DB_NAME is required}?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Seoul&connectTimeout=3000
+      KRAFT_DB_URL: jdbc:mariadb://mariadb:3306/${KRAFT_DB_NAME}?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Seoul&connectTimeout=3000
+      KRAFT_API_URL: ${KRAFT_API_URL:-https://www.dhlottery.co.kr/common.do}
       TZ: Asia/Seoul
     ports:
-      - "${KRAFT_APP_PORT:-8080}:8080"
+      - "127.0.0.1:${KRAFT_APP_PORT:-8080}:8080"
     networks:
       - kraft-net
     volumes:
       - ./logs:/app/logs
-    logging:
-      options:
-        max-size: "10m"
-        max-file: "3"
     healthcheck:
-      test: [ "CMD", "/app/healthcheck.sh" ]
+      test: ["CMD", "/app/healthcheck.sh"]
       interval: 15s
       timeout: 5s
       retries: 10

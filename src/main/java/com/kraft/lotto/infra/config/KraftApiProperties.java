@@ -10,7 +10,6 @@ public record KraftApiProperties(
         int readTimeoutMs,
         int maxRetries,
         int retryBackoffMs,
-        boolean fallbackToMockOnFailure,
         int mockLatestRound
 ) {
 }

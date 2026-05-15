@@ -61,28 +61,32 @@ public class WinningStatisticsService {
     public List<NumberFrequencyDto> frequency() {
         long startedAt = System.nanoTime();
         String source = "recompute";
+        long totalDraws = repository.count();
         if (summaryRepository != null) {
             int latestRound = repository.findMaxRound().orElse(0);
             List<WinningNumberFrequencySummaryEntity> summaryRows = summaryRepository.findAllByOrderByBallAsc();
             if (isUsableSummary(summaryRows, latestRound)) {
                 List<NumberFrequencyDto> result = summaryRows.stream()
-                        .map(row -> new NumberFrequencyDto(row.getBall(), row.getHitCount()))
+                        .map(row -> new NumberFrequencyDto(
+                                row.getBall(),
+                                row.getHitCount(),
+                                calculateRate(row.getHitCount(), totalDraws)))
                         .toList();
                 source = "summary";
                 recordFrequencyLatency(startedAt, source);
                 return result;
             }
-            List<NumberFrequencyDto> recomputed = recomputeFrequency();
+            List<NumberFrequencyDto> recomputed = recomputeFrequency(totalDraws);
             saveSummary(recomputed, latestRound);
             recordFrequencyLatency(startedAt, source);
             return recomputed;
         }
-        List<NumberFrequencyDto> recomputed = recomputeFrequency();
+        List<NumberFrequencyDto> recomputed = recomputeFrequency(totalDraws);
         recordFrequencyLatency(startedAt, source);
         return recomputed;
     }
 
-    private List<NumberFrequencyDto> recomputeFrequency() {
+    private List<NumberFrequencyDto> recomputeFrequency(long totalDraws) {
         long[] counts = new long[46];
         for (Object[] row : repository.findAllNumbersForFrequency()) {
             for (Object number : row) {
@@ -90,8 +94,15 @@ public class WinningStatisticsService {
             }
         }
         return IntStream.rangeClosed(1, 45)
-                .mapToObj(n -> new NumberFrequencyDto(n, counts[n]))
+                .mapToObj(n -> new NumberFrequencyDto(n, counts[n], calculateRate(counts[n], totalDraws)))
                 .toList();
+    }
+
+    private static double calculateRate(long count, long totalDraws) {
+        if (totalDraws <= 0) {
+            return 0.0d;
+        }
+        return (count * 100.0d) / totalDraws;
     }
 
     private boolean isUsableSummary(List<WinningNumberFrequencySummaryEntity> summaryRows, int latestRound) {
