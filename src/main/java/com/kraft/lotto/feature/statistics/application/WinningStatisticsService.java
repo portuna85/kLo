@@ -12,17 +12,21 @@ import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Service
 public class WinningStatisticsService {
@@ -30,6 +34,9 @@ public class WinningStatisticsService {
     private final WinningNumberRepository repository;
     private final WinningNumberFrequencySummaryRepository summaryRepository;
     private final MeterRegistry meterRegistry;
+    @Lazy
+    @Autowired(required = false)
+    private WinningStatisticsService self;
 
     public WinningStatisticsService(WinningNumberRepository repository) {
         this(repository, null, null);
@@ -50,7 +57,7 @@ public class WinningStatisticsService {
     }
 
     @Cacheable(cacheNames = "winningNumberFrequency")
-    @Transactional
+    @Transactional(readOnly = true)
     public List<NumberFrequencyDto> frequency() {
         long startedAt = System.nanoTime();
         String source = "recompute";
@@ -91,10 +98,23 @@ public class WinningStatisticsService {
         if (summaryRows.size() != 45) {
             return false;
         }
-        Optional<Integer> summaryRound = summaryRows.stream()
-                .map(WinningNumberFrequencySummaryEntity::getLastCalculatedRound)
-                .findFirst();
-        return summaryRound.isPresent() && summaryRound.get() == latestRound;
+        Set<Integer> balls = new HashSet<>(45);
+        for (WinningNumberFrequencySummaryEntity row : summaryRows) {
+            Integer ball = row.getBall();
+            if (ball == null || ball < 1 || ball > 45) {
+                return false;
+            }
+            if (!balls.add(ball)) {
+                return false;
+            }
+            if (row.getHitCount() < 0) {
+                return false;
+            }
+            if (row.getLastCalculatedRound() != latestRound) {
+                return false;
+            }
+        }
+        return balls.size() == 45;
     }
 
     private void saveSummary(List<NumberFrequencyDto> frequencies, int latestRound) {
@@ -152,7 +172,8 @@ public class WinningStatisticsService {
 
     @Transactional(readOnly = true)
     public FrequencySummaryDto frequencySummary() {
-        List<NumberFrequencyDto> frequencies = frequency();
+        WinningStatisticsService proxy = self == null ? this : self;
+        List<NumberFrequencyDto> frequencies = proxy.frequency();
         List<Integer> lowSixNumbers = frequencies.stream()
                 .sorted(Comparator.comparingLong(NumberFrequencyDto::count).thenComparingInt(NumberFrequencyDto::number))
                 .limit(6)
@@ -163,7 +184,7 @@ public class WinningStatisticsService {
         return new FrequencySummaryDto(frequencies, lowSixHistory);
     }
 
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @CacheEvict(cacheNames = {"winningNumberFrequency", "combinationPrizeHistory"}, allEntries = true)
     public void evictCachesOnCollected(WinningNumbersCollectedEvent event) {
         // cache eviction handled by annotation

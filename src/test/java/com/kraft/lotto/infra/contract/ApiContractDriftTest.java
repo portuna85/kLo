@@ -60,6 +60,7 @@ class ApiContractDriftTest {
                 "/admin/lotto/draws/collect-missing",
                 "/admin/lotto/draws/{drwNo}/refresh",
                 "/admin/lotto/draws/backfill",
+                "/admin/smoke-auth-check",
                 "/admin/lotto/jobs/backfill",
                 "/admin/lotto/jobs/{jobId}"
         );

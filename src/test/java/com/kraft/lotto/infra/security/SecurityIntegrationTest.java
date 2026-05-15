@@ -2,6 +2,7 @@ package com.kraft.lotto.infra.security;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -10,10 +11,12 @@ import com.kraft.lotto.feature.recommend.application.RecommendService;
 import com.kraft.lotto.feature.recommend.web.RecommendController;
 import com.kraft.lotto.feature.winningnumber.application.LottoCollectionService;
 import com.kraft.lotto.feature.winningnumber.application.WinningNumberQueryService;
+import com.kraft.lotto.feature.winningnumber.web.AdminSmokeController;
 import com.kraft.lotto.feature.winningnumber.web.WinningNumberCollectController;
 import com.kraft.lotto.feature.winningnumber.web.WinningNumberController;
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
 import com.kraft.lotto.feature.winningnumber.web.dto.WinningNumberDto;
+import com.kraft.lotto.infra.web.CspReportController;
 import com.kraft.lotto.infra.config.KraftAdminProperties;
 import com.kraft.lotto.infra.config.KraftRateLimitRedisProperties;
 import com.kraft.lotto.infra.config.KraftRecommendRateLimitProperties;
@@ -41,6 +44,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = {
+        AdminSmokeController.class,
+        CspReportController.class,
         WinningNumberController.class,
         WinningNumberCollectController.class,
         RecommendController.class
@@ -166,6 +171,51 @@ class SecurityIntegrationTest {
         givenSecurityProperties();
         mockMvc.perform(get("/admin/unknown"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("관리자 스모크 인증 체크는 유효 토큰으로 접근 가능하다")
+    void adminSmokeAuthCheckIsAccessibleWithAdminToken() throws Exception {
+        givenSecurityProperties();
+        mockMvc.perform(get("/admin/smoke-auth-check")
+                        .header("X-Kraft-Admin-Token", "test-admin-token")
+                        .with(request -> {
+                            request.setRemoteAddr("203.0.113.20");
+                            return request;
+                        }))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.status").value("ok"));
+    }
+
+    @Test
+    @DisplayName("공개 엔드포인트 응답에는 보안 헤더가 포함된다")
+    void publicEndpointContainsSecurityHeaders() throws Exception {
+        givenSecurityProperties();
+        Mockito.when(recommendService.rules()).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/recommend/rules"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cross-Origin-Opener-Policy", "same-origin"))
+                .andExpect(header().string("Cross-Origin-Resource-Policy", "same-origin"))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("Content-Security-Policy", org.hamcrest.Matchers.containsString("report-uri /csp/report")))
+                .andExpect(header().string("Content-Security-Policy", org.hamcrest.Matchers.containsString("report-to csp-endpoint")));
+
+        mockMvc.perform(get("/api/recommend/rules").secure(true))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Strict-Transport-Security",
+                        org.hamcrest.Matchers.containsString("max-age=31536000")));
+    }
+
+    @Test
+    @DisplayName("CSP report endpoint는 인증 없이 수집 가능하다")
+    void cspReportEndpointIsPublic() throws Exception {
+        givenSecurityProperties();
+        mockMvc.perform(post("/csp/report")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"csp-report\":{\"blocked-uri\":\"inline\"}}"))
+                .andExpect(status().isNoContent());
     }
 
     private void givenSecurityProperties() {

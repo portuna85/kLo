@@ -21,7 +21,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -33,6 +35,7 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
 
     static final int MAX_TRACKED_IPS = 50_000;
     private static final long CLEANUP_INTERVAL_MS = 60_000L;
+    private static final RedisScript<Long> INCR_EXPIRE_SCRIPT = buildIncrExpireScript();
     private final KraftRecommendRateLimitProperties properties;
     private final KraftRateLimitRedisProperties redisProperties;
     private final ObjectMapper objectMapper;
@@ -164,11 +167,9 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
         long windowSeconds = Math.max(1, limit.windowSeconds());
         long bucket = now / (windowSeconds * 1000L);
         String key = redisProperties.resolvedKeyPrefix() + ":" + endpoint.id + ":" + clientIp + ":" + bucket;
+        String ttlSeconds = String.valueOf(windowSeconds + 1);
         try {
-            Long count = redisTemplate.opsForValue().increment(key);
-            if (count != null && count == 1L) {
-                redisTemplate.expire(key, java.time.Duration.ofSeconds(windowSeconds + 1));
-            }
+            Long count = redisTemplate.execute(INCR_EXPIRE_SCRIPT, java.util.List.of(key), ttlSeconds);
             if (count != null && count <= limit.maxRequests()) {
                 return new Decision(true, 1);
             }
@@ -182,6 +183,16 @@ public class RecommendRateLimitFilter extends OncePerRequestFilter {
             log.warn("redis rate-limit failed, fallback to in-memory", ex);
             return decideByInMemory(endpoint, clientIp, now, limit);
         }
+    }
+
+    private static RedisScript<Long> buildIncrExpireScript() {
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setResultType(Long.class);
+        script.setScriptText(
+                "local v = redis.call('INCR', KEYS[1]) "
+                        + "if v == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end "
+                        + "return v");
+        return script;
     }
 
     private boolean isRedisMode() {

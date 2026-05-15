@@ -52,8 +52,8 @@ class RequiredConfigValidatorTest {
     }
 
     @Test
-    @DisplayName("운영 프로파일에서 관리자 토큰이 존재하면 문제를 추가하지 않는다")
-    void doesNotAddProblemWhenProdTokenPresent() {
+    @DisplayName("운영 프로파일에서 평문 관리자 토큰 목록은 허용하지 않는다")
+    void addsProblemWhenProdPlainTokensPresent() {
         MockEnvironment env = new MockEnvironment();
         env.setActiveProfiles("prod");
         env.setProperty("kraft.admin.api-tokens", "token-value-a,token-value-b");
@@ -61,12 +61,12 @@ class RequiredConfigValidatorTest {
 
         RequiredConfigValidator.addProdAdminTokenProblem(env, problems);
 
-        assertThat(problems).isEmpty();
+        assertThat(problems).anyMatch(p -> p.contains("plain text tokens are not allowed"));
     }
 
     @Test
-    @DisplayName("레거시 관리자 토큰만 있어도 허용한다")
-    void doesNotAddProblemWhenOnlyLegacyProdTokenPresent() {
+    @DisplayName("운영 프로파일에서 레거시 평문 관리자 토큰도 허용하지 않는다")
+    void addsProblemWhenOnlyLegacyProdTokenPresent() {
         MockEnvironment env = new MockEnvironment();
         env.setActiveProfiles("prod");
         env.setProperty("kraft.admin.api-token", "legacy-token-value");
@@ -74,7 +74,7 @@ class RequiredConfigValidatorTest {
 
         RequiredConfigValidator.addProdAdminTokenProblem(env, problems);
 
-        assertThat(problems).isEmpty();
+        assertThat(problems).anyMatch(p -> p.contains("plain text tokens are not allowed"));
     }
 
     @Test
@@ -115,6 +115,19 @@ class RequiredConfigValidatorTest {
         RequiredConfigValidator.addProdAdminTokenProblem(env, problems);
 
         assertThat(problems).isEmpty();
+    }
+
+    @Test
+    @DisplayName("hash 형식이 잘못되면 운영 토큰 검증에 실패한다")
+    void addsProblemWhenProdTokenHashesMalformed() {
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("prod");
+        env.setProperty("kraft.admin.api-token-hashes", "ops:not-a-sha256");
+        List<String> problems = new ArrayList<>();
+
+        RequiredConfigValidator.addProdAdminTokenProblem(env, problems);
+
+        assertThat(problems).anyMatch(p -> p.contains("kraft.admin.api-token-hashes"));
     }
 
     @Test

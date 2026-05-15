@@ -30,4 +30,4 @@ kraft:
   api:
     client: ${KRAFT_API_CLIENT:mock}
     fallback-to-mock-on-failure: ${KRAFT_API_FALLBACK_TO_MOCK_ON_FAILURE:true}
-    mock-latest-round: ${KRAFT_API_MOCK_LATEST_ROUND:1200}
+    mock-latest-round: ${KRAFT_API_MOCK_LATEST_ROUND:0}

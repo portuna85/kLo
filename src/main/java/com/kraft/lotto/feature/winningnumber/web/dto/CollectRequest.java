@@ -1,6 +1,8 @@
 package com.kraft.lotto.feature.winningnumber.web.dto;
 
-import com.kraft.lotto.feature.winningnumber.web.validation.ValidRound;
+import com.kraft.lotto.feature.winningnumber.application.WinningNumberQueryService;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 
 /**
  * POST /api/winning-numbers/refresh 요청 본문.
@@ -10,7 +12,8 @@ import com.kraft.lotto.feature.winningnumber.web.validation.ValidRound;
  * </ul>
  */
 public record CollectRequest(
-        @ValidRound(allowNull = true, message = "targetRound는 숫자 형식의 유효한 회차 범위여야 합니다.")
-        String targetRound
+        @Min(value = 1, message = "targetRound는 1 이상이어야 합니다.")
+        @Max(value = WinningNumberQueryService.MAX_ROUND, message = "targetRound는 허용된 최대 회차 이하여야 합니다.")
+        Integer targetRound
 ) {
 }

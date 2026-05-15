@@ -6,6 +6,10 @@ on:
     branches: [ main ]
     types: [ completed ]
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref (commit SHA/tag/branch) to deploy"
+        required: true
 
 permissions:
   contents: read
@@ -27,12 +31,25 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
+      - name: Resolve deploy ref
+        id: ref
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "value=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ github.event.inputs.ref }}" ]; then
+            echo "value=${{ github.event.inputs.ref }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Fix permissions
         run: |
           sudo chown -R $USER:$USER $GITHUB_WORKSPACE || true
 
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.ref.outputs.value }}
 
       - name: Make deploy scripts executable
         run: chmod +x scripts/deploy/*.sh
@@ -69,18 +86,7 @@ jobs:
       - name: Validate Docker Compose file
         run: docker compose config -q
 
-      - name: Download snippets artifact from CI
-        if: ${{ github.event_name == 'workflow_run' }}
-        uses: actions/download-artifact@v5
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id }}
-          pattern: restdocs-snippets-*
-          path: build/generated-snippets
-          merge-multiple: true
-
-      - name: Generate snippets for manual deploy
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+      - name: Generate snippets for deploy build
         run: ./gradlew --no-daemon test
 
       - name: Verify snippets for Docker build
@@ -92,6 +98,9 @@ jobs:
         run: ./scripts/deploy/prepare-logs.sh
 
       - name: Build and restart services
+        env:
+          KRAFT_APP_IMAGE_REF: kraft-lotto-app
+          KRAFT_APP_IMAGE_TAG: ${{ steps.ref.outputs.value }}
         run: ./scripts/deploy/build-and-up.sh
 
       - name: Verify prod profile env in container

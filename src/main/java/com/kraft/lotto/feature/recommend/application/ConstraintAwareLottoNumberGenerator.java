@@ -2,6 +2,7 @@ package com.kraft.lotto.feature.recommend.application;
 
 import com.kraft.lotto.feature.winningnumber.domain.LottoCombination;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -11,19 +12,30 @@ class ConstraintAwareLottoNumberGenerator implements LottoNumberGenerator {
 
     private static final int MAX_NUMBER = 45;
     private static final int SIZE = 6;
-    private static final int MAX_INITIAL_PICK_ATTEMPTS = 10_000;
-    private static final int MAX_FIXUP_ATTEMPTS = 1_000;
 
     private final Random random;
     private final int birthdayThreshold;
     private final int longRunThreshold;
     private final int decadeThreshold;
+    private final int initialPickMaxAttempts;
+    private final int fixupMaxAttempts;
 
     ConstraintAwareLottoNumberGenerator(Random random, int birthdayThreshold, int longRunThreshold, int decadeThreshold) {
+        this(random, birthdayThreshold, longRunThreshold, decadeThreshold, 10_000, 1_000);
+    }
+
+    ConstraintAwareLottoNumberGenerator(Random random,
+                                        int birthdayThreshold,
+                                        int longRunThreshold,
+                                        int decadeThreshold,
+                                        int initialPickMaxAttempts,
+                                        int fixupMaxAttempts) {
         this.random = random;
         this.birthdayThreshold = birthdayThreshold;
         this.longRunThreshold = longRunThreshold;
         this.decadeThreshold = decadeThreshold;
+        this.initialPickMaxAttempts = initialPickMaxAttempts;
+        this.fixupMaxAttempts = fixupMaxAttempts;
     }
 
     @Override
@@ -34,7 +46,7 @@ class ConstraintAwareLottoNumberGenerator implements LottoNumberGenerator {
         int initialPickAttempts = 0;
 
         while (selected.size() < SIZE) {
-            if (++initialPickAttempts > MAX_INITIAL_PICK_ATTEMPTS) {
+            if (++initialPickAttempts > initialPickMaxAttempts) {
                 throw new RecommendGenerationTimeoutException("initial pick exceeded max attempts");
             }
             int n = random.nextInt(MAX_NUMBER) + 1;
@@ -59,10 +71,16 @@ class ConstraintAwareLottoNumberGenerator implements LottoNumberGenerator {
         List<Integer> numbers = new ArrayList<>(selected);
         int fixupAttempts = 0;
         while (hasLongRun(numbers, longRunThreshold)) {
-            if (++fixupAttempts > MAX_FIXUP_ATTEMPTS) {
+            if (++fixupAttempts > fixupMaxAttempts) {
                 throw new RecommendGenerationTimeoutException("fixup exceeded max attempts");
             }
-            int replaceIndex = random.nextInt(SIZE);
+            List<Integer> longRunIndices = findLongRunIndices(numbers, longRunThreshold);
+            int replaceIndex;
+            if (!longRunIndices.isEmpty()) {
+                replaceIndex = longRunIndices.get(random.nextInt(longRunIndices.size()));
+            } else {
+                replaceIndex = random.nextInt(SIZE);
+            }
             int old = numbers.get(replaceIndex);
             int newNumber = random.nextInt(MAX_NUMBER) + 1;
             if (numbers.contains(newNumber)) {
@@ -79,6 +97,31 @@ class ConstraintAwareLottoNumberGenerator implements LottoNumberGenerator {
             numbers.sort(Integer::compareTo);
         }
         return new LottoCombination(numbers);
+    }
+
+    private static List<Integer> findLongRunIndices(List<Integer> numbers, int threshold) {
+        if (threshold <= 1 || numbers.size() < threshold) {
+            return Collections.emptyList();
+        }
+        List<Integer> indices = new ArrayList<>();
+        int runStart = 0;
+        int runLength = 1;
+        for (int i = 1; i < numbers.size(); i++) {
+            if (numbers.get(i) - numbers.get(i - 1) == 1) {
+                runLength++;
+                if (runLength >= threshold) {
+                    for (int idx = runStart; idx <= i; idx++) {
+                        if (!indices.contains(idx)) {
+                            indices.add(idx);
+                        }
+                    }
+                }
+            } else {
+                runStart = i;
+                runLength = 1;
+            }
+        }
+        return indices;
     }
 
     private static int bucketIndex(int n) {

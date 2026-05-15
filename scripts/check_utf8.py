@@ -35,6 +35,14 @@ TEXT_FILENAMES = {
 }
 
 SKIP_DIRS = {".git", ".gradle", "build", "node_modules", ".idea"}
+MOJIBAKE_MARKERS = (
+    "\ufffd",   # replacement character
+    "Ã",
+    "Â",
+    "â€",
+    "ðŸ",
+    "ï¿½",
+)
 
 
 def is_text_target(path: Path) -> bool:
@@ -90,9 +98,13 @@ def main() -> int:
             failures.append(f"{rel}: UTF-8 BOM is not allowed")
             continue
         try:
-            data.decode("utf-8")
+            decoded = data.decode("utf-8")
         except UnicodeDecodeError as exc:
             failures.append(f"{rel}: invalid UTF-8 ({exc})")
+            continue
+        marker = next((m for m in MOJIBAKE_MARKERS if m in decoded), None)
+        if marker is not None:
+            failures.append(f"{rel}: suspicious mojibake marker detected ({marker!r})")
     if failures:
         print("UTF-8 validation failed:")
         for failure in failures:

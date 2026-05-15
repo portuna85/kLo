@@ -11,11 +11,10 @@ printf '%s\n' "$BODY"
 printf '%s' "$BODY" | grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"'
 
 HTTP=$(curl -s -o /dev/null -w '%{http_code}' \
-  -X POST http://localhost:8080/admin/lotto/draws/collect-next \
+  -X GET http://localhost:8080/admin/smoke-auth-check \
   -H "X-Kraft-Admin-Token: ${KRAFT_ADMIN_API_TOKENS%%,*}")
-if [[ "$HTTP" != "200" && "$HTTP" != "409" ]]; then
+if [[ "$HTTP" != "200" ]]; then
   echo "::error::Admin token smoke test failed: HTTP $HTTP"
   exit 1
 fi
 echo "Smoke test passed"
-

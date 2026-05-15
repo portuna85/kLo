@@ -4,19 +4,39 @@ import com.kraft.lotto.feature.winningnumber.event.WinningNumbersCollectedEvent;
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
 import com.kraft.lotto.support.BusinessException;
 import com.kraft.lotto.support.ErrorCode;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.time.Duration;
+import java.time.Instant;
+import net.javacrumbs.shedlock.core.LockConfiguration;
+import net.javacrumbs.shedlock.core.LockProvider;
+import net.javacrumbs.shedlock.core.SimpleLock;
 import org.springframework.context.ApplicationEventPublisher;
 class LottoCollectionGate {
 
+    private static final String LOCK_NAME = "lotto_collect_gate";
     private final ApplicationEventPublisher eventPublisher;
-    private final AtomicBoolean running = new AtomicBoolean(false);
+    private final LockProvider lockProvider;
+    private final Duration lockAtMostFor;
+    private final Duration lockAtLeastFor;
 
-    LottoCollectionGate(ApplicationEventPublisher eventPublisher) {
+    LottoCollectionGate(ApplicationEventPublisher eventPublisher,
+                       LockProvider lockProvider,
+                       Duration lockAtMostFor,
+                       Duration lockAtLeastFor) {
         this.eventPublisher = eventPublisher;
+        this.lockProvider = lockProvider;
+        this.lockAtMostFor = lockAtMostFor;
+        this.lockAtLeastFor = lockAtLeastFor;
     }
 
     CollectResponse run(CollectionTask task) {
-        if (!running.compareAndSet(false, true)) {
+        LockConfiguration lockConfiguration = new LockConfiguration(
+                Instant.now(),
+                LOCK_NAME,
+                lockAtMostFor,
+                lockAtLeastFor
+        );
+        SimpleLock lock = lockProvider.lock(lockConfiguration).orElse(null);
+        if (lock == null) {
             throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS, "lotto collect job is already running");
         }
         try {
@@ -32,7 +52,7 @@ class LottoCollectionGate {
             }
             return response;
         } finally {
-            running.set(false);
+            lock.unlock();
         }
     }
 

@@ -27,8 +27,11 @@ public class GlobalExceptionHandler {
         } else {
             log.info("BusinessException: {} - {}", code.name(), ex.getMessage());
         }
+        String responseMessage = code.getHttpStatus().is5xxServerError()
+                ? code.getDefaultMessage()
+                : ex.getMessage();
         return ResponseEntity.status(code.getHttpStatus())
-                .body(ApiResponse.failure(ApiError.of(code, ex.getMessage())));
+                .body(ApiResponse.failure(ApiError.of(code, responseMessage)));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

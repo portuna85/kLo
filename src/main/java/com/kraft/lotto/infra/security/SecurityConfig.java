@@ -7,6 +7,7 @@ import com.kraft.lotto.infra.config.KraftRecommendRateLimitProperties;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -16,6 +17,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.CrossOriginOpenerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.CrossOriginResourcePolicyHeaderWriter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
@@ -26,34 +29,38 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain appSecurityFilterChain(HttpSecurity http,
                                                       RecommendRateLimitFilter recommendRateLimitFilter,
-                                                      AdminApiTokenFilter adminApiTokenFilter) throws Exception {
+                                                      AdminApiTokenFilter adminApiTokenFilter,
+                                                      CspNonceFilter cspNonceFilter,
+                                                      @Value("${kraft.security.monitoring.public-prometheus:false}")
+                                                      boolean publicPrometheus) throws Exception {
         http
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
                         "/api/**",
                         "/admin/**",
-                        "/actuator/**"
+                        "/actuator/**",
+                        "/csp/**"
                 ))
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
                 .addFilterBefore(recommendRateLimitFilter, BasicAuthenticationFilter.class)
                 .addFilterBefore(adminApiTokenFilter, RecommendRateLimitFilter.class)
+                .addFilterAfter(cspNonceFilter, AdminApiTokenFilter.class)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(h -> h
-                        .contentSecurityPolicy(csp -> csp.policyDirectives(
-                                "default-src 'self'; " +
-                                "img-src 'self' data:; " +
-                                "style-src 'self' 'unsafe-inline'; " +
-                                "font-src 'self' data:; " +
-                                "script-src 'self'; " +
-                                "connect-src 'self'; " +
-                                "frame-ancestors 'none'; " +
-                                "base-uri 'self'; " +
-                                "form-action 'self'"))
+                        .crossOriginOpenerPolicy(coop -> coop.policy(
+                                CrossOriginOpenerPolicyHeaderWriter.CrossOriginOpenerPolicy.SAME_ORIGIN))
+                        .crossOriginResourcePolicy(corp -> corp.policy(
+                                CrossOriginResourcePolicyHeaderWriter.CrossOriginResourcePolicy.SAME_ORIGIN))
                         .referrerPolicy(rp -> rp.policy(
                                 ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
                         .permissionsPolicyHeader(pp -> pp.policy(
                                 "geolocation=(), microphone=(), camera=(), payment=(), usb=()"))
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .maxAgeInSeconds(31536000)
+                                .includeSubDomains(true)
+                                .preload(true))
+                        .contentTypeOptions(Customizer.withDefaults())
                         .frameOptions(Customizer.withDefaults())
                 )
                 .authorizeHttpRequests(auth -> auth
@@ -67,6 +74,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, ApiPaths.ADMIN_PREFIX + "**").authenticated()
                         .requestMatchers(HttpMethod.GET, ApiPaths.ADMIN_PREFIX + "**").authenticated()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/csp/report").permitAll()
+                        .requestMatchers("/actuator/prometheus").access((authentication, context) ->
+                                new org.springframework.security.authorization.AuthorizationDecision(publicPrometheus))
                         .requestMatchers("/docs", "/docs/", "/docs/**").permitAll()
                         .anyRequest().denyAll()
                 );
@@ -96,4 +106,3 @@ public class SecurityConfig {
         );
     }
 }
-

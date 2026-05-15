@@ -1,810 +1,902 @@
-# kLo 개선 작업 단위 (Work Units)
+# kLo 코드베이스 개선 종합 보고서
 
-> **최종 갱신**: 2026-05-14
-> **저장소**: `portuna85/kLo` (main)
-> **본 문서의 성격**: 각 항목은 **독립 실행 가능한 작업 단위(unit)** 입니다.
-> 단위 하나 = PR 하나 = 이슈 하나를 원칙으로 합니다.
-
----
-
-## 0. 사용법
-
-- 작업 시작 시 **인덱스 표의 체크박스를 in-progress(`[~]`)** 로 변경
-- 완료 시 본 문서에서 해당 단위를 **삭제**하고 커밋 메시지에 단위 ID를 명시
-  예: `git commit -m "feat(collect): apply distributed lock [#001]"`
-- 새 항목 추가 시 다음 빈 번호를 사용 (#001 → #002 → ...)
-- 우선순위는 **P1**(다음 sprint) / **P2**(중기) / **P3**(장기)
+> **저장소**: [portuna85/kLo](https://github.com/portuna85/kLo) (`main`)
+> **최신 업데이트**: 2026-05-15
+> **작업단위 총량**: 60개 (#001~#060) — **P1** 12 / **P2** 23 / **P3** 25
+> **범위**: 백엔드 / 프론트엔드 / 테스트 / CI·CD / DB·운영
 
 ---
 
-## 1. 작업 단위 인덱스
+## 📑 목차
 
-| ID | 우선 | 영역 | 제목 | 상태 |
-|:---:|:---:|---|---|:---:|
-| #001 | P1 | 백엔드 | LottoCollectionGate 분산 동시성 (ShedLock) | ☐ |
-| #002 | P1 | 백엔드 | BackfillJobService 잡 상태 DB 영속화 | ☐ |
-| #003 | P1 | 백엔드 | Transaction 경계 명시 | ☐ |
-| #004 | P1 | 보안 | HSTS 헤더 적용 | ☐ |
-| #005 | P1 | 운영 | Redis compose 서비스 추가 | ☐ |
-| #006 | P1 | 도메인 | 추천 엔진 결정성·성능 보증 | ☐ |
-| #007 | P1 | 프론트 | JS 모듈 mount 구조화 | ☐ |
-| #008 | P2 | 보안 | 보안 헤더 통합 테스트 | ☐ |
-| #009 | P2 | 운영 | Profile 정책 명확화 (`KRAFT_ENVIRONMENT`) | ☐ |
-| #010 | P2 | 운영 | Docker image SHA 기반 tag 전략 | ☐ |
-| #011 | P2 | 백엔드 | 외부 API client resilience 통합 | ☐ |
-| #012 | P2 | 백엔드 | Error model 상세 구조 정교화 | ☐ |
-| #013 | P2 | 백엔드 | ArchUnit 경계 규칙 확대 | ☐ |
-| #014 | P2 | 프론트 | 폼 검증 즉시 피드백 | ☐ |
-| #015 | P2 | 프론트 | 접근성 보강 (aria-busy / aria-live) | ☐ |
-| #016 | P2 | 테스트 | E2E 실패 시나리오 확대 | ☐ |
-| #017 | P2 | 테스트 | 계약 테스트 강화 (OpenAPI ↔ REST Docs) | ☐ |
-| #018 | P2 | DB | Migration 규칙 문서화 + from-scratch 테스트 | ☐ |
-| #019 | P2 | 관찰성 | Metric/Alert 기준 문서화 | ☐ |
-| #020 | P2 | 문서 | `SECURITY.md` 신설 | ☐ |
-| #021 | P2 | 문서 | `CONTRIBUTING.md` 신설 | ☐ |
-| #022 | P2 | 문서 | `docs/ARCHITECTURE.md` 신설 | ☐ |
-| #023 | P2 | 문서 | `docs/RUNBOOK.md` 신설 | ☐ |
-| #024 | P3 | 백엔드 | LottoRecommender 시도 횟수 yml 외부화 | ☐ |
-| #025 | P3 | 백엔드 | `isUsableSummary` 방어적 검증 | ☐ |
-| #026 | P3 | 운영 | Logback `discardingThreshold` 조정 | ☐ |
-| #027 | P3 | 품질 | Spotless / Checkstyle / shellcheck 도입 | ☐ |
-| #028 | P3 | DB | 조회 성능 인덱스 재검토 | ☐ |
-| #029 | P3 | 프론트 | Vite 도입 및 OpenAPI→TS 타입 생성 | ☐ |
-| #030 | P3 | 문서 | 환경변수 표준표 + `docs/configuration.md` | ☐ |
-| #031 | P3 | 운영 | Java 21 LTS 백포팅 옵션 검토 | ☐ |
+1. [한눈에 보기 (Executive Summary)](#1-한눈에-보기-executive-summary)
+2. [리포지토리 개요](#2-리포지토리-개요)
+3. [백엔드 분석](#3-백엔드-분석)
+4. [프론트엔드 분석](#4-프론트엔드-분석)
+5. [테스트 및 품질 보증](#5-테스트-및-품질-보증)
+6. [코드 품질](#6-코드-품질)
+7. [문서 및 온보딩](#7-문서-및-온보딩)
+8. [🆕 2026-05-15 추가 코드 리뷰 결과](#8--2026-05-15-추가-코드-리뷰-결과)
+9. [우선순위 통합 로드맵 (#001~#060)](#9-우선순위-통합-로드맵-001060)
+10. [코드 샘플 및 패치 예시](#10-코드-샘플-및-패치-예시)
+11. [권장 도구·라이브러리·CI](#11-권장-도구라이브러리ci)
+12. [리뷰 체크리스트 및 PR 템플릿](#12-리뷰-체크리스트-및-pr-템플릿)
+13. [실행 명령어 예시](#13-실행-명령어-예시)
 
 ---
 
-## 2. 작업 단위 상세
+## 1. 한눈에 보기 (Executive Summary)
 
-### 🔴 P1 — 다음 sprint
+### 프로젝트 개요
 
----
+**kLo**는 **Spring Boot 4** (Java 25) 기반의 로또 번호 조회·추천 서비스다.
 
-#### #001 — LottoCollectionGate 분산 동시성
-
-| 항목 | 내용 |
+| 영역 | 스택 |
 |---|---|
-| 우선순위 | **P1** · 백엔드 |
-| 의존성 | — |
-| 브랜치 안 | `feat/collect-gate-shedlock` |
-| 커밋 메시지 안 | `feat(collect): apply distributed lock to collection gate [#001]` |
+| 백엔드 | Spring Boot 4, Java 25, Gradle (Kotlin DSL) |
+| DB / 마이그레이션 | MariaDB / MySQL, Flyway |
+| 캐시 / 락 | Caffeine, Redis(토글), ShedLock |
+| 회복성 / 관측 | Resilience4j, Micrometer, OpenTelemetry, Logstash Encoder |
+| 프론트엔드 | Thymeleaf + Bootstrap (Webjars), Vanilla JS |
+| 테스트 | JUnit 5, Testcontainers, ArchUnit, REST Docs, Vitest, Playwright |
 
-**문제** — `AtomicBoolean` 단일 JVM 기준 → 멀티 인스턴스에서 admin 동시 수집 미보호.
+### 핵심 강점 ✅
 
-**변경 파일**
-- `feature/winningnumber/application/LottoCollectionGate.java`
-- `infra/config/SchedulerLockConfig.java` (기존 `JdbcTemplateLockProvider` 재사용)
-- `feature/winningnumber/application/LottoCollectionGateTest.java`
+- 명확한 `feature` / `domain` / `infra` **계층 분리** + ArchUnit · 계약 테스트 · REST Docs
+- **Resilience4j**, **ShedLock**, **Flyway**, **Caffeine / Redis 토글**, **Bean Validation**
+- `OncePerRequestFilter` 기반 **토큰 인증 + SHA-256 해시 토큰**, **Rate-limit**, **Prometheus 메트릭**, **MDC 트레이싱**
+- **Multi-stage Docker** + healthcheck + non-root + **JVM 가상스레드** + 그레이스풀 셧다운
+- 자동 수집/재시도/missing 보충 스케줄, `FailoverLottoApiClient`, `RequiredConfigValidator`로 startup 검증
 
-**작업 단계**
-1. `LockProvider`를 `LottoCollectionGate` 생성자에 주입
-2. `AtomicBoolean.compareAndSet` 분기를 `LockConfiguration` 기반 분산 락으로 치환
-3. 락 획득 실패 시 `BusinessException(ErrorCode.TOO_MANY_REQUESTS, "already running")`
-4. 2-인스턴스 시뮬레이션 IT 추가 (`@Sql`로 동일 lock row를 미리 점유)
+### 🚨 즉시 조치 필요 — P1 핵심 6선
 
-**완료 조건 (DoD)**
-- [ ] `lotto_collect_gate` 키로 ShedLock 락 동작
-- [ ] 락 획득 실패 → 429 응답
-- [ ] 단일 JVM 회귀 테스트 통과
-- [ ] 2-인스턴스 동시 호출 시 1개만 실행되는 IT 통과
+| 우선 | 항목 | 영향 |
+|:---:|---|---|
+| **#032** | 캐시 self-invocation 무력화 (`WinningStatisticsService`) | 매 페이지 로드마다 DB 집계 실행 — **사용자 영향 최대** |
+| **#034** | CSP × 인라인 스크립트 충돌 (`header.html`) | prod 진입 시 즉시 **FOUC** + 콘솔 위반 |
+| **#033** | `@TransactionalEventListener` 미통일 + `readOnly` 누락 | 데이터·캐시 일관성 결함 |
+| **#036** | 낙관락 실패가 SKIPPED로 둔갑 (`WinningNumberPersister`) | **사일런트 실패** — 관찰성 결함 |
+| **#042** | `DhLotteryApiClient.preview()` NPE | 외부 API 다운 시 fallback 진입 차단 |
+| **#037** | CD `workflow_run` vs `workflow_dispatch` 산출물 불일치 | 같은 commit, **다른 jar** → 운영 사고 가능 |
 
-**참고 스니펫**
+> ⚠️ 위 6건은 다음 sprint(2주)에 우선 반영을 권장한다. 자세한 내용은 [§8](#8--2026-05-15-추가-코드-리뷰-결과) 참고.
+
+---
+
+## 2. 리포지토리 개요
+
+### 파일 구조
+
+```
+kLo/
+├── src/main/java/com/kraft/lotto/
+│   ├── feature/
+│   │   ├── winningnumber/      # 당첨번호 수집·조회
+│   │   ├── recommend/          # 추천 번호 로직 + 제외 규칙
+│   │   └── statistics/         # 빈도·이력 통계
+│   ├── infra/                  # 설정 · 보안 · 헬스체크
+│   └── support/                # 응답 포맷 · 예외 · 유틸
+├── src/main/resources/
+│   ├── static/                 # JS 모듈, CSS
+│   ├── templates/              # Thymeleaf
+│   └── docs/index.adoc         # REST Docs
+├── src/test/                   # 단위 + 통합 + JS + e2e
+├── build.gradle.kts
+├── docker-compose.yml
+├── .env.example
+└── README.md
+```
+
+### 의존성 하이라이트
+
+`build.gradle.kts`에 정의된 주요 라이브러리는 다음과 같다.
+
+- **웹/보안**: Spring Web, Security, Validation, Actuator
+- **퍼시스턴스**: JPA, Flyway, MariaDB Connector
+- **캐시/회복성**: Caffeine, Redis, Resilience4j, ShedLock
+- **관측**: Micrometer, OpenTelemetry, Logstash Encoder
+- **문서/뷰**: SpringDoc(OpenAPI/Swagger UI), Thymeleaf, Bootstrap Webjars
+- **테스트**: Spring Test, REST Docs, Testcontainers, ArchUnit
+
+### 실행/배포
+
+- **로컬 빌드**: `./gradlew build`
+- **컨테이너 실행**: `docker compose up -d --build` → `http://localhost:8080`
+- **CI/CD**: GitHub Actions `ci.yml` + `cd.yml` (workflow_run / workflow_dispatch)
+- **라이선스**: MIT
+
+### 설정
+
+`.env.example`에 프로필·DB·외부 API·관리 토큰·스케줄러·RateLimit·로깅 환경변수가 정의되어 있다. 대표 키:
+
+| 환경변수 | 용도 |
+|---|---|
+| `KRAFT_ENV` | 프로필 식별자 |
+| `KRAFT_API_CLIENT` | 외부 API 클라이언트 모드 (`mock`/`real`) |
+| `KRAFT_ADMIN_API_TOKENS` | 관리 API 토큰 (평문 — `apiTokenHashes` 권장) |
+| `KRAFT_RECOMMEND_RATE_LIMIT_*` | 추천 API 속도 제한 |
+
+---
+
+## 3. 백엔드 분석
+
+### 3.1 아키텍처 및 모듈
+
+전형적인 Spring Boot 레이어 구조다.
+
+```
+Controller (REST API)
+   ↓
+Service  (비즈니스 로직)
+   ↓
+Repository (JPA)
+   ↓
+Domain / DTO (불변 모델)
+```
+
+`@SpringBootApplication`에 `@EnableScheduling`, `@EnableRetry`가 적용되어 있다.
+
+#### 추천 모듈 (`feature.recommend`)
+
+- `RecommendController`: `/api/recommend`, `/api/v1/recommend`
+- `RecommendService.recommend(count)`: POST 요청 처리
+- 제외 규칙: `BirthdayBiasRule`, `LongRunRule`, `SingleDecadeRule` 등
+- `RecommendService.rules()`: 활성 규칙 목록 반환
+
+#### 당첨번호 모듈 (`feature.winningnumber`)
+
+| 컴포넌트 | 책임 |
+|---|---|
+| `WinningNumberEntity` | JPA 엔티티 (회차, 날짜, 번호1~6, 보너스, 당첨금) |
+| `LottoFetchLogEntity` | 수집 시도 로그 |
+| `WinningNumber` (record) | 불변 도메인, 보너스/음수 검증 |
+| `LottoCombination` (record) | 6개 번호 조합, 중복/범위 검증 |
+| `WinningNumberController` | `/api/winning-numbers/*` (v1 호환 포함) |
+| `LottoCollectionService` + 커맨드 서비스 | 단일/범위 수집 조합 |
+| `LottoApiClient` → `WinningNumberPersister` | 외부 API 호출 → DB 저장 |
+| `LottoCollectionGate` | `AtomicBoolean` 동시 실행 차단 (단일 인스턴스) |
+| `BackfillJobService` | 비동기 백필 (현재 인메모리 맵 — #002로 영속화 예정) |
+
+#### 통계 모듈 (`feature.statistics`)
+
+- `WinningStatisticsService`: 번호 빈도 + 조합 당첨 이력
+- 빈도 요약 테이블(`winning_number_frequency_summary`) + Caffeine 캐시 2단 구조
+- 수집 이벤트 수신 시 `@CacheEvict` 트리거 (⚠️ 트랜잭션 안전성 문제 — #033)
+
+### 3.2 API 엔드포인트
+
+#### 사용자 API (인증 불필요)
+
+| Method | Path | 설명 |
+|---|---|---|
+| POST | `/api/recommend` (`/api/v1/recommend`) | `{count: 1~10}` 추천 조합 반환 |
+| GET | `/api/recommend/rules` | 활성 제외 규칙 목록 |
+| GET | `/api/winning-numbers/latest` | 최신 회차 |
+| GET | `/api/winning-numbers/{round}` | 특정 회차 (1~3000) |
+| GET | `/api/winning-numbers?page=&size=` | 페이징 조회 |
+| GET | `/api/winning-numbers/stats/frequency` | 번호별 등장 횟수 |
+| GET | `/api/winning-numbers/stats/frequency-summary` | 최저빈도 6개 + 당첨 이력 |
+| GET | `/api/winning-numbers/stats/combination-prize-history?numbers=...` | 6개 조합 당첨 이력 |
+
+#### 관리 API (`X-Kraft-Admin-Token` 헤더 필수)
+
+| Method | Path | 설명 |
+|---|---|---|
+| POST | `/admin/lotto/draws/collect-next` | 최신 회차까지 순차 수집 |
+| POST | `/admin/lotto/draws/collect-missing` | 누락 회차 수집 |
+| POST | `/admin/lotto/draws/{drwNo}/refresh` | 특정 회차 재수집 |
+| POST | `/admin/lotto/draws/backfill?from=&to=` | 동기 백필 |
+| POST | `/admin/lotto/jobs/backfill?from=&to=` | 비동기 백필 잡 큐잉 |
+
+### 3.3 보안
+
+| 항목 | 현 상태 |
+|---|---|
+| 토큰 인증 | `AdminApiTokenFilter` — 평문/해시 비교, 실패 시 `UNAUTHORIZED_ADMIN_API` |
+| CSRF | `/api/**`, `/admin/**`에서 비활성 (stateless) |
+| 세션 | stateless |
+| Rate Limit | IP별 (`recommend`, `collect`) — 인메모리 / Redis 토글 |
+| 보안 헤더 | CSP, Referrer-Policy, Permissions-Policy, X-Frame-Options 적용 |
+| ⚠️ 누락 | **HSTS**(#004), **COOP**, **CORP**(#049), **CSP report-uri**(#049) |
+
+### 3.4 데이터 모델 및 영속성
+
+- `WinningNumberRepository`: `findTopByOrderByRoundDesc()`, `findById(round)`, 페이지 조회, 빈도 조회, 조합 PRIZE 히트
+- `WinningNumberFrequencySummaryEntity`: 번호별 집계 (성능 최적화)
+- `LottoFetchLogRepository`: 수집 로그 + 오래된 로그 삭제
+
+조회 서비스는 `@Transactional(readOnly = true)`, 수집/수정은 `Propagation.NOT_SUPPORTED`로 분리한다. 다만 `LottoCollectionGate`, `BackfillJobService`의 트랜잭션 경계가 코드상 명시되지 않은 부분이 있다 (#003).
+
+### 3.5 성능 및 확장성
+
+| 영역 | 분석 |
+|---|---|
+| **추천 엔진** | 랜덤 조합 → 다중 규칙 필터 방식. `maxAttempts=5000`, 초과 시 429. 결정적 알고리즘/제한 백트래킹 검토 필요 (#006) |
+| **DB** | PK 조회 / 페이징 효율. 빈도 조회는 캐시·요약 테이블 활용. 인덱스 점검 필요 |
+| **캐시** | Caffeine + (옵션) Redis. `@CacheEvict` 수동 무효화 |
+| **확장성** | `AtomicBoolean` 동시성 제어 → **멀티 인스턴스 부적합** (ShedLock 필요 — #001) |
+
+---
+
+## 4. 프론트엔드 분석
+
+### 4.1 구조 및 동작
+
+- **렌더링**: Thymeleaf 서버사이드 + 정적 JS 보강
+- **모듈**: `src/main/resources/static/js` — `api.js`, `pagination.js`, `recommend.js`, `winning.js`, `frequency.js`, `theme.js`, `ui.js`
+- **상태 관리**: SPA 프레임워크 없음, vanilla JS + fetch
+- **빌드**: 별도 번들러 없음 (정적 서빙)
+- **테스트**: Vitest 단위 + Playwright e2e (현재 각 1~2건 수준)
+
+### 4.2 UI/UX
+
+- Bootstrap 기반 컴포넌트
+- 폼 즉시 검증 / 피드백 부족 (#014)
+- 접근성(ARIA, 키보드 내비) 보강 필요 (#015)
+    - `aria-busy`, `aria-live`, role 속성 등
+- 페이지네이션 / 추천 폼 모듈화 진행 중 (#007)
+
+### 4.3 빌드 자동화 검토 (#029)
+
+번들링·minify·캐시 무효화 자동화가 없다. Vite 도입 시 다음 이점:
+- 의존성 트리·tree-shaking
+- TypeScript 점진 도입 가능
+- OpenAPI 스키마 → 타입 자동 생성
+
+---
+
+## 5. 테스트 및 품질 보증
+
+### 5.1 커버리지 및 도구
+
+- Jacoco 최소 커버리지 **70%** 요구 (Gradle 빌드 통합)
+- Testcontainers로 MariaDB 통합 테스트
+- ArchUnit으로 계층 경계 검증 (#013)
+- Spring REST Docs로 API 문서 동기화
+
+### 5.2 부족한 영역
+
+| 영역 | 현 상태 | 개선 항목 |
+|---|---|---|
+| 통합 테스트 | 보안 중심, 정상 응답 검증 제한적 | 정상/오류 케이스 확장 |
+| E2E | Playwright 1건 (smoke) | 추천, 페이지네이션, 토글 등 (#016) |
+| 계약 테스트 | 경로 set만 검증 | 응답 스키마 (REST Docs ↔ OpenAPI) (#017) |
+| JS 단위 | 2개만 존재 | `recommend.js`, `winning.js`, `frequency.js`, `theme.js`, `ui.js` (#048) |
+| 캐시 회귀 | **없음** | self-invocation 회귀 테스트 (#047) |
+| CI | `./gradlew check` 의존 | 린트·커버리지·Docker 빌드 통합 (#027) |
+
+### 5.3 Flaky 위험
+
+외부 API mock·Testcontainers 사용 통합 테스트는 네트워크·시간에 따라 변동할 수 있다. 시드 고정·격리 강화 필요.
+
+---
+
+## 6. 코드 품질
+
+### 6.1 스타일·린팅
+
+- Java/Kotlin DSL 모두 **Spotless·Checkstyle·PMD 미적용** (#027)
+- 패키지·import 정렬, 주석 컨벤션 비일관
+- Shell/Python 스크립트도 shellcheck/ruff 권장
+
+### 6.2 복잡도 핫스팟
+
+| 컴포넌트 | 위험 |
+|---|---|
+| `LottoRecommender` 생성 루프 | 최악 5000회 시도, 타임아웃 가능 |
+| `WinningStatisticsService` 집계 | 캐시 self-invocation으로 매번 DB hit (#032) |
+| `BackfillJobService` | 쓰레드풀 + 인메모리 상태 + cleanup race (#002, #060) |
+| `RecommendRateLimitFilter` Redis 모드 | INCR+EXPIRE 비원자 (#009) |
+
+### 6.3 중복·추상화
+
+- single/range 수집 결과 처리 코드 중복
+- `BusinessException` 처리 패턴이 여러 서비스에서 반복 → AOP/Advice 통일 여지
+- `PastWinningCacheLoader.reload()` ↔ `WinningStatisticsService.recomputeFrequency()` 동일 read 패턴 (#Q-1)
+
+---
+
+## 7. 문서 및 온보딩
+
+| 문서 | 현 상태 | 개선 |
+|---|---|---|
+| `README.md` | 실행 방법, API 경로 요약 | 환경변수·배포 절차 보강 |
+| `docs/index.adoc` | REST Docs 수동 작성 | `/docs` 엔드포인트로 노출 + 자동화 |
+| `.env.example` | 키 나열, 설명 간략 | `docs/configuration.md` 정리 (#030) |
+| `docs/docs.md` | 최소 절차 | Runbook(#022) + Architecture(#023) 추가 |
+| `CONTRIBUTING.md` | **없음** | 추가 (#020) |
+| `SECURITY.md` | **없음** | 추가 (#021) |
+
+---
+
+## 8. 🆕 2026-05-15 추가 코드 리뷰 결과
+
+> **분석 범위**: 전체 91개 Java 파일 + 8개 JS · Thymeleaf · SQL · GitHub Workflow 전수 조사
+> **추가 작업단위**: #032~#060 (총 29건)
+
+### 범례
+
+- 🐛 **버그** · 🔒 **보안/설정** · ⚡ **성능** · 📦 **도메인** · 🎨 **프론트** · 🧪 **테스트** · 🚀 **운영** · 🧹 **청결도**
+- 🔴 **P1** (즉시) · 🟡 **P2** (단기) · 🟢 **P3** (중장기)
+
+---
+
+### 8.1 🐛 명백한 버그 (Bug)
+
+#### 🔴 B-2 · 캐시 self-invocation 무력화 → **#032**
+
+**위치**: `feature/statistics/application/WinningStatisticsService.java:154`
+
+`frequencySummary()`가 같은 빈의 `@Cacheable` 메서드를 `this`로 직접 호출. Spring AOP 프록시 미경유 → **매 요청마다 DB 집계 쿼리 실행**.
+
+```text
+사용자 영향: 메인 화면 진입 시마다 캐시 무력화 — 즉시 조치 필요
+```
+
+**조치**: 별도 빈 분리 / `AopContext.currentProxy()` / `@Lazy self-injection`.
+
+---
+
+#### 🔴 B-7 · CSP × 인라인 스크립트 충돌 → **#034**
+
+**위치**: `infra/security/SecurityConfig.java:48` ↔ `templates/fragments/header.html:8-18`
+
+CSP `script-src 'self'`인데 `header.html`에 테마 초기화 인라인 `<script>` 존재. prod 환경에서 **FOUC + 콘솔 위반**.
+
+**조치 (택일)**:
+- CSP nonce 통합 + Thymeleaf에서 `nonce="${...}"` 주입
+- 인라인 스크립트를 외부 `theme-init.js`로 분리 후 `<head>`에서 동기 로드
+
+---
+
+#### 🔴 B-3 / B-4 · 트랜잭션 이벤트 일관성 → **#033**
+
+**위치**: `feature/statistics/application/WinningStatisticsService.java:53, 166`
+
+- `evictCachesOnCollected`: `@EventListener` → 수집 트랜잭션 롤백 시 캐시는 이미 비워진 상태
+- 같은 이벤트를 듣는 `PastWinningCacheLoader.onCollected`는 `@TransactionalEventListener(AFTER_COMMIT)` — 일관성 깨짐
+- `frequency()`: `@Cacheable @Transactional` — **`readOnly = true` 누락** (다른 두 메서드는 적용됨)
+
+**조치**: `@TransactionalEventListener(phase = AFTER_COMMIT)`로 통일 + `readOnly = true` 추가.
+
+---
+
+#### 🔴 B-6 · 낙관락 실패가 SKIPPED로 둔갑 → **#036**
+
+**위치**: `feature/winningnumber/application/WinningNumberPersister.java:64`
+
+```java
+for (int attempt = 1; attempt <= UPSERT_MAX_RETRIES_ON_OPTIMISTIC_LOCK; attempt++) {
+    try { outcome = doUpsert(...); break; }
+    catch (OptimisticLockingFailureException ex) {
+        if (attempt == UPSERT_MAX_RETRIES_ON_OPTIMISTIC_LOCK)
+            outcome = UpsertOutcome.UNCHANGED;   // ← 실패가 "변경 없음"으로 보고됨
+    }
+}
+```
+
+| 문제 | 영향 |
+|---|---|
+| 변수명 `MAX_RETRIES`인데 값 `2` → 실제 1회 재시도 | 의미 불일치 |
+| 재시도 끝까지 실패 시 `UNCHANGED` 보고 | **사일런트 실패** — `SUCCESS+skipped`로 fetch_log 기록 |
+
+**조치**: `kraft.winningnumber.optimistic_lock.failure` 메트릭 + `FAILED` 상태 전파.
+
+---
+
+#### 🟡 B-1 · `DhLotteryApiClient.preview()` NPE 가능성 → **#042**
+
+**위치**: `feature/winningnumber/application/DhLotteryApiClient.java:77`
+
+```java
+throw new LottoApiClientException(
+    "external API HTTP error (... preview=" + preview(response.body()) + ")", ...);
+```
+
+`response.body()`가 `null`이면 `preview()` 내부 `body.length()` 호출에서 NPE → fallback 진입 차단.
+
+**조치**: 내부 null 가드 또는 호출부에서 `body == null ? "" : body`.
+
+---
+
+#### 🟢 B-8 · `LottoSingleDrawCollector` 중복 조회 + 데드 코드 → **#052**
+
+- `winningNumberRepository.findMaxRound()`가 한 메서드 분기마다 **별도 SQL로 최대 4번** 실행
+- `private CollectResponse response(CollectResponse r) { return r; }` (`:71-73`) — 항등함수, 데드 코드
+
+---
+
+#### 🟡 B-9 · `RecommendRateLimitFilter` Redis 비원자 → 기존 #005에 흡수
+
+```java
+Long count = redisTemplate.opsForValue().increment(key);
+if (count != null && count == 1L) redisTemplate.expire(key, ...);
+```
+
+- `INCR` 직후 별도 RTT로 `EXPIRE` → 클라이언트 사망 시 TTL 미설정 키 영구 잔존
+- 핫패스 RTT 2회 → 비용 증가
+
+**조치**: Lua 스크립트(`INCR` + `EXPIRE` 원자) 또는 `SET key 1 EX <ttl> NX`.
+
+---
+
+#### 🟢 B-10 · 모지바케 한글 주석 잔존 → **#051**
+
+다음 파일에 이중 인코딩 한글 주석 (UTF-8 valid bytes이지만 의미 불명):
+
+- `LottoRecommenderTest.java:37`
+- `WinningNumberQueryServiceTest.java:122,126,128`
+- `RecommendControllerTest.java`
+- `KraftPropertiesBindingTest.java`
+
+`scripts/check_utf8.py`는 바이트 단위 유효성만 검사 → 검출 못 함.
+
+**조치**: 모지바케 마커(`?뺢`, `?낫`, `?곕?` 등) 검출 룰 + staged 파일 검수.
+
+---
+
+#### 🟡 B-11 · `isUsableSummary` `saveAll` 동시성 비결정성
+
+**위치**: `WinningStatisticsService.java:107` — `@Version` 없음 → 멀티 인스턴스 동시 stale 감지 시 last-write-wins. ([#Q-2 참고](#84--프로젝트-청결도))
+
+#### 🟢 B-12 · `WinningNumberPersister.saveIfAbsent` — 미사용 메서드
+
+데드 코드 또는 향후 사용 의도라면 문서화 필요.
+
+---
+
+### 8.1.1 🐛 추가 버그 (2차) — B-13~B-23
+
+| ID | 위치 | 문제 | 매핑 |
+|:---:|---|---|:---:|
+| **B-13** | `application.yml` | `kraft.recommend.rate-limit.recommend` 키 누락 — env로만 변경 가능 | #054 |
+| **B-14** | `LottoFetchLogRetentionScheduler` | `@SchedulerLock` 부재 + 단일 DELETE → 멀티 인스턴스 동시 실행 + 테이블 락 | **#041** |
+| **B-15** | `LottoApiHealthIndicator` | 이중 SQL (`findMaxRound` + `findTopByOrderByRoundDesc`) + 이름 오해 | — |
+| **B-16** | `LottoApiHealthIndicator` | `withDetail("error", ex.getMessage())` — prod 노출 위험 | **#040** |
+| **B-17** | `WinningNumberCollectController` | `CollectRequest.targetRound`가 String — `{"targetRound":"1200"}` 강제 | **#043** |
+| **B-18** | `LegacyApiDeprecationHeaderFilter` | `SUNSET_VALUE` 하드코딩, sunset 이후 정책 미정 | #056 |
+| **B-19** | `logback-spring.xml` | `cleanHistoryOnStart=true` × 5 appender → 재시작 시 로그 소실 | #055 |
+| **B-20** | `build-and-up.sh` | 미정의 `klo` systemd 서비스 + 위험한 `docker image prune -f` | **#035** / #057 |
+| **B-21** | `smoke-test.sh` | 409 분기 잘못 — 코드는 429 반환 + 매 배포마다 실수집 발생 | **#035** |
+| **B-22** | `RandomLottoNumberGenerator` | 데드 코드 가능성 (`ConstraintAwareLottoNumberGenerator`만 빈 등록) | #053 |
+| **B-23** | `LottoCollectionService.forTest` | 프로덕션 jar에 테스트 진입점 포함 | #053 |
+
+---
+
+### 8.2 🔒 보안·운영 결함
+
+| ID | 항목 | 조치 | 매핑 |
+|:---:|---|---|:---:|
+| **S-1** | CSP `frame-ancestors 'none'` + `X-Frame-Options` 이중 | `X-Frame-Options` 제거 | — |
+| **S-2** | 누락 헤더: COOP / CORP / X-Content-Type-Options(명시) | 추가 | **#049** |
+| **S-3** | Rate limit `clientIp = "unknown"` 키 폭주 | `kraft.rate_limit.unknown_client_ip` 카운터 노출 | — |
+| **S-4** | 어드민 토큰 audit 로그 IP 평문 | 부분 마스킹 / 해시 | — |
+| **S-5** | prod actuator `metrics`/`prometheus` 노출 정책 | 별도 management 포트 / 인증 | **#039** |
+| **S-6** | `KRAFT_ADMIN_API_TOKENS` 평문 허용 | prod에서 차단 룰 + 길이 검증 | **#046** |
+| **S-7** | CD `render-env.sh`가 `.env` 평문 기록 | `docker compose run -e KEY=$VAL` + `trap` | — |
+| **S-8** | prod Prometheus 노출 vs SecurityConfig 정합성 | permitAll 명시 또는 차단 의도 문서화 | **#039** |
+| **S-9** | `health.show-details: when-authorized` ↔ authorized 경로 부재 | 의도 정리 | — |
+| **S-10** | CSP `report-uri` / `report-to` 부재 | violation 수집 endpoint | **#049** |
+| **S-11** | CORS 설정 부재 (현재는 same-origin) | mobile/SPA 분리 시 대비 | — |
+
+---
+
+### 8.3 ⚡ 성능
+
+| ID | 항목 | 조치 | 매핑 |
+|:---:|---|---|:---:|
+| **P-1** | `findPrizeHitsByNumbers` 풀스캔 × 2 (UNION ALL, 6컬럼 IN) | bitmask 컬럼 / combination_signature 컬럼 | **#038** |
+| **P-2** | `recomputeFrequency` 매번 1223+ 행 6컬럼 로드 | DB쪽 `UNNEST + GROUP BY` | — |
+| **P-3** | `PastWinningCacheLoader.reload()` JPA stream 미사용 | `Stream` / 페이징 | — |
+| **P-4** | Caffeine `maximumSize=100` 너무 작음 (`application.yml:53`) | `maximumSize=1000~5000`, `expireAfterAccess=24h` | #059 |
+| **P-5** | `WinningNumberAutoCollectScheduler` 모든 잡 동일 `lock-at-most-for=PT10M` | 잡별 분리 | — |
+
+---
+
+### 8.4 📦 도메인·추천 엔진
+
+| ID | 항목 | 조치 | 매핑 |
+|:---:|---|---|:---:|
+| **D-1** | 십의자리 임계치 두 곳에서 다르게 구현 (`SingleDecadeRule` ↔ `ConstraintAware...`) | 공유 상수/유틸 추출 | — |
+| **D-2** | `LongRunRule` ↔ 생성기 fix-up: 무작위 인덱스 교체로 효율 낮음 | "긴 연속 구간 내부" 인덱스만 후보 | #050 |
+| **D-3** | `KraftRecommendProperties.Rules` 범위 검증 부재 (`decadeThreshold=1`이면 모든 요청 500) | record compact constructor 검증 | #050 |
+| **D-4** | `RecommendRequest.countOrDefault()` Bean Validation 우회 | `@NotNull` 옵션 검토 | — |
+| **D-5** | `BackfillJobService.start` cleanup race-prone | cleanup을 `executor.execute(...)` 이후로 이동 | — |
+| **D-6** | `BackfillJobService` SUCCEEDED 결과 메모리 보존 (`jobRetention=PT6H`) | #002 영속화로 흡수 | #060 |
+| **D-7** | `LottoRangeCollector` 부분 실패가 응답에 묻힘 (HTTP 200) | 207 Multi-Status / 경고 헤더 | — |
+| **D-8** | `LottoCollectionGate.run()` lock 해제 전 `publishEvent` (동기 listener 블로킹) | `publish`를 try 밖으로 / async listener 통일 | — |
+
+---
+
+### 8.5 🎨 프론트엔드
+
+| ID | 항목 | 조치 | 매핑 |
+|:---:|---|---|:---:|
+| **F-1** | `api.js` 타임아웃 10초 하드코딩 | 호출자 override | — |
+| **F-2** | `pagination.js` AbortController 누수 (catch 분기) | `listState.abortCtrl = null` | — |
+| **F-3** | `frequency.js` "최저빈도 6개" 매번 백엔드 호출 | B-2(#032) 해결 시 자동 회복 | — |
+| **F-4** | 동일 화면 4개 API 병렬 호출 — `latest`를 `list` 첫 페이지에서 재사용 가능 | cache-friendly | — |
+| **F-5** | `recommend.js` 폼 검증 즉시 피드백 부재 | 기존 #014에 흡수 | #014 |
+| **F-6** | 429 `Retry-After` 헤더 무시 | 토스트에 "X초 후 재시도" | — |
+
+---
+
+### 8.6 🧪 테스트
+
+| ID | 항목 | 조치 | 매핑 |
+|:---:|---|---|:---:|
+| **T-1** | 캐시 동작 회귀 테스트 부재 | repository hit 횟수 검증 | **#047** |
+| **T-2** | `MockLottoApiClientTest.fetch(2000)` 1.5초+ | `@Tag("perf")` 분리 | — |
+| **T-3** | ArchUnit 룰 미흡 | `application`→`RestClient` 금지, `domain`에서 Spring 어노테이션 금지 등 | #013 |
+| **T-4** | 계약 테스트가 경로 set만 검증 | REST Docs snippet ↔ OpenAPI 스키마 매칭 | #017 |
+| **T-5** | JS 테스트 2개에 불과 | `recommend.js`, `winning.js`, `frequency.js`, `theme.js`, `ui.js` 추가 | **#048** |
+| **T-6** | Playwright e2e 1개 (smoke) | 추천 폼, 페이지네이션, 토글 시나리오 | #016 |
+
+---
+
+### 8.7 🚀 운영·배포
+
+| ID | 항목 | 조치 | 매핑 |
+|:---:|---|---|:---:|
+| **O-1** | `cd.yml` workflow_run vs workflow_dispatch — 빌드 산출물 비결정성 ⚠️ | 산출물 일원화 | **#037** |
+| **O-2** | Docker 이미지 태그 SHA만 사용 (롤백 어려움) | `latest` + sha 동시 / `previous` 별도 | #010 |
+| **O-3** | `wait-readiness.sh` 실패 시 컨테이너 로그 미출력 | `docker compose logs --tail=200` 추가 | — |
+| **O-4** | `JAVA_OPTS`에 `-XX:+HeapDumpOnOutOfMemoryError` 없음 | 추가 | **#044** |
+| **O-5** | JVM 가상스레드 + JDBC 핀닝 모니터링 필요 | 메트릭/대시보드 정의 | #019 |
+| **O-6** | Flyway `baseline-on-migrate`/`baseline-version` 미정의 | 명시 | **#045** |
+| **O-7** | `IMPROVEMENT.md` ↔ GitHub Issues 양방향 sync 없음 | 작업단위 ID prefix `[#NNN]` 강제 | — |
+| **O-8** | `package.json` 루트 + 테스트는 `src/test/js`, `src/test/e2e` | 의존성 dev-only 확인 | — |
+| **O-9** | README "최신 회차" 수동 업데이트 | 자동 생성 / 동적 endpoint | #058 |
+| **O-10** | `KRAFT_API_MOCK_LATEST_ROUND:1200` default — 실제 1223 | startup 시 `findMaxRound() + 1` 자동 동기화 | #058 |
+
+---
+
+### 8.8 🧹 프로젝트 청결도
+
+| ID | 항목 | 조치 |
+|:---:|---|---|
+| **Q-1** | `recomputeFrequency` 패턴이 `PastWinningCacheLoader.reload()`와 `WinningStatisticsService`에 중복 | 공통 read-projection / 같은 read 흐름 공유 |
+| **Q-2** | Caffeine + 빈도 요약 테이블 양립 — 멀티 인스턴스 동시 saveAll | DB 갱신을 `WinningNumberPersister` 또는 이벤트 리스너에서 단일화 |
+| **Q-3** | `CollectResponse.dataChanged` 내부 의사결정 플래그가 응답에 노출 | `@JsonIgnore` / internal-response 모델 분리 |
+| **Q-4** | 패키지 명 비대칭 (`feature/winningnumber/event/...`만 존재) | ArchUnit 패키지 명명 규약 추가 (#013) |
+
+---
+
+## 9. 우선순위 통합 로드맵 (#001~#060)
+
+> **범례**: 🔴 P1(즉시) / 🟡 P2(단기) / 🟢 P3(중장기)
+> **출처**: 기존 #001~#031 (IMPROVEMENT.md) + 신규 #032~#060 (2026-05-15 리뷰)
+
+### 9.1 🔴 P1 — 즉시 조치 (다음 sprint, 2주)
+
+| # | 영역 | 항목 | 예상 노력 |
+|:---:|:---:|---|:---:|
+| **#001** | 백엔드 | ShedLock 도입 (`LottoCollectionGate` 분산 락) | 중 |
+| **#002** | 백엔드 | 백필 작업 상태 영속화 (DB 테이블) | 중 |
+| **#003** | 백엔드 | 트랜잭션 경계 명확화 | 소~중 |
+| **#004** | 보안 | HSTS 및 보안 헤더 강화 | 소 |
+| **#005** | 인프라 | Redis 구성 추가 (Rate Limit) | 중 |
+| **#006** | 도메인 | 추천 엔진 결정성 도입 / 백트래킹 | 중~대 |
+| **#007** | 프론트 | JS 모듈 구조화 | 소 |
+| **#032** | 백엔드 | 캐시 self-invocation 수정 (B-2) | 소 |
+| **#033** | 백엔드 | `@TransactionalEventListener(AFTER_COMMIT)` 통일 + `readOnly` (B-3, B-4) | 소 |
+| **#034** | 보안 | CSP nonce / `theme-init.js` 외부화 (B-7) | 중 |
+| **#035** | 운영 | CD smoke test side-effect 제거 + 409→429 + `image prune` 안전화 (B-20, B-21) | 소 |
+| **#036** | 백엔드 | 낙관락 실패 메트릭 + FAILED 전파 (B-6) | 소 |
+| **#037** | 운영 | manual/auto deploy 빌드 산출물 일원화 (O-1) | 중 |
+
+### 9.2 🟡 P2 — 단기 (Sprint 2~4)
+
+| # | 영역 | 항목 |
+|:---:|:---:|---|
+| #008 | 테스트 | 보안 헤더 통합 테스트 |
+| #009 | 운영 | 프로필 정책 문서화 (`KRAFT_ENV`) |
+| #010 | 운영 | Docker 태깅 전략 |
+| #011 | 백엔드 | 외부 API resilience 보강 |
+| #012 | 백엔드 | 에러 모델 개선 |
+| #013 | 백엔드 | ArchUnit 계층/패키지 규칙 강화 |
+| #014 | 프론트 | 폼 즉시 검증/피드백 |
+| #015 | 프론트 | 접근성(ARIA) 강화 |
+| #016 | 테스트 | E2E 테스트 확대 (Playwright) |
+| #017 | 테스트 | 계약 테스트 (REST Docs ↔ OpenAPI) |
+| #018 | 운영 | 마이그레이션 문서화 |
+| #019 | 운영 | JVM 가상스레드 핀닝 모니터링 |
+| #020 | 문서 | CONTRIBUTING.md |
+| #021 | 문서 | SECURITY.md |
+| #022 | 문서 | Runbook |
+| #023 | 문서 | Architecture |
+| **#038** | 성능 | `findPrizeHitsByNumbers` bitmask/signature 컬럼 (P-1) |
+| **#039** | 운영 | Prometheus 노출 vs SecurityConfig 정합성 (S-5, S-8) |
+| **#040** | 보안 | `LottoApiHealthIndicator` detail `ex.message` 제외 (B-16) |
+| **#041** | 백엔드 | `LottoFetchLogRetentionScheduler` `@SchedulerLock` + 배치 삭제 (B-14) |
+| **#042** | 백엔드 | `DhLotteryApiClient.preview()` NPE 가드 (B-1) |
+| **#043** | API | `CollectRequest.targetRound` → `Integer` + `@Min/@Max` (B-17) |
+| **#044** | 운영 | `JAVA_OPTS`에 `-XX:+HeapDumpOnOutOfMemoryError` (O-4) |
+| **#045** | 운영 | Flyway `baseline-on-migrate` / `baseline-version` (O-6) |
+| **#046** | 보안 | prod 평문 admin token 차단 + 길이 검증 (S-6) |
+| **#047** | 테스트 | 캐시 회귀 통합 테스트 (T-1) |
+| **#048** | 테스트 | JS 단위 테스트 확대 (T-5) |
+| **#049** | 보안 | CSP `report-uri`/`report-to` + COOP/CORP (S-2, S-10) |
+
+### 9.3 🟢 P3 — 중장기
+
+| # | 영역 | 항목 |
+|:---:|:---:|---|
+| #024 | 백엔드 | 추천 시도횟수 외부 설정화 |
+| #025 | 백엔드 | 빈도 요약 검증 강화 |
+| #026 | 로깅 | 로깅 임계값 조정 |
+| #027 | 품질 | 린트/스타일 도구 도입 (Spotless, Checkstyle, ktlint) |
+| #028 | DB | 인덱스 재검토 |
+| #029 | 프론트 | Vite 도입 및 타입 생성 |
+| #030 | 문서 | 환경변수 표준 및 문서화 |
+| #031 | 운영 | Java 21 백포팅 검토 |
+| **#050** | 도메인 | `KraftRecommendProperties.Rules` 범위 검증 + fix-up 효율화 (D-2, D-3) |
+| **#051** | 청결도 | 모지바케 주석 정리 + `check_utf8.py` 보강 (B-10) |
+| **#052** | 청결도 | `LottoSingleDrawCollector` 항등함수 제거 + `findMaxRound` 중복 정리 (B-8) |
+| **#053** | 청결도 | `RandomLottoNumberGenerator` 데드 코드 + `forTest` 분리 (B-22, B-23) |
+| **#054** | 설정 | `application.yml` `rate-limit.recommend` 키 명시 (B-13) |
+| **#055** | 운영 | `cleanHistoryOnStart=false` (B-19) |
+| **#056** | API | `LegacyApiDeprecationHeaderFilter` SUNSET 외부화 + RFC 9745 (B-18) |
+| **#057** | 운영 | `build-and-up.sh` systemd 정리 (B-20) |
+| **#058** | 운영 | `KRAFT_API_MOCK_LATEST_ROUND` default 자동 갱신 (O-9, O-10) |
+| **#059** | 성능 | Caffeine 캐시 사이즈/만료 정책 재조정 (P-4) |
+| **#060** | 도메인 | `BackfillJobService` 메모리 limit (#002와 연결) (D-6) |
+
+---
+
+## 10. 코드 샘플 및 패치 예시
+
+### 10.1 ShedLock 적용 (#001)
+
+`LottoCollectionGate.run`에서 기존 `AtomicBoolean` 대신 ShedLock을 사용:
+
 ```java
 LockConfiguration cfg = new LockConfiguration(
-    Instant.now(), "lotto_collect_gate",
-    Duration.ofMinutes(10), Duration.ofSeconds(5));
-return lockProvider.lock(cfg)
-    .map(lock -> { try { return run(task); } finally { lock.unlock(); } })
+    Instant.now(),
+    "lotto_collect_gate",
+    Duration.ofMinutes(10),
+    Duration.ofSeconds(5));
+
+lockProvider.lock(cfg)
+    .map(lock -> {
+        try { return task.run(); }
+        finally { lock.unlock(); }
+    })
     .orElseThrow(() -> new BusinessException(
         ErrorCode.TOO_MANY_REQUESTS, "already running"));
 ```
 
----
+`JdbcTemplateLockProvider`를 `lockProvider`로 주입하고 `AtomicBoolean` 분기를 대체한다.
 
-#### #002 — BackfillJobService 잡 상태 DB 영속화
+### 10.2 백필 잡 영속화 엔티티 (#002)
 
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P1** · 백엔드 |
-| 의존성 | — |
-| 브랜치 안 | `feat/backfill-job-persistence` |
-
-**문제** — `ConcurrentHashMap` 인메모리 → 재시작 시 잡 상태 유실 + 운영 추적 불가.
-
-**변경 파일**
-- `src/main/resources/db/migration/V6__create_backfill_jobs.sql` (신규)
-- `feature/winningnumber/infrastructure/BackfillJobEntity.java` (신규)
-- `feature/winningnumber/infrastructure/BackfillJobRepository.java` (신규)
-- `feature/winningnumber/application/BackfillJobService.java` (수정)
-- `feature/winningnumber/application/BackfillJobStartupHook.java` (신규)
-
-**작업 단계**
-1. Flyway V6 migration 작성
-2. JPA Entity·Repository 추가
-3. `BackfillJobService`에서 ConcurrentHashMap → Repository 호출로 교체
-4. `ApplicationReadyEvent` 리스너에서 `RUNNING` → `FAILED("interrupted_by_restart")` 마킹
-5. 통합 테스트로 재시작 시나리오 검증
-
-**완료 조건 (DoD)**
-- [ ] V6 migration이 `migrationFromScratchIT`에서 통과
-- [ ] 잡 생성/조회 시 DB row 존재 확인
-- [ ] 재시작 후 RUNNING 잡이 FAILED로 마킹됨
-- [ ] 기존 BackfillJobServiceTest 회귀 통과
-
-**참고 — V6 SQL**
-```sql
-CREATE TABLE backfill_jobs (
-    job_id       VARCHAR(36)  NOT NULL,
-    from_round   INT          NOT NULL,
-    to_round     INT          NOT NULL,
-    status       VARCHAR(20)  NOT NULL,
-    started_at   DATETIME     NULL,
-    completed_at DATETIME     NULL,
-    result_json  LONGTEXT     NULL,
-    error_msg    VARCHAR(500) NULL,
-    CONSTRAINT pk_backfill_jobs PRIMARY KEY (job_id)
-);
-CREATE INDEX idx_backfill_jobs_status ON backfill_jobs(status);
-```
-
----
-
-#### #003 — Transaction 경계 명시
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P1** · 백엔드 |
-| 의존성 | — |
-| 브랜치 안 | `refactor/transaction-boundary` |
-
-**문제** — read-only / write 경계가 코드 레벨에서 일관되지 않음. 외부 API 호출이 DB transaction 내부에서 일어날 위험.
-
-**변경 파일**
-- `feature/winningnumber/application/WinningNumberQueryService.java`
-- `feature/winningnumber/application/WinningNumberPersister.java`
-- `feature/winningnumber/application/LottoSingleDrawCollector.java`
-- `feature/winningnumber/application/LottoRangeCollector.java`
-
-**작업 단계**
-1. 모든 조회 서비스에 클래스 레벨 `@Transactional(readOnly = true)` 적용
-2. 저장 메서드에만 메서드 레벨 `@Transactional` 명시 (readOnly 미설정)
-3. 외부 API 호출이 `@Transactional` 메서드 외부에서 일어나도록 메서드 분리
-4. range/backfill은 회차별 단위 transaction으로 chunk 처리
-5. ArchUnit 규칙 추가: `*Collector`는 `RestClient` 호출 전후로 transaction 분리
-
-**완료 조건 (DoD)**
-- [ ] 모든 query service에 read-only 적용
-- [ ] 저장 흐름에서 외부 API call이 transaction 내부에 없음 (코드 리뷰)
-- [ ] 기존 Repository IT 회귀 통과
-- [ ] ArchUnit 규칙 1개 추가
-
----
-
-#### #004 — HSTS 헤더 적용
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P1** · 보안 |
-| 의존성 | #008 (테스트와 함께 묶어도 됨) |
-| 브랜치 안 | `feat/security-hsts` |
-
-**문제** — HTTPS 강제 헤더 부재.
-
-**변경 파일**
-- `infra/security/SecurityConfig.java`
-- `infra/security/SecurityHeaderIT.java` (신규 또는 #008과 통합)
-
-**작업 단계**
-1. `SecurityFilterChain`의 `.headers()`에 HSTS 추가
-2. prod profile 전용으로 한정 (local에서 HTTPS 미사용 케이스 보호)
-3. IT로 응답 헤더 확인
-
-**완료 조건 (DoD)**
-- [ ] `Strict-Transport-Security: max-age=31536000; includeSubDomains` 응답에 포함 (prod)
-- [ ] local profile에서는 미포함 또는 짧은 max-age
-- [ ] IT 통과
-
-**참고 스니펫**
 ```java
-.headers(h -> h.httpStrictTransportSecurity(hsts -> hsts
-    .includeSubDomains(true)
-    .maxAgeInSeconds(31_536_000)))
+@Entity
+@Table(name = "backfill_jobs")
+public class BackfillJobEntity {
+    @Id private String jobId;
+    private int fromRound;
+    private int toRound;
+    private String status; // QUEUED, RUNNING, SUCCEEDED, FAILED
+    private Instant createdAt;
+    private Instant startedAt;
+    private Instant completedAt;
+    private String error;
+    // getter/setter 생략
+}
 ```
+
+`BackfillJobRepository`로 상태를 저장하고 `BackfillJobService`의 인메모리 맵을 영속화 로직으로 교체.
+
+### 10.3 캐시 self-invocation 해결 (#032)
+
+```java
+@Service
+public class WinningStatisticsService {
+
+    @Lazy
+    @Autowired
+    private WinningStatisticsService self;   // ← self-proxy
+
+    @Transactional(readOnly = true)
+    public FrequencySummaryDto frequencySummary() {
+        // this.frequency() ❌  →  self.frequency() ✅ (프록시 경유)
+        var freq = self.frequency();
+        var hist = self.combinationPrizeHistory(lowSix(freq));
+        return assemble(freq, hist);
+    }
+}
+```
+
+또는 `@Cacheable` 메서드를 별도 빈(`StatisticsCacheFacade`)으로 분리하는 방식이 더 깔끔하다.
+
+### 10.4 트랜잭션 이벤트 통일 (#033)
+
+```java
+// Before
+@EventListener
+@CacheEvict(cacheNames = {"winningNumberFrequency", "combinationPrizeHistory"}, allEntries = true)
+public void evictCachesOnCollected(WinningNumbersCollectedEvent event) { }
+
+// After
+@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+@CacheEvict(cacheNames = {"winningNumberFrequency", "combinationPrizeHistory"}, allEntries = true)
+public void evictCachesOnCollected(WinningNumbersCollectedEvent event) { }
+```
+
+같이 `frequency()`에 `readOnly = true` 추가:
+
+```java
+@Cacheable("winningNumberFrequency")
+@Transactional(readOnly = true)
+public List<NumberFrequencyDto> frequency() { ... }
+```
+
+### 10.5 보안 헤더 강화 (#004)
+
+```java
+http.headers(headers -> headers
+    .httpStrictTransportSecurity(hsts -> hsts
+        .includeSubDomains(true)
+        .maxAgeInSeconds(31_536_000))
+    .crossOriginOpenerPolicy(coop -> coop
+        .policy(CrossOriginOpenerPolicyHeaderWriter.CrossOriginOpenerPolicy.SAME_ORIGIN))
+    .crossOriginResourcePolicy(corp -> corp
+        .policy(CrossOriginResourcePolicyHeaderWriter.CrossOriginResourcePolicy.SAME_ORIGIN)));
+```
+
+### 10.6 CSP nonce + Thymeleaf (#034)
+
+```java
+// SecurityConfig
+.contentSecurityPolicy(csp -> csp.policyDirectives(
+    "default-src 'self'; " +
+    "script-src 'self' 'nonce-{nonce}'; " +
+    "style-src 'self' 'nonce-{nonce}'; " +
+    "frame-ancestors 'none'; " +
+    "report-uri /csp/report"))
+```
+
+```html
+<!-- header.html -->
+<script th:attr="nonce=${cspNonce}">
+  (function() { /* theme init */ })();
+</script>
+```
+
+### 10.7 Redis Rate Limit 원자화 (#005)
+
+```java
+private static final RedisScript<Long> INCR_EXPIRE = RedisScript.of("""
+    local v = redis.call('INCR', KEYS[1])
+    if v == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
+    return v
+    """, Long.class);
+
+Long count = redisTemplate.execute(INCR_EXPIRE, List.of(key), String.valueOf(ttlSeconds));
+```
+
+### 10.8 낙관락 실패 메트릭 (#036)
+
+```java
+catch (OptimisticLockingFailureException ex) {
+    if (attempt == UPSERT_MAX_RETRIES_ON_OPTIMISTIC_LOCK) {
+        meterRegistry.counter("kraft.winningnumber.optimistic_lock.failure").increment();
+        outcome = UpsertOutcome.FAILED;        // ← UNCHANGED 아님
+        return outcome;
+    }
+}
+```
+
+호출자(`LottoSingleDrawCollector`)는 `FAILED` 상태를 fetch_log에 기록.
 
 ---
 
-#### #005 — Redis compose 서비스 추가
+## 11. 권장 도구·라이브러리·CI
 
-| 항목 | 내용 |
+### 11.1 도구
+
+| 카테고리 | 권장 |
 |---|---|
-| 우선순위 | **P1** · 운영 |
-| 의존성 | — |
-| 브랜치 안 | `feat/compose-redis` |
+| 린트/정적분석 | Spotless(Prettier), Checkstyle, PMD, SonarQube, ktlint |
+| Docker 이미지 | GraalVM AOT, GitHub Container Registry, `latest` + `sha` + `previous` 태그 |
+| 모니터링 | Grafana / Prometheus 대시보드, OTEL Collector |
+| API 문서 | Spring REST Docs + OpenAPI 스키마 자동 비교 (#017) |
+| 보안 스캔 | OWASP Dependency-Check, Trivy(이미지) |
 
-**문제** — 다중 인스턴스 rate limit을 위해 Redis 옵션이 있으나 compose에 정의 없음.
+### 11.2 CI 파이프라인 (GitHub Actions)
 
-**변경 파일**
-- `docker-compose.yml`
-- `.env.example`
-- `README.md` (Redis 활성화 절차 1단락)
-
-**작업 단계**
-1. `docker-compose.yml`에 `redis` 서비스 (profile: `redis`)
-2. `.env.example`에 `COMPOSE_PROFILES=redis` 주석 예시 + `REDIS_HOST` 등 변수
-3. README에 "다중 인스턴스 운영 시 Redis 활성화" 짧은 절 추가
-
-**완료 조건 (DoD)**
-- [ ] `docker compose --profile redis up`으로 redis 정상 기동
-- [ ] app이 `redis` profile로 부팅 시 redis에 접속 성공
-- [ ] 기본 `docker compose up`(profile 미지정) 시에는 redis 미기동
-
-**참고 스니펫**
 ```yaml
-redis:
-  image: redis:7-alpine
-  profiles: ["redis"]
-  container_name: kraft-lotto-redis
-  restart: unless-stopped
-  command: ["redis-server", "--save", "", "--appendonly", "no"]
-  networks: [kraft-net]
-  healthcheck:
-    test: ["CMD", "redis-cli", "ping"]
-    interval: 10s
-    timeout: 3s
-    retries: 5
+jobs:
+  verify:
+    steps:
+      - ./gradlew spotlessCheck
+      - ./gradlew check                  # 테스트 + 커버리지
+      - ./gradlew jacocoTestCoverageVerification
+      - npm ci && npm run typecheck && npm test
+      - npx playwright install --with-deps && npm run e2e
+      - docker build --target test .     # 멀티스테이지로 산출물 검증
+```
+
+- 린트 실패 / 커버리지 미달 시 CI 실패
+- PR 템플릿 + 체크리스트 강제 (아래 §12)
+
+---
+
+## 12. 리뷰 체크리스트 및 PR 템플릿
+
+### 12.1 체크리스트
+
+- [ ] 관련 테스트 추가 (단위 / 통합 / E2E)
+- [ ] 커버리지 70% 이상 유지
+- [ ] 보안 영향 검토 (헤더, 토큰, 입력 검증)
+- [ ] API 변경 시 OpenAPI / REST Docs 동기화
+- [ ] 환경변수 / 설정 문서 반영 (`.env.example`)
+- [ ] 코드 스타일 (Spotless / Prettier) 통과
+- [ ] DB 마이그레이션 시 `V<n>__...sql` 추가 + 롤백 전략
+
+### 12.2 PR 템플릿
+
+```markdown
+## 변경 사항 설명
+- 구현 내용 요약
+- 관련 작업단위: #NNN
+
+## 테스팅
+- [ ] 단위 테스트 ✅
+- [ ] 통합/계약 테스트 ✅
+- [ ] E2E (해당 시)
+- [ ] CI 통과
+
+## 체크리스트
+- [ ] 코드 스타일 (Spotless / Prettier) 통과
+- [ ] 보안 영향 검토 완료
+- [ ] 문서(`README`, API 명세, `.env.example`) 업데이트
+- [ ] 마이그레이션 / 롤백 전략 명시
+
+## 스크린샷 / 로그 (선택)
 ```
 
 ---
 
-#### #006 — 추천 엔진 결정성·성능 보증
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P1** · 도메인 |
-| 의존성 | — |
-| 브랜치 안 | `feat/recommend-determinism` |
-
-**문제** — `maxAttempts` 안에서 랜덤 생성 후 규칙으로 제외하는 구조 → 필터가 강해질수록 rejection rate↑·timeout 위험.
-
-**변경 파일**
-- `feature/recommend/application/RandomLottoNumberGenerator.java`
-- `feature/recommend/application/ConstraintAwareLottoNumberGenerator.java`
-- `feature/recommend/application/RecommendConfiguration.java`
-- `feature/recommend/application/LottoRecommenderPerformanceTest.java` (신규)
-
-**작업 단계**
-1. `Random` 주입을 통한 seed 기반 generator 옵션
-2. `ConstraintAwareLottoNumberGenerator`를 기본 전략으로 승격
-3. `kraft.recommend.rejection.rate` Micrometer Counter 추가
-4. rejection rate 임계치(예: 0.5) 초과 시 WARN 로그
-5. rule set별 최악 성능 테스트(타임 boxed)
-
-**완료 조건 (DoD)**
-- [ ] seed 고정 시 동일 추천 결과 재현되는 unit test
-- [ ] `ConstraintAware...`가 기본 Bean으로 노출
-- [ ] rejection rate metric이 `/actuator/metrics`에 노출
-- [ ] 모든 rule on 상태에서도 100 reqs 평균 50ms 이내 (성능 테스트)
-
----
-
-#### #007 — JS 모듈 mount 구조화
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P1** · 프론트 |
-| 의존성 | — |
-| 브랜치 안 | `refactor/js-mount-structure` |
-
-**문제** — `app.js`가 `DOMContentLoaded`에서 5개 feature를 직접 초기화 → 초기화 순서·DOM id 결합 강함.
-
-**변경 파일**
-- `src/main/resources/static/js/app.js`
-- `src/main/resources/static/js/features/*.js` (이동)
-- `src/main/resources/static/js/dom-ids.js` (신규)
-- `src/test/js/app.test.js` (신규)
-
-**작업 단계**
-1. `static/js/features/` 디렉터리로 recommend/winning/frequency/pagination/theme 이동
-2. 각 feature에 `mount(root)` export 시그니처 통일
-3. DOM id 문자열을 `dom-ids.js` 상수로 추출
-4. `app.js`는 `mount()` 호출 5줄로 축소
-5. mount 함수의 단위 테스트 (root 없을 때 noop 등)
-
-**완료 조건 (DoD)**
-- [ ] `app.js` 50줄 이하
-- [ ] 각 feature가 `mount(root)`만 노출 (default export)
-- [ ] DOM id 하드코딩 0건 (grep 검증)
-- [ ] 기존 vitest 회귀 통과
-
----
-
-### 🟡 P2 — 중기
-
----
-
-#### #008 — 보안 헤더 통합 테스트
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · 보안 |
-| 의존성 | #004 |
-| 브랜치 안 | `test/security-headers` |
-
-**변경 파일**
-- `infra/security/SecurityHeaderIT.java` (신규)
-
-**완료 조건 (DoD)**
-- [ ] `/` 응답에 CSP 포함 + `unsafe-inline` 미포함 검증
-- [ ] admin endpoint 401 시 JSON error schema 검증
-- [ ] CSRF ignoring 범위가 의도한 API에만 적용되는지 검증
-- [ ] HSTS 헤더 검증 (#004 결과 포함)
-
----
-
-#### #009 — Profile 정책 명확화 (`KRAFT_ENVIRONMENT`)
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · 운영 |
-| 의존성 | — |
-| 브랜치 안 | `refactor/kraft-environment` |
-
-**문제** — `RequiredConfigValidator`가 container=prod / host=local 강제 → staging·preview·test container 확장 어려움.
-
-**변경 파일**
-- `infra/config/RequiredConfigValidator.java`
-- `infra/config/EnvironmentResolver.java` (신규)
-- README 환경변수 절
-
-**완료 조건 (DoD)**
-- [ ] `KRAFT_ENVIRONMENT=local|test|staging|prod` 인식
-- [ ] container 여부와 environment가 독립적으로 결정됨
-- [ ] staging profile 허용
-- [ ] validator error message에 예외 설정 방법 명시
-
----
-
-#### #010 — Docker image SHA 기반 tag 전략
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · 운영 |
-| 의존성 | — |
-| 브랜치 안 | `ci/image-sha-tag` |
-
-**변경 파일**
-- `.github/workflows/cd.yml`
-- `scripts/deploy/*.sh`
-
-**완료 조건 (DoD)**
-- [ ] `kraft-lotto-app:${GITHUB_SHA}` 빌드
-- [ ] 이전 SHA를 `.deploy-state`에 기록 → rollback 시 참조
-- [ ] 배포 로그에 image digest 출력
-- [ ] `previous` tag 의존 제거
-
----
-
-#### #011 — 외부 API client resilience 통합
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · 백엔드 |
-| 의존성 | — |
-| 브랜치 안 | `refactor/resilience4j-unify` |
-
-**문제** — `DhLotteryApiClient`의 자체 retry와 Resilience4j 의존성이 혼재.
-
-**변경 파일**
-- `feature/winningnumber/application/DhLotteryApiClient.java`
-- `feature/winningnumber/application/FailoverLottoApiClient.java`
-- `infra/config/ResilienceConfig.java` (신규 또는 수정)
-
-**완료 조건 (DoD)**
-- [ ] retry는 Resilience4j `@Retry`로 일원화 (또는 의존성 제거 후 직접 구현 유지)
-- [ ] HTTP status / parse error / not-drawn이 별개 예외 타입
-- [ ] mock fallback이 prod profile에서 기본 비활성
-- [ ] timeout·retry 정책 README 표 1개 추가
-
----
-
-#### #012 — Error model 상세 구조 정교화
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · 백엔드 |
-| 의존성 | — |
-| 브랜치 안 | `feat/error-model-detail` |
-
-**변경 파일**
-- `support/ApiError.java`
-- `support/GlobalExceptionHandler.java`
-- `support/ErrorCodeHttpStatusMappingTest.java` (신규)
-
-**완료 조건 (DoD)**
-- [ ] validation error에 `field`, `path`, `rejectedValue`, `reason` 배열 포함
-- [ ] rate limit error에 `retryAfterSeconds`
-- [ ] external API failure에 `upstreamStatus`, `retriable`
-- [ ] 모든 ErrorCode의 HTTP status 매핑 테스트
-
----
-
-#### #013 — ArchUnit 경계 규칙 확대
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · 백엔드 |
-| 의존성 | — |
-| 브랜치 안 | `test/archunit-boundaries` |
-
-**변경 파일**
-- `src/test/java/.../ArchitectureTest.java`
-
-**완료 조건 (DoD)**
-- [ ] `..domain..`은 Spring/JPA/Web 의존 금지
-- [ ] `..application..`은 `..web..` 의존 금지
-- [ ] `..web..`은 repository 직접 접근 금지
-- [ ] `..infrastructure..`는 web DTO 의존 금지
-
----
-
-#### #014 — 폼 검증 즉시 피드백
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · 프론트 |
-| 의존성 | #007 (선행하면 좋음) |
-| 브랜치 안 | `feat/form-validation` |
-
-**변경 파일**
-- `static/js/features/recommend.js`
-- `static/js/features/winning.js`
-- `templates/*.html` (input min/max 속성)
-- `src/test/js/form-validation.test.js` (신규)
-
-**완료 조건 (DoD)**
-- [ ] count/round/pagination size 입력 시 즉시 invalid state 표시
-- [ ] 서버 validation error의 field가 해당 input에 매핑됨
-- [ ] vitest 추가
-
----
-
-#### #015 — 접근성 보강 (aria-busy / aria-live)
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · 프론트 |
-| 의존성 | — |
-| 브랜치 안 | `feat/a11y-aria` |
-
-**변경 파일**
-- `static/js/ui.js`
-- `templates/*.html`
-
-**완료 조건 (DoD)**
-- [ ] loading skeleton에 `aria-busy="true"`, `role="status"`
-- [ ] 오류 메시지 영역에 `aria-live="polite"`
-- [ ] color만으로 의미 전달하는 케이스 0건 (수동 검토)
-- [ ] axe-core 또는 Playwright a11y 스캔 추가
-
----
-
-#### #016 — E2E 실패 시나리오 확대
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · 테스트 |
-| 의존성 | — |
-| 브랜치 안 | `test/e2e-failure-scenarios` |
-
-**변경 파일**
-- `src/test/e2e/recommend-failure.spec.js` (신규)
-- `src/test/e2e/winning-failure.spec.js` (신규)
-- `src/test/e2e/mobile.spec.js` (신규)
-
-**완료 조건 (DoD)**
-- [ ] 추천 API 429 UI 표시
-- [ ] 추천 API validation error UI 표시
-- [ ] 최신 당첨번호 API 실패 시 fallback UI
-- [ ] 회차 조회 404 UI 표시
-- [ ] 모바일 viewport(375x667) 주요 기능 동작
-
----
-
-#### #017 — 계약 테스트 강화 (OpenAPI ↔ REST Docs)
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · 테스트 |
-| 의존성 | — |
-| 브랜치 안 | `test/contract-openapi` |
-
-**변경 파일**
-- `build.gradle.kts` (springdoc 또는 openapi-generator 추가)
-- `src/test/java/.../OpenApiSnippetParityTest.java` (신규)
-
-**완료 조건 (DoD)**
-- [ ] OpenAPI JSON이 CI artifact로 생성됨
-- [ ] 프론트 vitest에서 mock response schema 검증
-- [ ] REST Docs snippets endpoint 목록과 OpenAPI endpoint 목록 일치 검증
-
----
-
-#### #018 — Migration 규칙 문서화 + from-scratch 테스트
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · DB |
-| 의존성 | — |
-| 브랜치 안 | `docs/migration-rules` |
-
-**변경 파일**
-- `docs/migration-rules.md` (신규)
-- `src/test/java/.../MigrationFromScratchIT.java` (신규)
-
-**완료 조건 (DoD)**
-- [ ] migration 파일 naming convention 문서화
-- [ ] destructive migration 금지 룰 명시 + checklist
-- [ ] index/unique constraint 설계 표 (현재 상태 기준)
-- [ ] Testcontainers로 V1~V최신 from-scratch 적용 IT 통과
-
----
-
-#### #019 — Metric/Alert 기준 문서화
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · 관찰성 |
-| 의존성 | #006 (rejection rate metric 필요) |
-| 브랜치 안 | `docs/metrics-alerts` |
-
-**변경 파일**
-- `docs/observability.md` (신규)
-
-**완료 조건 (DoD)** — 다음이 문서화되어 있음:
-- [ ] `kraft.api.dhlottery.{call.success,call.failure,call.retry,latency}`
-- [ ] `kraft.recommend.{generation.latency,rejection.rate}`
-- [ ] DB connection pool / HTTP server 표준 metric
-- [ ] alert 룰: readiness 3회 DOWN / external API failure 10분 평균 임계 / recommend timeout / DB pool 80%+
-
----
-
-#### #020 — `SECURITY.md` 신설
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · 문서 |
-| 의존성 | — |
-| 브랜치 안 | `docs/security-md` |
-
-**완료 조건 (DoD)**
-- [ ] 취약점 신고 경로(이메일/이슈)
-- [ ] supported versions 표
-- [ ] 응답 SLA 명시
-- [ ] GitHub의 "Security policy" 탭에 노출 확인
-
----
-
-#### #021 — `CONTRIBUTING.md` 신설
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · 문서 |
-| 의존성 | — |
-| 브랜치 안 | `docs/contributing-md` |
-
-**완료 조건 (DoD)**
-- [ ] 커밋 메시지 convention (`type(scope): subject [#N]`)
-- [ ] PR 체크리스트
-- [ ] 로컬 개발 환경 셋업 (`./gradlew bootRun` 등)
-- [ ] 코드 스타일 가이드 (또는 #027 참조)
-
----
-
-#### #022 — `docs/ARCHITECTURE.md` 신설
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · 문서 |
-| 의존성 | — |
-| 브랜치 안 | `docs/architecture-md` |
-
-**완료 조건 (DoD)**
-- [ ] feature 패키지 구조 다이어그램 (mermaid)
-- [ ] application/domain/infrastructure/web 계층 의존 규칙
-- [ ] 주요 흐름 시퀀스 다이어그램: 수집 / 추천 / 백필
-- [ ] ArchUnit 규칙(#013)과 일치 확인
-
----
-
-#### #023 — `docs/RUNBOOK.md` 신설
-
-| 항목 | 내용 |
-|---|---|
-| 우선순위 | **P2** · 문서 |
-| 의존성 | — |
-| 브랜치 안 | `docs/runbook-md` |
-
-**완료 조건 (DoD)** — 각 시나리오에 대해 증상 / 원인 / 조치 / 검증 절차 포함:
-- [ ] 502 Bad Gateway
-- [ ] Flyway migration 충돌
-- [ ] 백필 잡 재개
-- [ ] DH 로또 API 장애 시 mock fallback
-- [ ] DB connection pool 고갈
-- [ ] rollback 절차
-
----
-
-### 🟢 P3 — 장기
-
----
-
-#### #024 — LottoRecommender 시도 횟수 yml 외부화
-
-| | |
-|---|---|
-| 우선순위 | **P3** · 백엔드 |
-| 브랜치 안 | `refactor/recommend-attempts-config` |
-
-`MAX_INITIAL_PICK_ATTEMPTS`, `MAX_FIXUP_ATTEMPTS` → `KraftRecommendProperties.Rules.attempts`로 이전. 기본값은 현재 값 유지.
-
-**DoD**: yml 변경만으로 시도 횟수 조정 가능 + 기본값 회귀 테스트.
-
----
-
-#### #025 — `isUsableSummary` 방어적 검증
-
-| | |
-|---|---|
-| 우선순위 | **P3** · 백엔드 |
-| 브랜치 안 | `fix/usable-summary-strict-check` |
-
-```java
-// 현재: findFirst()로 첫 행만 확인
-// 개선: 모든 행의 round 일치 + latest round 일치 동시 검증
-summaryRows.stream().map(...::getLastCalculatedRound).distinct().count() == 1
-    && summaryRows.get(0).getLastCalculatedRound() == latestRound
+## 13. 실행 명령어 예시
+
+```bash
+# 로컬 빌드 / 테스트
+./gradlew clean build test
+./gradlew jacocoTestReport
+
+# JS 테스트
+npm ci
+npm test                    # vitest
+npm run e2e                 # playwright
+
+# Docker 실행
+docker compose up -d --build
+# → http://localhost:8080
+
+# jar 직접 실행
+java -jar build/libs/app.jar
+
+# API 호출 예시
+curl http://localhost:8080/api/winning-numbers/latest
+curl -X POST http://localhost:8080/api/recommend \
+     -H "Content-Type: application/json" \
+     -d '{"count": 5}'
+
+# 관리 API
+curl -X POST http://localhost:8080/admin/lotto/draws/collect-next \
+     -H "X-Kraft-Admin-Token: <token>"
 ```
 
-**DoD**: round mismatch 데이터 fixture로 false 반환 검증 테스트.
-
 ---
 
-#### #026 — Logback `discardingThreshold` 조정
+## 부록 — 권장 다음 sprint
 
-| | |
-|---|---|
-| 우선순위 | **P3** · 운영 |
-| 브랜치 안 | `fix/logback-discarding-threshold` |
+> **다음 2주 sprint**: P1 핵심 6선(#032, #034, #033, #036, #042, #037)부터 처리
+>
+> 기존 31개 + 신규 29개 = **60개 작업단위**. P1 전체 12개는 6주짜리 큰 sprint이므로,
+> 신규 P1만 먼저 추출해 한 sprint로 운영하는 것이 현실적이다.
 
-`FILE_ALL`/`FILE_DEBUG` Async appender: `discardingThreshold=0` → 기본값(20)으로 복원. `FILE_ERROR`/`FILE_WARN`만 0 유지.
-
-**DoD**: `logback-spring.xml` 변경 + 부하 상황에서 ERROR/WARN 누락 0건 확인.
-
----
-
-#### #027 — Spotless / Checkstyle / shellcheck 도입
-
-| | |
-|---|---|
-| 우선순위 | **P3** · 품질 |
-| 브랜치 안 | `ci/code-quality-tools` |
-
-- Spotless + Palantir Java Format
-- Checkstyle (또는 Error Prone)
-- `scripts/deploy/*.sh`에 shellcheck CI
-- markdownlint for `docs/**`
-
-**DoD**: CI에서 4개 도구 모두 통과 + 기존 코드 일괄 포맷 PR 분리.
-
----
-
-#### #028 — 조회 성능 인덱스 재검토
-
-| | |
-|---|---|
-| 우선순위 | **P3** · DB |
-| 브랜치 안 | `perf/query-indexes` |
-
-- round unique index 점검
-- draw date index 추가 여부
-- n1~n6 번호별 통계 조회 인덱스 분석
-- 조합 이력의 OR 조건이 많으면 normalized table 또는 materialized summary 검토
-
-**DoD**: EXPLAIN 결과를 `docs/db-perf.md`에 기록 + 필요 시 V7 migration.
-
----
-
-#### #029 — Vite 도입 및 OpenAPI→TS 타입 생성
-
-| | |
-|---|---|
-| 우선순위 | **P3** · 프론트 |
-| 브랜치 안 | `feat/frontend-build-pipeline` |
-| 의존성 | #007, #017 |
-
-`src/main/frontend/` 분리 → Vite 빌드 → 산출물을 `static/`으로 복사. OpenAPI(#017) → TypeScript 타입 자동 생성.
-
-**DoD**: cache busting / minification / tree-shaking 동작 + Spring Boot 부팅 시 정적 자원 정상 서빙.
-
----
-
-#### #030 — 환경변수 표준표 + `docs/configuration.md`
-
-| | |
-|---|---|
-| 우선순위 | **P3** · 문서 |
-| 브랜치 안 | `docs/configuration-md` |
-
-| 컬럼 | 내용 |
-|---|---|
-| env var | 변수명 |
-| profile | local/staging/prod 적용 여부 |
-| required | 필수 여부 |
-| default | 기본값 |
-| secret | 비밀 여부 |
-| 설명 | 용도 |
-| 관련 property | application property 매핑 |
-
-**DoD**: 모든 `${ENV_VAR}` 참조가 표에 1:1 매핑.
-
----
-
-#### #031 — Java 21 LTS 백포팅 옵션 검토
-
-| | |
-|---|---|
-| 우선순위 | **P3** · 운영 |
-| 브랜치 안 | (검토 단계) |
-
-Java 25 + Spring Boot 4.0.5의 라이브러리 호환성 매트릭스 검증 결과에 따라:
-
-- **A안**: Java 25 유지 — 호환성 matrix 문서화 + self-hosted runner/Docker/local JDK 버전 통일
-- **B안**: Java 21 LTS 백포팅 — Spring Boot 안정 라인으로 변경, Records/패턴 매칭 외 차이점 정리
-
-**DoD**: 결정 문서 1편 + 채택 안의 ADR(Architecture Decision Record) 작성.
-
----
-
-## 3. Sprint 로드맵
-
-### Sprint 1 (다음 1주)
-**#001 · #002 · #004 · #005**
-
-분산 락 + 잡 영속화 + HSTS + Redis compose. 인프라/보안 기반 완성.
-
-### Sprint 2 (다음 2주)
-**#003 · #006 · #007 · #008**
-
-Transaction 경계 + 추천 엔진 결정성 + 프론트 mount 구조화 + 보안 헤더 테스트.
-
-### Sprint 3 (1개월차 후반)
-**#009 · #010 · #011 · #012 · #013**
-
-운영(profile/SHA tag) + 백엔드 정교화(resilience/error/ArchUnit).
-
-### Sprint 4 (2개월차)
-**#014 · #015 · #016 · #017 · #018 · #019**
-
-프론트 UX + 테스트 확장 + DB/관찰성 문서화.
-
-### Sprint 5 (2개월차 후반)
-**#020 · #021 · #022 · #023**
-
-문서 정비 4종.
-
-### Sprint 6+ (분기)
-**#024 ~ #031**
-
-장기 개선.
-
----
-
-## 4. 운영 원칙
-
-- **1 단위 = 1 PR**: 단위를 쪼개고 합치지 말 것. 단위 의존성이 강하면 인덱스의 "의존성" 칸에 명시.
-- **DoD 미충족 PR 머지 금지**: 모든 체크박스가 채워졌는지 리뷰어가 확인.
-- **커밋 메시지에 단위 ID**: `[#NNN]` 접미 (예: `feat(collect): apply distributed lock [#001]`).
-- **단위 완료 시 본 문서에서 제거**: 인덱스 행과 상세 섹션 모두 삭제. 이력은 git으로 남김.
-- **분기 1회 점수표 재평가**: 별도 문서나 PR 본문에서 갱신.
-- **P0는 본 문서에 두지 않음**: 발견 즉시 hotfix로 처리.
+**작성**: Claude (Anthropic)
+**기준 commit**: `portuna85/kLo` main (2026-05-15)

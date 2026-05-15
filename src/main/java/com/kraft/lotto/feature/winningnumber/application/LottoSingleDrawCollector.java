@@ -37,39 +37,39 @@ class LottoSingleDrawCollector {
     CollectResponse collectOne(int drwNo, boolean refresh) {
         if (!refresh && winningNumberRepository.existsByRound(drwNo)) {
             saveLog(drwNo, LottoFetchStatus.SKIPPED, "already collected round", null, null);
-            return response(CollectResponse.ofSkipped(1, winningNumberRepository.findMaxRound().orElse(0)));
+            return CollectResponse.ofSkipped(1, winningNumberRepository.findMaxRound().orElse(0));
         }
         try {
             Optional<WinningNumber> fetched = lottoApiClient.fetch(drwNo);
             if (fetched.isEmpty()) {
                 saveLog(drwNo, LottoFetchStatus.FAILED, "round not drawn yet", null, null);
-                return response(CollectResponse.ofFailed(List.of(drwNo), winningNumberRepository.findMaxRound().orElse(0), true));
+                return CollectResponse.ofFailed(List.of(drwNo), winningNumberRepository.findMaxRound().orElse(0), true);
             }
             UpsertOutcome outcome = persister.upsert(fetched.get());
             String message = switch (outcome) {
                 case INSERTED -> "inserted";
                 case UPDATED -> "updated";
                 case UNCHANGED -> "unchanged";
+                case FAILED -> "failed";
             };
-            saveLog(drwNo, LottoFetchStatus.SUCCESS, message, null, fetched.get().rawJson());
+            LottoFetchStatus status = outcome == UpsertOutcome.FAILED ? LottoFetchStatus.FAILED : LottoFetchStatus.SUCCESS;
+            saveLog(drwNo, status, message, null, fetched.get().rawJson());
+            int latestRound = winningNumberRepository.findMaxRound().orElse(0);
             return switch (outcome) {
-                case INSERTED -> response(CollectResponse.ofInserted(1, winningNumberRepository.findMaxRound().orElse(0)));
-                case UPDATED -> response(CollectResponse.ofUpdated(1, winningNumberRepository.findMaxRound().orElse(0)));
-                case UNCHANGED -> response(CollectResponse.ofSkipped(1, winningNumberRepository.findMaxRound().orElse(0)));
+                case INSERTED -> CollectResponse.ofInserted(1, latestRound);
+                case UPDATED -> CollectResponse.ofUpdated(1, latestRound);
+                case UNCHANGED -> CollectResponse.ofSkipped(1, latestRound);
+                case FAILED -> CollectResponse.ofFailed(List.of(drwNo), latestRound, false);
             };
         } catch (LottoApiClientException ex) {
             log.warn("lotto draw collect failed: drwNo={}", drwNo, ex);
             saveLog(drwNo, LottoFetchStatus.FAILED, ex.getMessage(), ex.getResponseCode(), ex.getRawResponse());
-            return response(CollectResponse.ofFailed(List.of(drwNo), winningNumberRepository.findMaxRound().orElse(0), false));
+            return CollectResponse.ofFailed(List.of(drwNo), winningNumberRepository.findMaxRound().orElse(0), false);
         } catch (RuntimeException ex) {
             log.warn("lotto draw collect failed: drwNo={}", drwNo, ex);
             saveLog(drwNo, LottoFetchStatus.FAILED, ex.getMessage(), null, null);
-            return response(CollectResponse.ofFailed(List.of(drwNo), winningNumberRepository.findMaxRound().orElse(0), false));
+            return CollectResponse.ofFailed(List.of(drwNo), winningNumberRepository.findMaxRound().orElse(0), false);
         }
-    }
-
-    private CollectResponse response(CollectResponse response) {
-        return response;
     }
 
     private void saveLog(int drwNo, LottoFetchStatus status, String message, Integer responseCode, String rawResponse) {

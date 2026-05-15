@@ -13,6 +13,10 @@
 
     <springProperty scope="context" name="LOG_PATH"
                     source="kraft.logging.path" defaultValue="./logs"/>
+    <springProperty scope="context" name="ROOT_LEVEL_LOCAL"
+                    source="kraft.logging.root-level-local" defaultValue="INFO"/>
+    <springProperty scope="context" name="ROOT_LEVEL_PROD"
+                    source="kraft.logging.root-level-prod" defaultValue="INFO"/>
 
     <!-- 파일 공통 패턴 -->
     <property name="FILE_PATTERN"
@@ -43,7 +47,7 @@
             <maxFileSize>50MB</maxFileSize>
             <maxHistory>30</maxHistory>
             <totalSizeCap>3GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+            <cleanHistoryOnStart>false</cleanHistoryOnStart>
         </rollingPolicy>
     </appender>
 
@@ -64,7 +68,7 @@
             <maxFileSize>20MB</maxFileSize>
             <maxHistory>60</maxHistory>
             <totalSizeCap>1GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+            <cleanHistoryOnStart>false</cleanHistoryOnStart>
         </rollingPolicy>
     </appender>
 
@@ -85,7 +89,7 @@
             <maxFileSize>20MB</maxFileSize>
             <maxHistory>30</maxHistory>
             <totalSizeCap>1GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+            <cleanHistoryOnStart>false</cleanHistoryOnStart>
         </rollingPolicy>
     </appender>
 
@@ -106,7 +110,7 @@
             <maxFileSize>50MB</maxFileSize>
             <maxHistory>14</maxHistory>
             <totalSizeCap>2GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+            <cleanHistoryOnStart>false</cleanHistoryOnStart>
         </rollingPolicy>
     </appender>
 
@@ -139,7 +143,7 @@
             <maxFileSize>50MB</maxFileSize>
             <maxHistory>30</maxHistory>
             <totalSizeCap>3GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+            <cleanHistoryOnStart>false</cleanHistoryOnStart>
         </rollingPolicy>
     </appender>
 
@@ -188,7 +192,7 @@
     <springProfile name="local">
         <logger name="com.kraft.lotto" level="DEBUG"/>
         <logger name="org.hibernate.SQL" level="DEBUG"/>
-        <root level="INFO">
+        <root level="${ROOT_LEVEL_LOCAL}">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="ASYNC_FILE_ALL"/>
             <appender-ref ref="ASYNC_FILE_ERROR"/>
@@ -207,7 +211,7 @@
         <logger name="org.mariadb.jdbc.message.server.ErrorPacket" level="ERROR"/>
         <!-- 운영에서도 ERROR/WARN 파일은 정상 작동.
              DEBUG 파일을 채우고 싶다면 위 logger 레벨을 DEBUG 로 변경한다. -->
-        <root level="INFO">
+        <root level="${ROOT_LEVEL_PROD}">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="ASYNC_FILE_ALL"/>
             <appender-ref ref="ASYNC_FILE_ERROR"/>
@@ -218,4 +222,3 @@
     </springProfile>
 
 </configuration>
-

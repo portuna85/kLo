@@ -31,7 +31,7 @@ public class LottoApiHealthIndicator implements HealthIndicator {
             }
             return builder.build();
         } catch (RuntimeException ex) {
-            return Health.down().withDetail("error", ex.getMessage()).build();
+            return Health.down().withDetail("error", "repository_query_failed").build();
         }
     }
 }

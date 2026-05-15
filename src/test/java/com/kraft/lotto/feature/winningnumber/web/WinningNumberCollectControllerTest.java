@@ -50,7 +50,11 @@ class WinningNumberCollectControllerTest {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new WinningNumberCollectController(collectService))
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .addFilters(new LegacyApiDeprecationHeaderFilter())
+                .addFilters(new LegacyApiDeprecationHeaderFilter(
+                        "@1785542399",
+                        "Fri, 31 Jul 2026 23:59:59 GMT",
+                        true
+                ))
                 .apply(documentationConfiguration(restDocumentation))
                 .build();
     }
@@ -62,8 +66,8 @@ class WinningNumberCollectControllerTest {
 
         mockMvc.perform(post("/api/winning-numbers/refresh"))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Deprecation", "true"))
-                .andExpect(header().string("Sunset", "Thu, 31 Jul 2026 23:59:59 GMT"))
+                .andExpect(header().string("Deprecation", "@1785542399"))
+                .andExpect(header().string("Sunset", "Fri, 31 Jul 2026 23:59:59 GMT"))
                 .andExpect(header().string("Link", "</api/v1/winning-numbers/refresh>; rel=\"successor-version\""))
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.collected").value(3))
@@ -80,12 +84,12 @@ class WinningNumberCollectControllerTest {
 
         mockMvc.perform(post("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"targetRound\":\"1103\"}"))
+                        .content("{\"targetRound\":1103}"))
                 .andDo(document("winning-numbers-refresh",
                         preprocessRequest(prettyPrint()),
                         preprocessResponse(prettyPrint()),
                         requestFields(
-                                fieldWithPath("targetRound").type(JsonFieldType.STRING).description("Target round (optional)")
+                                fieldWithPath("targetRound").type(JsonFieldType.NUMBER).description("Target round (optional)")
                         ),
                         responseFields(
                                 fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("Success"),
@@ -103,7 +107,7 @@ class WinningNumberCollectControllerTest {
                                 fieldWithPath("error").type(JsonFieldType.NULL).optional().description("Error")
                         )))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Deprecation", "true"))
+                .andExpect(header().string("Deprecation", "@1785542399"))
                 .andExpect(jsonPath("$.data.collected").value(2))
                 .andExpect(jsonPath("$.data.updated").value(1))
                 .andExpect(jsonPath("$.data.skipped").value(0))
@@ -125,7 +129,7 @@ class WinningNumberCollectControllerTest {
     void postCollectReturns400OnInvalidTargetRound() throws Exception {
         mockMvc.perform(post("/api/winning-numbers/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"targetRound\":\"0\"}"))
+                        .content("{\"targetRound\":0}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.error.code").value("LOTTO_INVALID_TARGET_ROUND"));

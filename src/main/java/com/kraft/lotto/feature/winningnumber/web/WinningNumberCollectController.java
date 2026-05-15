@@ -26,9 +26,7 @@ public class WinningNumberCollectController {
 
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<CollectResponse>> refresh(@Valid @RequestBody(required = false) CollectRequest request) {
-        Integer target = request == null || request.targetRound() == null
-                ? null
-                : Integer.parseInt(request.targetRound());
+        Integer target = request == null ? null : request.targetRound();
         return ResponseEntity.ok()
                 .body(ApiResponse.success(collectService.collect(target)));
     }

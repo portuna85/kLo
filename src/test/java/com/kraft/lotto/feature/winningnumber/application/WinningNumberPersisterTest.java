@@ -157,6 +157,20 @@ class WinningNumberPersisterTest {
         assertThat(outcome).isEqualTo(UpsertOutcome.UPDATED);
     }
 
+    @Test
+    @DisplayName("upsert는 낙관적 락 충돌이 재시도 한도를 넘으면 FAILED를 반환한다")
+    void upsertReturnsFailedWhenOptimisticLockRetriesExhausted() {
+        WinningNumber incoming = sample(1200);
+        when(repository.findById(1200))
+                .thenThrow(new OptimisticLockingFailureException("conflict-1"))
+                .thenThrow(new OptimisticLockingFailureException("conflict-2"));
+
+        UpsertOutcome outcome = persister.upsert(incoming);
+
+        assertThat(outcome).isEqualTo(UpsertOutcome.FAILED);
+        assertThat(meterRegistry.get("kraft.winningnumber.optimistic_lock.failure").counter().count()).isEqualTo(1.0);
+    }
+
     private WinningNumber sample(int round) {
         return new WinningNumber(
                 round,

@@ -15,11 +15,15 @@ import com.kraft.lotto.feature.winningnumber.infrastructure.LottoFetchLogReposit
 import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberRepository;
 import com.kraft.lotto.feature.winningnumber.web.dto.CollectResponse;
 import com.kraft.lotto.support.BusinessException;
+import java.time.Duration;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import net.javacrumbs.shedlock.core.LockConfiguration;
+import net.javacrumbs.shedlock.core.LockProvider;
+import net.javacrumbs.shedlock.core.SimpleLock;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -33,8 +37,22 @@ class LottoCollectionServiceTest {
     private final WinningNumberPersister persister = mock(WinningNumberPersister.class);
     private final LottoFetchLogRepository fetchLogRepository = mock(LottoFetchLogRepository.class);
     private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
-    private final LottoCollectionService service = LottoCollectionService.forTest(
-            lottoApiClient, winningNumberRepository, persister, fetchLogRepository, eventPublisher, Clock.systemUTC(), 0);
+    private final LockProvider lockProvider = mock(LockProvider.class);
+    private final LottoSingleDrawCollector singleDrawCollector = new LottoSingleDrawCollector(
+            lottoApiClient, winningNumberRepository, persister, fetchLogRepository, Clock.systemUTC());
+
+    {
+        SimpleLock simpleLock = mock(SimpleLock.class);
+        when(lockProvider.lock(any(LockConfiguration.class))).thenReturn(Optional.of(simpleLock));
+    }
+
+    private final LottoCollectionCommandService commandService = new LottoCollectionCommandService(
+            winningNumberRepository,
+            singleDrawCollector,
+            new LottoRangeCollector(singleDrawCollector, winningNumberRepository, 0, null),
+            new LottoCollectionGate(eventPublisher, lockProvider, Duration.ofMinutes(10), Duration.ZERO)
+    );
+    private final LottoCollectionService service = new LottoCollectionService(commandService);
 
     @Test
     @DisplayName("이미 존재하는 회차는 수집을 건너뛴다")

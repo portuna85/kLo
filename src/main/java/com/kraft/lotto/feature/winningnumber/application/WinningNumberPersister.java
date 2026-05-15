@@ -63,14 +63,17 @@ public class WinningNumberPersister {
     @Transactional
     public UpsertOutcome upsert(WinningNumber winningNumber) {
         long started = System.nanoTime();
-        UpsertOutcome outcome = UpsertOutcome.UNCHANGED;
+        UpsertOutcome outcome = UpsertOutcome.FAILED;
         for (int attempt = 1; attempt <= UPSERT_MAX_RETRIES_ON_OPTIMISTIC_LOCK; attempt++) {
             try {
                 outcome = doUpsert(winningNumber);
                 break;
             } catch (OptimisticLockingFailureException ex) {
                 if (attempt == UPSERT_MAX_RETRIES_ON_OPTIMISTIC_LOCK) {
-                    outcome = UpsertOutcome.UNCHANGED;
+                    if (meterRegistry != null) {
+                        meterRegistry.counter("kraft.winningnumber.optimistic_lock.failure").increment();
+                    }
+                    outcome = UpsertOutcome.FAILED;
                 }
             }
         }
@@ -78,6 +81,7 @@ public class WinningNumberPersister {
             case INSERTED -> "insert";
             case UPDATED -> "update";
             case UNCHANGED -> "unchanged";
+            case FAILED -> "failed";
         });
         return outcome;
     }

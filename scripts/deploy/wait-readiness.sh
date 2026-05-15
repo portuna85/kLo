@@ -28,7 +28,6 @@ done
 
 echo "::error::Readiness check timed out"
 docker compose ps || true
-docker logs --tail=300 "$CONTAINER_NAME" || true
-docker logs --tail=120 kraft-lotto-mariadb || true
+docker compose logs --tail=200 app || true
+docker compose logs --tail=200 mariadb || true
 exit 1
-

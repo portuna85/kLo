@@ -2,6 +2,7 @@ package com.kraft.lotto.feature.winningnumber.application;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kraft.lotto.infra.config.KraftApiProperties;
+import com.kraft.lotto.feature.winningnumber.infrastructure.WinningNumberRepository;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.net.http.HttpClient;
 import java.time.Duration;
@@ -27,7 +28,7 @@ public class LottoApiClientConfig {
 
     private static final Set<String> DHLOTTERY_TOKENS = Set.of("dhlottery", "real");
 
-    /** 회차 1184 (2025년 12월 추첨)에 가까운 보수적 기본값. 운영 시에는 dhlottery 클라이언트가 사용된다. */
+    /** mock latest round를 계산할 수 없는 경우의 보수적 fallback. */
     static final int MOCK_DEFAULT_LATEST_ROUND = 1200;
 
     @Bean
@@ -47,9 +48,11 @@ public class LottoApiClientConfig {
     public LottoApiClient lottoApiClient(KraftApiProperties properties,
                                          RestClient lottoRestClient,
                                          ObjectProvider<ObjectMapper> objectMapperProvider,
-                                         ObjectProvider<MeterRegistry> meterRegistryProvider) {
+                                         ObjectProvider<MeterRegistry> meterRegistryProvider,
+                                         ObjectProvider<WinningNumberRepository> winningNumberRepositoryProvider) {
         ObjectMapper objectMapper = objectMapperProvider.getIfAvailable(ObjectMapper::new);
         String client = properties.client() == null ? "" : properties.client().trim().toLowerCase();
+        int resolvedMockLatestRound = resolveMockLatestRound(properties, winningNumberRepositoryProvider.getIfAvailable());
         if (DHLOTTERY_TOKENS.contains(client)) {
             LottoApiClient primary = new DhLotteryApiClient(
                     lottoRestClient,
@@ -60,13 +63,23 @@ public class LottoApiClientConfig {
                     meterRegistryProvider.getIfAvailable()
             );
             if (properties.fallbackToMockOnFailure()) {
-                int mockLatestRound = properties.mockLatestRound() > 0
-                        ? properties.mockLatestRound()
-                        : MOCK_DEFAULT_LATEST_ROUND;
-                return new FailoverLottoApiClient(primary, new MockLottoApiClient(mockLatestRound));
+                return new FailoverLottoApiClient(primary, new MockLottoApiClient(resolvedMockLatestRound));
             }
             return primary;
         }
-        return new MockLottoApiClient(MOCK_DEFAULT_LATEST_ROUND);
+        return new MockLottoApiClient(resolvedMockLatestRound);
+    }
+
+    private static int resolveMockLatestRound(KraftApiProperties properties, WinningNumberRepository repository) {
+        if (properties.mockLatestRound() > 0) {
+            return properties.mockLatestRound();
+        }
+        if (repository != null) {
+            int latestStoredRound = repository.findMaxRound().orElse(0);
+            if (latestStoredRound > 0) {
+                return latestStoredRound + 1;
+            }
+        }
+        return MOCK_DEFAULT_LATEST_ROUND;
     }
 }

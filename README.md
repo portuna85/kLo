@@ -1,18 +1,17 @@
-# kLo
+﻿# kLo
 
-간단한 로또 번호 조회/추천 서비스입니다.
+로또 번호 조회/추천 서비스입니다.
 
-## 실행
+## Run
 
 ```bash
 docker compose up -d --build
 ```
 
-애플리케이션: `http://localhost:8080`
+앱 URL: `http://localhost:8080`
 
-## 개발 테스트
+## Docs
 
-```bash
-./gradlew test
-npm test
-```
+- 운영 문서 허브: `docs/docs.md`
+- 기여 가이드: `CONTRIBUTING.md`
+- 보안 정책: `SECURITY.md`

@@ -72,9 +72,10 @@ public class DhLotteryApiClient implements LottoApiClient {
                 try {
                     ApiRawResponse response = doFetch(round);
                     if (response.statusCode() >= 400) {
+                        String responseBody = response.body() == null ? "" : response.body();
                         count("kraft.api.dhlottery.call.failure", "reason", "network");
                         throw new LottoApiClientException("external API HTTP error (round=" + round + ", status=" + response.statusCode()
-                                + ", preview=" + preview(response.body()) + ")", response.statusCode(), response.body());
+                                + ", preview=" + preview(responseBody) + ")", response.statusCode(), response.body());
                     }
                     String body = response.body();
                     if (body == null || body.isBlank()) {
@@ -102,7 +103,7 @@ public class DhLotteryApiClient implements LottoApiClient {
                     log.debug("dhlottery retry detail: round={}, attempt={}/{}", round, attempt, attempts, ex);
                     sleepBackoff();
                 } catch (LottoApiClientException ex) {
-                    if (attempt >= attempts) {
+                    if (attempt >= attempts || !isRetriable(ex)) {
                         throw new LottoApiClientException(
                                 "external API call failed (round=" + round + ", attempts=" + attempts + ")", ex);
                     }
@@ -180,6 +181,14 @@ public class DhLotteryApiClient implements LottoApiClient {
     private static String preview(String body) {
         int limit = Math.min(80, body.length());
         return body.substring(0, limit).replaceAll("\\s+", " ");
+    }
+
+    private static boolean isRetriable(LottoApiClientException ex) {
+        Integer code = ex.getResponseCode();
+        if (code == null) {
+            return true;
+        }
+        return code == 429 || code >= 500;
     }
 
     record ApiRawResponse(int statusCode, String contentType, String body) {

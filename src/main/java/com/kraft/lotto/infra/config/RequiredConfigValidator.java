@@ -43,6 +43,7 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
             Pattern.compile("^jdbc:[a-zA-Z0-9]+://([A-Za-z0-9._-]+)");
     private static final Pattern JDBC_ENDPOINT_PATTERN =
             Pattern.compile("^jdbc:[a-zA-Z0-9]+://([A-Za-z0-9._-]+)(?::(\\d+))?");
+    private static final Pattern SHA256_HEX_PATTERN = Pattern.compile("^[0-9a-f]{64}$");
 
     public static List<String> requiredDeployEnvVars() {
         return REQUIRED_DEPLOY_ENV_VARS;
@@ -144,13 +145,49 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
         boolean hasToken = token != null && !token.isBlank();
         boolean hasTokens = tokens != null && !tokens.isBlank();
         boolean hasTokenHashes = tokenHashes != null && !tokenHashes.isBlank();
+        if (hasToken || hasTokens) {
+            problems.add(format(
+                    "kraft.admin.api-tokens",
+                    "Admin API token list/hash (env: KRAFT_ADMIN_API_TOKENS, KRAFT_ADMIN_API_TOKEN_HASHES, legacy: KRAFT_ADMIN_API_TOKEN)",
+                    "plain text tokens are not allowed in prod profile; use KRAFT_ADMIN_API_TOKEN_HASHES"
+            ));
+        }
         if (!hasToken && !hasTokens && !hasTokenHashes) {
             problems.add(format(
                     "kraft.admin.api-tokens",
                     "Admin API token list/hash (env: KRAFT_ADMIN_API_TOKENS, KRAFT_ADMIN_API_TOKEN_HASHES, legacy: KRAFT_ADMIN_API_TOKEN)",
                     "blank in prod profile"
             ));
+            return;
         }
+        if (hasTokenHashes && !hasValidHashEntries(tokenHashes)) {
+            problems.add(format(
+                    "kraft.admin.api-token-hashes",
+                    "Admin API token hash list (id:sha256hex, comma-separated)",
+                    "invalid format or hash length; require 64-char lowercase hex sha256 entries"
+            ));
+        }
+    }
+
+    private static boolean hasValidHashEntries(String raw) {
+        boolean hasAny = false;
+        for (String part : raw.split(",")) {
+            String entry = part == null ? "" : part.trim();
+            if (entry.isEmpty()) {
+                continue;
+            }
+            int separator = entry.indexOf(':');
+            if (separator <= 0 || separator >= entry.length() - 1) {
+                return false;
+            }
+            String id = entry.substring(0, separator).trim();
+            String hash = entry.substring(separator + 1).trim().toLowerCase();
+            if (id.length() < 3 || id.length() > 64 || !SHA256_HEX_PATTERN.matcher(hash).matches()) {
+                return false;
+            }
+            hasAny = true;
+        }
+        return hasAny;
     }
 
     static void addProdOperationalConfigProblems(ConfigurableEnvironment env, List<String> problems) {
@@ -183,25 +220,53 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
 
     static void addProfilePolicyProblems(ConfigurableEnvironment env, List<String> problems) {
         boolean inContainer = Boolean.parseBoolean(env.getProperty("KRAFT_IN_CONTAINER", "false"));
+        String kraftEnv = env.getProperty("KRAFT_ENV", "").trim().toLowerCase();
         String[] activeProfiles = env.getActiveProfiles();
         String active = activeProfiles.length == 0 ? "<none>" : String.join(",", activeProfiles);
+        boolean activeLocal = env.matchesProfiles("local");
+        boolean activeProd = env.matchesProfiles("prod");
 
         if (inContainer) {
-            if (!env.matchesProfiles("prod")) {
+            if (!activeProd) {
                 problems.add(format(
                         "spring.profiles.active",
                         "active profile",
                         "KRAFT_IN_CONTAINER=true requires prod profile (current: " + active + ")"
                 ));
             }
-            return;
-        }
-
-        if (!env.matchesProfiles("local")) {
+        } else if (!activeLocal) {
             problems.add(format(
                     "spring.profiles.active",
                     "active profile",
                     "local runtime requires local profile (current: " + active + ")"
+            ));
+        }
+
+        if (!kraftEnv.isBlank()) {
+            if (!"local".equals(kraftEnv) && !"prod".equals(kraftEnv)) {
+                problems.add(format(
+                        "KRAFT_ENV",
+                        "environment discriminator (allowed: local|prod)",
+                        "invalid value: " + kraftEnv
+                ));
+            } else if ("local".equals(kraftEnv) && !activeLocal) {
+                problems.add(format(
+                        "KRAFT_ENV",
+                        "environment discriminator",
+                        "KRAFT_ENV=local requires local profile (current: " + active + ")"
+                ));
+            } else if ("prod".equals(kraftEnv) && !activeProd) {
+                problems.add(format(
+                        "KRAFT_ENV",
+                        "environment discriminator",
+                        "KRAFT_ENV=prod requires prod profile (current: " + active + ")"
+                ));
+            }
+        } else {
+            problems.add(format(
+                    "KRAFT_ENV",
+                    "environment discriminator (env: KRAFT_ENV)",
+                    "blank; set local or prod explicitly"
             ));
         }
     }

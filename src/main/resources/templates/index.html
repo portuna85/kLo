@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/header :: head(${appName})}"></head>
 <body>
@@ -6,22 +6,23 @@
 
 <main class="container py-4">
   <div class="row g-4">
-    <!-- 추천 -->
+    <!-- 異붿쿇 -->
     <section class="col-12 col-lg-6">
       <div class="card kraft-card h-100">
         <div class="card-body">
           <h2 class="h6 text-uppercase text-muted mb-3">
-            <i class="bi bi-shuffle me-1"></i> 추천 조합
+            <i class="bi bi-shuffle me-1"></i> 異붿쿇 議고빀
           </h2>
           <form id="form-recommend" class="row g-2 align-items-end">
             <div class="col-auto">
-              <label class="form-label small text-muted mb-1" for="rec-count">개수</label>
+              <label class="form-label small text-muted mb-1" for="rec-count">媛쒖닔</label>
               <input id="rec-count" name="count" type="number" min="1" max="10" value="5"
-                     class="form-control form-control-sm kraft-input-count" />
+                     class="form-control form-control-sm kraft-input-count"  aria-describedby="rec-count-feedback" aria-invalid="false" />
+              <div id="rec-count-feedback" class="invalid-feedback d-block small" aria-live="polite"></div>
             </div>
             <div class="col-auto">
               <button type="submit" class="btn btn-primary btn-sm">
-                <i class="bi bi-magic me-1"></i> 생성
+                <i class="bi bi-magic me-1"></i> ?앹꽦
               </button>
             </div>
           </form>
@@ -30,12 +31,12 @@
       </div>
     </section>
 
-    <!-- 최신 회차 -->
+    <!-- 理쒖떊 ?뚯감 -->
     <section class="col-12 col-lg-6">
       <div class="card kraft-card h-100">
         <div class="card-body">
           <h2 class="h6 text-uppercase text-muted mb-3">
-            <i class="bi bi-trophy me-1"></i> 최신 회차
+            <i class="bi bi-trophy me-1"></i> 理쒖떊 ?뚯감
           </h2>
           <div id="latest-result" aria-live="polite">
             <div class="placeholder-glow"><span class="placeholder col-7"></span></div>
@@ -44,22 +45,21 @@
       </div>
     </section>
 
-    <!-- 회차 검색 -->
+    <!-- ?뚯감 寃??-->
     <section class="col-12 col-lg-6">
       <div class="card kraft-card h-100">
         <div class="card-body">
           <h2 class="h6 text-uppercase text-muted mb-3">
-            <i class="bi bi-search me-1"></i> 회차 검색
-          </h2>
+            <i class="bi bi-search me-1"></i> ?뚯감 寃??          </h2>
           <form id="form-by-round" class="row g-2 align-items-end">
             <div class="col-auto">
-              <label class="form-label small text-muted mb-1" for="round-input">회차</label>
-              <input id="round-input" name="round" type="number" min="1" placeholder="예: 1100"
+              <label class="form-label small text-muted mb-1" for="round-input">?뚯감</label>
+              <input id="round-input" name="round" type="number" min="1" placeholder="?? 1100"
                      required class="form-control form-control-sm kraft-input-round" />
             </div>
             <div class="col-auto">
               <button type="submit" class="btn btn-primary btn-sm">
-                <i class="bi bi-arrow-right-circle me-1"></i> 조회
+                <i class="bi bi-arrow-right-circle me-1"></i> 議고쉶
               </button>
             </div>
           </form>
@@ -68,12 +68,12 @@
       </div>
     </section>
 
-    <!-- 빈도 -->
+    <!-- 鍮덈룄 -->
     <section class="col-12 col-lg-6">
       <div class="card kraft-card h-100">
         <div class="card-body">
           <h2 class="h6 text-uppercase text-muted mb-3">
-            <i class="bi bi-bar-chart me-1"></i> 번호별 출현 빈도
+            <i class="bi bi-bar-chart me-1"></i> 踰덊샇蹂?異쒗쁽 鍮덈룄
           </h2>
           <div id="freq-result" class="kraft-freq-grid" aria-live="polite"></div>
           <div id="freq-low6-result" class="kraft-freq-low6 mt-3" aria-live="polite"></div>
@@ -81,16 +81,16 @@
       </div>
     </section>
 
-    <!-- 회차 페이지네이션 -->
+    <!-- ?뚯감 ?섏씠吏?ㅼ씠??-->
     <section class="col-12">
       <div class="card kraft-card h-100">
         <div class="card-body">
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <h2 class="h6 text-uppercase text-muted mb-0">
-              <i class="bi bi-collection me-1"></i> 회차 목록
+              <i class="bi bi-collection me-1"></i> ?뚯감 紐⑸줉
             </h2>
             <div class="d-flex align-items-center gap-2">
-              <label class="form-label small text-muted mb-0" for="list-size">페이지 크기</label>
+              <label class="form-label small text-muted mb-0" for="list-size">?섏씠吏 ?ш린</label>
               <select id="list-size" class="form-select form-select-sm kraft-list-size">
                 <option value="10">10</option>
                 <option value="20" selected>20</option>
@@ -101,13 +101,13 @@
           <div id="list-result" class="kraft-list" aria-live="polite">
             <div class="placeholder-glow"><span class="placeholder col-12"></span></div>
           </div>
-          <nav class="d-flex justify-content-between align-items-center mt-3" aria-label="회차 페이지네이션">
+          <nav class="d-flex justify-content-between align-items-center mt-3" aria-label="?뚯감 ?섏씠吏?ㅼ씠??>
             <button id="list-prev" type="button" class="btn btn-sm btn-outline-secondary" disabled>
-              <i class="bi bi-chevron-left"></i> 이전
+              <i class="bi bi-chevron-left"></i> ?댁쟾
             </button>
             <span id="list-pageinfo" class="small text-muted">-</span>
             <button id="list-next" type="button" class="btn btn-sm btn-outline-secondary" disabled>
-              다음 <i class="bi bi-chevron-right"></i>
+              ?ㅼ쓬 <i class="bi bi-chevron-right"></i>
             </button>
           </nav>
         </div>
@@ -120,4 +120,6 @@
 <div th:replace="~{fragments/footer :: scripts}"></div>
 </body>
 </html>
+
+
 

@@ -52,6 +52,6 @@ class LottoApiHealthIndicatorTest {
         Health result = indicator.health();
 
         assertThat(result.getStatus()).isEqualTo(Status.DOWN);
-        assertThat(result.getDetails()).containsKey("error");
+        assertThat(result.getDetails()).containsEntry("error", "repository_query_failed");
     }
 }

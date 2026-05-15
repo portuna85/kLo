@@ -25,7 +25,9 @@ public class RecommendConfiguration {
                 lottoRandom,
                 rules.birthdayThreshold(),
                 rules.longRunThreshold(),
-                rules.decadeThreshold()
+                rules.decadeThreshold(),
+                properties.initialPickMaxAttempts(),
+                properties.fixupMaxAttempts()
         );
     }
 

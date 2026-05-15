@@ -53,7 +53,7 @@ USER kraft
 EXPOSE 8080
 
 # 컨테이너 환경 기본 JVM 옵션 (cgroup 메모리 감지 + Asia/Seoul)
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Duser.timezone=Asia/Seoul -Djdk.tracePinnedThreads=full" \
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/app/logs -Duser.timezone=Asia/Seoul -Djdk.tracePinnedThreads=full" \
     KRAFT_LOG_PATH="/app/logs" \
     KRAFT_HEALTHCHECK_URL="http://localhost:8080/actuator/health/readiness" \
     KRAFT_HEALTHCHECK_TIMEOUT_SECONDS="3"

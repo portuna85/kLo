@@ -40,6 +40,8 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+    baseline-on-migrate: false
+    baseline-version: 1
   data:
     redis:
       repositories:
@@ -50,7 +52,7 @@ spring:
       - winningNumberFrequency
       - combinationPrizeHistory
     caffeine:
-      spec: maximumSize=100,expireAfterWrite=45m,recordStats
+      spec: maximumSize=2000,expireAfterAccess=24h,recordStats
 
 server:
   shutdown: graceful
@@ -89,6 +91,9 @@ management:
           include: readinessState,db
 
 kraft:
+  security:
+    monitoring:
+      public-prometheus: ${KRAFT_SECURITY_PUBLIC_PROMETHEUS:false}
   db:
     connectivity-check:
       enabled: ${KRAFT_DB_CONNECTIVITY_CHECK_ENABLED:true}
@@ -127,7 +132,13 @@ kraft:
     max-retries: ${KRAFT_API_MAX_RETRIES:2}
     retry-backoff-ms: ${KRAFT_API_RETRY_BACKOFF_MS:700}
     fallback-to-mock-on-failure: ${KRAFT_API_FALLBACK_TO_MOCK_ON_FAILURE:false}
-    mock-latest-round: ${KRAFT_API_MOCK_LATEST_ROUND:1200}
+    mock-latest-round: ${KRAFT_API_MOCK_LATEST_ROUND:0}
+    legacy:
+      deprecation:
+        value: ${KRAFT_API_LEGACY_DEPRECATION_VALUE:@1785542399}
+      sunset:
+        value: ${KRAFT_API_LEGACY_SUNSET_VALUE:Fri, 31 Jul 2026 23:59:59 GMT}
+      emit-after-sunset: ${KRAFT_API_LEGACY_EMIT_AFTER_SUNSET:true}
   admin:
     api-token: ${KRAFT_ADMIN_API_TOKEN:}
     api-tokens: ${KRAFT_ADMIN_API_TOKENS:}
@@ -135,6 +146,8 @@ kraft:
     token-header: ${KRAFT_ADMIN_TOKEN_HEADER:X-Kraft-Admin-Token}
   recommend:
     max-attempts: ${KRAFT_RECOMMEND_MAX_ATTEMPTS:5000}
+    initial-pick-max-attempts: ${KRAFT_RECOMMEND_INITIAL_PICK_MAX_ATTEMPTS:10000}
+    fixup-max-attempts: ${KRAFT_RECOMMEND_FIXUP_MAX_ATTEMPTS:1000}
     rules:
       birthday-threshold: ${KRAFT_RECOMMEND_RULE_BIRTHDAY_THRESHOLD:31}
       long-run-threshold: ${KRAFT_RECOMMEND_RULE_LONG_RUN_THRESHOLD:5}
@@ -148,8 +161,13 @@ kraft:
       redis:
         enabled: ${KRAFT_RECOMMEND_RATE_LIMIT_REDIS_ENABLED:false}
         key-prefix: ${KRAFT_RECOMMEND_RATE_LIMIT_REDIS_KEY_PREFIX:kraft:rate-limit}
+      recommend:
+        max-requests: ${KRAFT_RECOMMEND_RATE_LIMIT_MAX_REQUESTS:30}
+        window-seconds: ${KRAFT_RECOMMEND_RATE_LIMIT_WINDOW_SECONDS:60}
       collect:
         max-requests: ${KRAFT_COLLECT_RATE_LIMIT_MAX_REQUESTS:10}
         window-seconds: ${KRAFT_COLLECT_RATE_LIMIT_WINDOW_SECONDS:300}
   logging:
     path: ${KRAFT_LOG_PATH:./logs}
+    root-level-local: ${KRAFT_LOG_ROOT_LEVEL_LOCAL:INFO}
+    root-level-prod: ${KRAFT_LOG_ROOT_LEVEL_PROD:INFO}
