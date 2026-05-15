@@ -34,16 +34,13 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
             "KRAFT_DB_NAME",
             "KRAFT_DB_USER",
             "KRAFT_DB_PASSWORD",
-            "KRAFT_DB_ROOT_PASSWORD",
-            "KRAFT_ADMIN_API_TOKENS",
-            "KRAFT_ADMIN_API_TOKEN_HASHES"
+            "KRAFT_DB_ROOT_PASSWORD"
     );
 
     private static final Pattern JDBC_URL_PATTERN =
             Pattern.compile("^jdbc:[a-zA-Z0-9]+://([A-Za-z0-9._-]+)");
     private static final Pattern JDBC_ENDPOINT_PATTERN =
             Pattern.compile("^jdbc:[a-zA-Z0-9]+://([A-Za-z0-9._-]+)(?::(\\d+))?");
-    private static final Pattern SHA256_HEX_PATTERN = Pattern.compile("^[0-9a-f]{64}$");
 
     public static List<String> requiredDeployEnvVars() {
         return REQUIRED_DEPLOY_ENV_VARS;
@@ -96,7 +93,6 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
             }
         }
 
-        addProdAdminTokenProblem(env, problems);
         addProdOperationalConfigProblems(env, problems);
         addProfilePolicyProblems(env, problems);
 
@@ -133,61 +129,6 @@ public class RequiredConfigValidator implements EnvironmentPostProcessor, Ordere
         } catch (RuntimeException ex) {
             return null;
         }
-    }
-
-    static void addProdAdminTokenProblem(ConfigurableEnvironment env, List<String> problems) {
-        if (!env.matchesProfiles("prod")) {
-            return;
-        }
-        String token = safeGet(env, "kraft.admin.api-token");
-        String tokens = safeGet(env, "kraft.admin.api-tokens");
-        String tokenHashes = safeGet(env, "kraft.admin.api-token-hashes");
-        boolean hasToken = token != null && !token.isBlank();
-        boolean hasTokens = tokens != null && !tokens.isBlank();
-        boolean hasTokenHashes = tokenHashes != null && !tokenHashes.isBlank();
-        if (hasToken || hasTokens) {
-            problems.add(format(
-                    "kraft.admin.api-tokens",
-                    "Admin API token list/hash (env: KRAFT_ADMIN_API_TOKENS, KRAFT_ADMIN_API_TOKEN_HASHES, legacy: KRAFT_ADMIN_API_TOKEN)",
-                    "plain text tokens are not allowed in prod profile; use KRAFT_ADMIN_API_TOKEN_HASHES"
-            ));
-        }
-        if (!hasToken && !hasTokens && !hasTokenHashes) {
-            problems.add(format(
-                    "kraft.admin.api-tokens",
-                    "Admin API token list/hash (env: KRAFT_ADMIN_API_TOKENS, KRAFT_ADMIN_API_TOKEN_HASHES, legacy: KRAFT_ADMIN_API_TOKEN)",
-                    "blank in prod profile"
-            ));
-            return;
-        }
-        if (hasTokenHashes && !hasValidHashEntries(tokenHashes)) {
-            problems.add(format(
-                    "kraft.admin.api-token-hashes",
-                    "Admin API token hash list (id:sha256hex, comma-separated)",
-                    "invalid format or hash length; require 64-char lowercase hex sha256 entries"
-            ));
-        }
-    }
-
-    private static boolean hasValidHashEntries(String raw) {
-        boolean hasAny = false;
-        for (String part : raw.split(",")) {
-            String entry = part == null ? "" : part.trim();
-            if (entry.isEmpty()) {
-                continue;
-            }
-            int separator = entry.indexOf(':');
-            if (separator <= 0 || separator >= entry.length() - 1) {
-                return false;
-            }
-            String id = entry.substring(0, separator).trim();
-            String hash = entry.substring(separator + 1).trim().toLowerCase();
-            if (id.length() < 3 || id.length() > 64 || !SHA256_HEX_PATTERN.matcher(hash).matches()) {
-                return false;
-            }
-            hasAny = true;
-        }
-        return hasAny;
     }
 
     static void addProdOperationalConfigProblems(ConfigurableEnvironment env, List<String> problems) {

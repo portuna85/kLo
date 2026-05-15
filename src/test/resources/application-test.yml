@@ -1,4 +1,4 @@
-spring:
+﻿spring:
   datasource:
     url: jdbc:h2:mem:kraft_lotto_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
     username: sa
@@ -30,22 +30,9 @@ kraft:
     read-timeout-ms: 3000
     max-retries: 2
     retry-backoff-ms: 50
-    fallback-to-mock-on-failure: false
     mock-latest-round: 1200
-  admin:
-    api-token: test-admin-token
-    token-header: X-Kraft-Admin-Token
   recommend:
     max-attempts: 1000
-    rate-limit:
-      max-requests: 30
-      window-seconds: 60
-      recommend:
-        max-requests: 30
-        window-seconds: 60
-      collect:
-        max-requests: 30
-        window-seconds: 60
 
 logging:
   level:
