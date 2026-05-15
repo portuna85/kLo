@@ -1,0 +1,21 @@
+﻿<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(title,content)">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${title}">kraft-lotto</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header>
+  <nav>
+    <a href="/">홈</a>
+    <a href="/recommend">추천 조합</a>
+    <a href="/rounds/search">회차 검색</a>
+    <a href="/frequency">출현 빈도</a>
+    <a href="/rounds">회차 목록</a>
+  </nav>
+</header>
+<main th:replace="${content}"></main>
+</body>
+</html>

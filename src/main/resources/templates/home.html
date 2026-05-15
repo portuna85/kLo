@@ -1,0 +1,21 @@
+﻿<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout('홈', ~{::section})}">
+<section>
+  <h1>kraft-lotto</h1>
+  <p>공개 조회형 로또 서비스입니다. 아래 화면에서 추천, 회차 조회, 빈도 조회를 이용할 수 있습니다.</p>
+  <ul>
+    <li><a href="/recommend">추천 조합 보기</a></li>
+    <li><a href="/rounds/search">회차 검색</a></li>
+    <li><a href="/frequency">번호별 출현 빈도</a></li>
+    <li><a href="/rounds">회차 목록</a></li>
+  </ul>
+
+  <div th:if="${latest != null}">
+    <h2>최신 회차</h2>
+    <p>회차: <span th:text="${latest.round}">0</span></p>
+    <p>추첨일: <span th:text="${latest.drawDate}">-</span></p>
+    <p>번호: <span th:text="${latest.numbers}">[]</span> + 보너스 <span th:text="${latest.bonusNumber}">0</span></p>
+  </div>
+  <p th:if="${latest == null}">아직 수집된 회차 데이터가 없습니다.</p>
+</section>
+</html>

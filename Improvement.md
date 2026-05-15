@@ -233,7 +233,7 @@ Domain / DTO (불변 모델)
 - Bootstrap 기반 컴포넌트
 - 폼 즉시 검증 / 피드백 부족 (#014)
 - 접근성(ARIA, 키보드 내비) 보강 필요 (#015)
-    - `aria-busy`, `aria-live`, role 속성 등
+  - `aria-busy`, `aria-live`, role 속성 등
 - 페이지네이션 / 추천 폼 모듈화 진행 중 (#007)
 
 ### 4.3 빌드 자동화 검토 (#029)
